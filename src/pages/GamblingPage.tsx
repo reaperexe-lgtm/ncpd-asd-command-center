@@ -193,8 +193,8 @@ const GamblingPage = () => {
 
     const local = readLocalCasinoState(user.id);
     if (local) {
-      setBalance(local.balance);
-      setLastDailyGift(local.lastDailyGift);
+      updateBalance(local.balance);
+      updateLastDailyGift(local.lastDailyGift);
     }
 
     const load = async () => {
@@ -212,8 +212,8 @@ const GamblingPage = () => {
       if (data) {
         const serverBalance = typeof data.balance === "number" ? data.balance : local?.balance ?? 1000;
         const serverLastDailyGift = ((data as any).last_daily_gift as string | null) ?? local?.lastDailyGift ?? null;
-        setBalance(serverBalance);
-        setLastDailyGift(serverLastDailyGift);
+        updateBalance(serverBalance);
+        updateLastDailyGift(serverLastDailyGift);
         writeLocalCasinoState(user.id, serverBalance, serverLastDailyGift);
         return;
       }
@@ -228,8 +228,8 @@ const GamblingPage = () => {
       } as any);
 
       if (!insertError) {
-        setBalance(initialBalance);
-        setLastDailyGift(initialLastDailyGift);
+        updateBalance(initialBalance);
+        updateLastDailyGift(initialLastDailyGift);
         writeLocalCasinoState(user.id, initialBalance, initialLastDailyGift);
       }
     };
