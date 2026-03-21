@@ -88,8 +88,12 @@ const writeLocalCasinoState = (userId: string, balance: number, lastDailyGift: s
 };
 
 const GamblingPage = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [balance, setBalance] = useState(1000);
+  const [multipliers, setMultipliers] = useState(loadMultipliers);
+  const [pairMult, setPairMult] = useState(loadPairMult);
+  const [twoPairMult, setTwoPairMult] = useState(loadTwoPairMult);
+  const [editingPayouts, setEditingPayouts] = useState(false);
   const [bet, setBet] = useState(100);
   const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
   const [displayReels, setDisplayReels] = useState<string[][]>([[], [], [], []]);
