@@ -149,10 +149,20 @@ const GamblingPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const updateBalance = useCallback((val: number) => {
+    balanceRef.current = val;
+    setBalance(val);
+  }, []);
+
+  const updateLastDailyGift = useCallback((val: string | null) => {
+    lastDailyGiftRef.current = val;
+    setLastDailyGift(val);
+  }, []);
+
   const persistCasinoState = useCallback(
     async (nextBalance: number, nextLastDailyGift: string | null) => {
-      setBalance(nextBalance);
-      setLastDailyGift(nextLastDailyGift);
+      updateBalance(nextBalance);
+      updateLastDailyGift(nextLastDailyGift);
 
       if (!user) return;
 
@@ -175,7 +185,7 @@ const GamblingPage = () => {
         refetchLeaderboard();
       }
     },
-    [user, refetchLeaderboard]
+    [user, refetchLeaderboard, updateBalance, updateLastDailyGift]
   );
 
   useEffect(() => {
