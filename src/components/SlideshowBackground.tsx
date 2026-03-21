@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const BG_IMAGES = [
   "/images/bg-1.png",
@@ -14,49 +14,28 @@ const BG_IMAGES = [
 
 const SlideshowBackground = () => {
   const [current, setCurrent] = useState(0);
-  const [prev, setPrev] = useState<number | null>(null);
-  const [fading, setFading] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPrev(current);
-      setCurrent((p) => (p + 1) % BG_IMAGES.length);
-      setFading(true);
-
-      // After fade completes, remove old layer
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
-        setPrev(null);
-        setFading(false);
-      }, 4500);
-    }, 6000);
-    return () => {
-      clearInterval(interval);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [current]);
+      setCurrent((prev) => (prev + 1) % BG_IMAGES.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="fixed inset-0 overflow-hidden z-0">
-      {/* Previous image fading out */}
-      {prev !== null && (
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[4500ms] ease-in-out"
+      {BG_IMAGES.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
           style={{
-            backgroundImage: `url('${BG_IMAGES[prev]}')`,
-            opacity: fading ? 0 : 1,
+            opacity: i === current ? 1 : 0,
+            transition: "opacity 3s ease-in-out",
           }}
         />
-      )}
-      {/* Current image fading in */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[4500ms] ease-in-out"
-        style={{
-          backgroundImage: `url('${BG_IMAGES[current]}')`,
-          opacity: 1,
-        }}
-      />
+      ))}
       <div className="absolute inset-0 bg-background/70" />
     </div>
   );
