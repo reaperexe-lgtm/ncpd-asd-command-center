@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import asdLogo from "@/assets/asd-logo.png";
-import SlideshowBackground from "@/components/SlideshowBackground";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
@@ -40,7 +39,6 @@ const Index = () => {
 
   return (
     <div className="flex flex-col items-center gap-8 relative">
-      <SlideshowBackground />
       <div className="relative z-10 flex flex-col items-center gap-8 w-full pb-8">
       <div className="mt-4 w-48 h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-cover rounded-full scale-125" />
