@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Plus, Trash2, Plane, AlertTriangle, Clock } from "lucide-react";
 
 const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
-const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division"];
+const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division", "Keine"];
 
 const EXPIRY_MONTHS = 3;
 
@@ -231,8 +231,10 @@ const FluglizenzenPage = () => {
               {sorted.map((l) => {
                 const status = getExpiryStatus(l.license_date);
                 const expiry = getExpiryDate(l.license_date);
+                const teamBg = l.team === "Team Red" ? "bg-red-500/8" : l.team === "Team Blue" ? "bg-blue-500/8" : l.team === "Team Gold" ? "bg-yellow-500/8" : l.team === "Team Silver" ? "bg-gray-400/8" : "";
+                const teamBadge = l.team === "Team Red" ? "bg-red-500/15 text-red-400" : l.team === "Team Blue" ? "bg-blue-500/15 text-blue-400" : l.team === "Team Gold" ? "bg-yellow-500/15 text-yellow-400" : l.team === "Team Silver" ? "bg-gray-400/15 text-gray-300" : "bg-primary/10 text-primary";
                 return (
-                  <tr key={l.id} className={`border-b border-border/30 hover:bg-primary/[0.02] transition-colors ${status === "expired" ? "opacity-60" : ""}`}>
+                  <tr key={l.id} className={`border-b border-border/30 hover:bg-primary/[0.02] transition-colors ${teamBg} ${status === "expired" ? "opacity-60" : ""}`}>
                     <td className="px-4 py-3 font-medium">{l.name}</td>
                     <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(l.license_date).toLocaleDateString("de-DE")}</td>
                     <td className="px-4 py-3 tabular-nums">
@@ -240,8 +242,8 @@ const FluglizenzenPage = () => {
                         {expiry.toLocaleDateString("de-DE")}
                       </span>
                     </td>
-                    <td className="px-4 py-3"><span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{l.team}</span></td>
-                    <td className="px-4 py-3 text-muted-foreground">{l.unit || "–"}</td>
+                    <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${teamBadge}`}>{l.team}</span></td>
+                    <td className="px-4 py-3 text-muted-foreground">{l.unit === "Keine" ? "–" : l.unit || "–"}</td>
                     <td className="px-4 py-3">
                       {status === "expired" ? (
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/10 text-red-400 inline-flex items-center gap-1">
