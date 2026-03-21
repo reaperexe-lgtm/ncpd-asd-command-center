@@ -39,7 +39,7 @@ const Index = () => {
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="mt-4 w-40 h-40 rounded-full border-2 border-border p-2 shadow-[0_0_30px_hsl(185_100%_50%/0.08)]">
+      <div className="mt-4 w-48 h-48 rounded-full border-2 border-border p-2 shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-contain rounded-full" />
       </div>
 
