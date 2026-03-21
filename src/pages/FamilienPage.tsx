@@ -265,11 +265,35 @@ const FamilienPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {group.items.map((g) => (
                     <div key={g.id} className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-all duration-200 group/card">
-                      {g.image_url && (
+                      {editingId === g.id ? (
+                        /* Edit mode image */
+                        <div className="aspect-video bg-background/50 flex items-center justify-center relative">
+                          {editData.image_url ? (
+                            <>
+                              <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
+                              <button onClick={removeEditImage} className="absolute top-1.5 right-1.5 bg-destructive/90 text-white rounded-full p-1 hover:bg-destructive transition-colors">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <label className="flex flex-col items-center gap-1 cursor-pointer text-muted-foreground hover:text-primary transition-colors">
+                              <Upload className="w-5 h-5" />
+                              <span className="text-[10px]">{editUploading ? "Hochladen..." : "Foto hinzufügen"}</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={handleEditImageUpload} disabled={editUploading} />
+                            </label>
+                          )}
+                          {editData.image_url && (
+                            <label className="absolute bottom-1.5 right-1.5 bg-primary/90 text-white rounded-full p-1 cursor-pointer hover:bg-primary transition-colors">
+                              <Upload className="w-3 h-3" />
+                              <input type="file" accept="image/*" className="hidden" onChange={handleEditImageUpload} disabled={editUploading} />
+                            </label>
+                          )}
+                        </div>
+                      ) : g.image_url ? (
                         <div className="aspect-video overflow-hidden">
                           <img src={g.image_url} alt={g.name} className="w-full h-full object-cover group-hover/card:scale-[1.02] transition-transform duration-300" />
                         </div>
-                      )}
+                      ) : null}
                       <div className="p-3 space-y-1.5">
                         {editingId === g.id ? (
                           /* Edit mode */
