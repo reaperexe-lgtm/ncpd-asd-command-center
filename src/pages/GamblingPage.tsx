@@ -771,27 +771,27 @@ const GamblingPage = () => {
               return (
                 <div
                   key={entry.user_id}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${
+                  className={`rounded-lg transition-colors ${
                     isMe ? "bg-primary/10 border border-primary/30" : "bg-background/50 border border-transparent hover:border-border"
                   }`}
                 >
-                  <div className="w-6 text-center shrink-0">
-                    {i === 0 ? <Crown className="w-4 h-4 text-yellow-400 mx-auto" /> : <span className="text-[10px] text-muted-foreground font-bold">{i + 1}</span>}
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
-                    {entry.image_url ? (
-                      <img src={entry.image_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-bold text-muted-foreground">{entry.name?.charAt(0)?.toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-medium truncate ${isMe ? "text-primary" : "text-foreground"}`}>{entry.name}</p>
-                    {entry.dienstnummer && <p className="text-[9px] text-muted-foreground font-mono">{entry.dienstnummer}</p>}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-2.5 px-3 py-2">
+                    <div className="w-6 text-center shrink-0">
+                      {i === 0 ? <Crown className="w-4 h-4 text-yellow-400 mx-auto" /> : <span className="text-[10px] text-muted-foreground font-bold">{i + 1}</span>}
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
+                      {entry.image_url ? (
+                        <img src={entry.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-bold text-muted-foreground">{entry.name?.charAt(0)?.toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-medium truncate ${isMe ? "text-primary" : "text-foreground"}`}>{entry.name}</p>
+                      {entry.dienstnummer && <p className="text-[9px] text-muted-foreground font-mono">{entry.dienstnummer}</p>}
+                    </div>
                     <span
-                      className={`text-xs font-bold tabular-nums ${
+                      className={`text-xs font-bold tabular-nums shrink-0 ${
                         i === 0 ? "text-yellow-400" : i === 1 ? "text-muted-foreground" : i === 2 ? "text-amber-600" : "text-muted-foreground"
                       }`}
                     >
@@ -799,8 +799,8 @@ const GamblingPage = () => {
                     </span>
                     {isAdmin && (
                       <button
-                        onClick={() => setGiveMoneyUserId(giveMoneyUserId === entry.user_id ? null : entry.user_id)}
-                        className="ml-1 text-xs hover:scale-110 transition-transform active:scale-95"
+                        onClick={(e) => { e.stopPropagation(); setGiveMoneyUserId(giveMoneyUserId === entry.user_id ? null : entry.user_id); }}
+                        className="w-7 h-7 shrink-0 flex items-center justify-center rounded-md hover:bg-accent transition-colors active:scale-95 text-base"
                         title="Geld geben"
                       >
                         💰
@@ -808,7 +808,7 @@ const GamblingPage = () => {
                     )}
                   </div>
                   {isAdmin && giveMoneyUserId === entry.user_id && (
-                    <div className="col-span-full flex items-center gap-1.5 mt-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="flex items-center gap-1.5 px-3 pb-2 animate-in fade-in slide-in-from-top-1 duration-150">
                       <span className="text-[10px] text-muted-foreground">$</span>
                       <input
                         type="number"
