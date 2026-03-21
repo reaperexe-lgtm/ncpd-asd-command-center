@@ -11,6 +11,8 @@ import asdLogo from "@/assets/asd-logo.png";
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
 
 const Auth = () => {
+  const { user, loading } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
   const [isLogin, setIsLogin] = useState(true);
   const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
