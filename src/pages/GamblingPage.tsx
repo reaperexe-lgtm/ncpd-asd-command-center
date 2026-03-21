@@ -15,7 +15,10 @@ const REEL_SYMBOLS = [
   { id: "asd", src: asdLogo, name: "ASD", weight: 25, multiplier: 4 },
   { id: "swat", src: swatLogo, name: "SWAT", weight: 25, multiplier: 3 },
   { id: "hp", src: hpLogo, name: "HP", weight: 30, multiplier: 2 },
-];
+] as const;
+
+const DAILY_GIFT_AMOUNT = 500;
+const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 const getRandomSymbolId = () => {
   const totalWeight = REEL_SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
@@ -29,6 +32,27 @@ const getRandomSymbolId = () => {
 
 const getSymbol = (id: string) => REEL_SYMBOLS.find((s) => s.id === id) || REEL_SYMBOLS[0];
 
+const getCasinoStorageKey = (userId: string) => `casino_state_${userId}`;
+
+const readLocalCasinoState = (userId: string): { balance: number; lastDailyGift: string | null } | null => {
+  try {
+    const raw = localStorage.getItem(getCasinoStorageKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.balance !== "number") return null;
+    return {
+      balance: parsed.balance,
+      lastDailyGift: typeof parsed?.lastDailyGift === "string" ? parsed.lastDailyGift : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const writeLocalCasinoState = (userId: string, balance: number, lastDailyGift: string | null) => {
+  localStorage.setItem(getCasinoStorageKey(userId), JSON.stringify({ balance, lastDailyGift }));
+};
+
 const GamblingPage = () => {
   const { user } = useAuth();
   const [balance, setBalance] = useState(1000);
@@ -39,6 +63,7 @@ const GamblingPage = () => {
   const [lastWin, setLastWin] = useState(0);
   const [history, setHistory] = useState<{ symbols: string[]; amount: number }[]>([]);
   const [lastDailyGift, setLastDailyGift] = useState<string | null>(null);
+  const [nowTs, setNowTs] = useState(Date.now());
 
   const { data: leaderboard, refetch: refetchLeaderboard } = useQuery({
     queryKey: ["casino-leaderboard"],
@@ -48,43 +73,118 @@ const GamblingPage = () => {
         .select("user_id, balance")
         .order("balance", { ascending: false });
       if (!balances?.length) return [];
+
       const userIds = balances.map((b) => b.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, name, dienstnummer, image_url")
         .in("id", userIds);
+
       return balances.map((b) => {
         const p = profiles?.find((pr) => pr.id === b.user_id);
-        return { ...b, name: p?.name || "Unbekannt", dienstnummer: p?.dienstnummer, image_url: p?.image_url };
+        return {
+          ...b,
+          name: p?.name || "Unbekannt",
+          dienstnummer: p?.dienstnummer,
+          image_url: p?.image_url,
+        };
       });
     },
     refetchInterval: 3000,
   });
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from("casino_balances").select("balance, last_daily_gift").eq("user_id", user.id).single().then(({ data, error }: any) => {
-      if (data) {
-        setBalance(data.balance);
-        setLastDailyGift(data.last_daily_gift);
-      } else if (error) {
-        supabase.from("casino_balances").insert({ user_id: user.id, balance: 1000 });
+    const timer = setInterval(() => setNowTs(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const persistCasinoState = useCallback(
+    async (nextBalance: number, nextLastDailyGift: string | null) => {
+      setBalance(nextBalance);
+      setLastDailyGift(nextLastDailyGift);
+
+      if (!user) return;
+
+      writeLocalCasinoState(user.id, nextBalance, nextLastDailyGift);
+
+      const { error } = await supabase
+        .from("casino_balances")
+        .upsert(
+          {
+            user_id: user.id,
+            balance: nextBalance,
+            last_daily_gift: nextLastDailyGift,
+          } as any,
+          { onConflict: "user_id" }
+        );
+
+      if (error) {
+        console.error("Casino persist error:", error);
+      } else {
+        refetchLeaderboard();
       }
-    });
+    },
+    [user, refetchLeaderboard]
+  );
+
+  useEffect(() => {
+    if (!user) return;
+
+    const local = readLocalCasinoState(user.id);
+    if (local) {
+      setBalance(local.balance);
+      setLastDailyGift(local.lastDailyGift);
+    }
+
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("casino_balances")
+        .select("user_id, balance, last_daily_gift")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Casino load error:", error);
+        return;
+      }
+
+      if (data) {
+        const serverBalance = typeof data.balance === "number" ? data.balance : local?.balance ?? 1000;
+        const serverLastDailyGift = ((data as any).last_daily_gift as string | null) ?? local?.lastDailyGift ?? null;
+        setBalance(serverBalance);
+        setLastDailyGift(serverLastDailyGift);
+        writeLocalCasinoState(user.id, serverBalance, serverLastDailyGift);
+        return;
+      }
+
+      const initialBalance = local?.balance ?? 1000;
+      const initialLastDailyGift = local?.lastDailyGift ?? null;
+
+      const { error: insertError } = await supabase.from("casino_balances").insert({
+        user_id: user.id,
+        balance: initialBalance,
+        last_daily_gift: initialLastDailyGift,
+      } as any);
+
+      if (!insertError) {
+        setBalance(initialBalance);
+        setLastDailyGift(initialLastDailyGift);
+        writeLocalCasinoState(user.id, initialBalance, initialLastDailyGift);
+      }
+    };
+
+    load();
   }, [user]);
 
   const canClaimDaily = () => {
     if (!lastDailyGift) return true;
-    const last = new Date(lastDailyGift);
-    const now = new Date();
-    return now.getTime() - last.getTime() >= 24 * 60 * 60 * 1000;
+    return nowTs - new Date(lastDailyGift).getTime() >= DAILY_GIFT_COOLDOWN_MS;
   };
 
   const getTimeUntilDaily = () => {
     if (!lastDailyGift) return null;
-    const last = new Date(lastDailyGift);
-    const next = new Date(last.getTime() + 24 * 60 * 60 * 1000);
-    const diff = next.getTime() - Date.now();
+    const nextTs = new Date(lastDailyGift).getTime() + DAILY_GIFT_COOLDOWN_MS;
+    const diff = nextTs - nowTs;
     if (diff <= 0) return null;
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
@@ -92,29 +192,23 @@ const GamblingPage = () => {
   };
 
   const claimDailyGift = async () => {
-    if (!canClaimDaily() || !user) return;
-    const newBalance = balance + 500;
-    const now = new Date().toISOString();
-    setBalance(newBalance);
-    setLastDailyGift(now);
-    await supabase.from("casino_balances").update({ balance: newBalance, last_daily_gift: now } as any).eq("user_id", user.id);
-    refetchLeaderboard();
-    toast.success("$500 Tagesgeschenk abgeholt!");
-  };
-
-  const updateBalance = useCallback(async (newBalance: number) => {
-    setBalance(newBalance);
-    if (user) {
-      await supabase.from("casino_balances").update({ balance: newBalance }).eq("user_id", user.id);
-      refetchLeaderboard();
+    if (!user) return;
+    if (!canClaimDaily()) {
+      toast.error("Tagesgeschenk noch nicht verfügbar.");
+      return;
     }
-  }, [user, refetchLeaderboard]);
+
+    const nowIso = new Date().toISOString();
+    await persistCasinoState(balance + DAILY_GIFT_AMOUNT, nowIso);
+    toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt!`);
+  };
 
   const spin = async () => {
     if (spinning || balance < bet) {
       if (balance < bet) toast.error("Nicht genug Guthaben!");
       return;
     }
+
     setSpinning(true);
     setMessage("");
     setLastWin(0);
@@ -123,7 +217,7 @@ const GamblingPage = () => {
       setReels([getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()]);
     }, 70);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       clearInterval(interval);
       const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
@@ -134,20 +228,22 @@ const GamblingPage = () => {
 
       const allSame = final.every((s) => s === final[0]);
       const counts: Record<string, number> = {};
-      final.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
+      final.forEach((s) => {
+        counts[s] = (counts[s] || 0) + 1;
+      });
       const maxCount = Math.max(...Object.values(counts));
-      const pairs = Object.values(counts).filter((c) => c >= 2).length;
+      const pairGroups = Object.values(counts).filter((c) => c >= 2).length;
 
       if (allSame) {
         const mult = getSymbol(final[0]).multiplier * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
       } else if (maxCount >= 3) {
-        const sym = Object.entries(counts).find(([, c]) => c >= 3)![0];
+        const sym = Object.entries(counts).find(([, c]) => c >= 3)?.[0] || final[0];
         const mult = getSymbol(sym).multiplier;
         winAmount = bet * mult;
         resultMsg = `🔥 Dreifach! x${mult}`;
-      } else if (pairs >= 2) {
+      } else if (pairGroups >= 2) {
         winAmount = bet * 2;
         resultMsg = "✨ Zwei Paare! x2";
       } else if (maxCount >= 2) {
@@ -158,22 +254,21 @@ const GamblingPage = () => {
         resultMsg = "Kein Glück!";
       }
 
-      const newBalance = balance + (winAmount > 0 ? winAmount - bet : winAmount);
-      updateBalance(Math.max(0, newBalance));
+      const nextBalance = Math.max(0, balance + (winAmount > 0 ? winAmount - bet : winAmount));
+      await persistCasinoState(nextBalance, lastDailyGift);
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
-      setHistory((prev) => [{ symbols: [...final], amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
+      setHistory((prev) => [{ symbols: final, amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
     }, 1800);
   };
 
   const myRank = leaderboard?.findIndex((l) => l.user_id === user?.id) ?? -1;
-  const displayLeaderboard = leaderboard?.map((l) =>
-    l.user_id === user?.id ? { ...l, balance } : l
-  )?.sort((a, b) => b.balance - a.balance);
+  const displayLeaderboard = leaderboard
+    ?.map((l) => (l.user_id === user?.id ? { ...l, balance } : l))
+    ?.sort((a, b) => b.balance - a.balance);
 
   return (
     <div className="flex gap-6 max-w-6xl mx-auto">
-      {/* Main Slot */}
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
         <h1 className="text-2xl font-bold text-primary">🎰 NCPD Casino</h1>
 
@@ -182,16 +277,21 @@ const GamblingPage = () => {
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Kontostand</p>
             <p className="text-3xl font-bold text-primary tabular-nums">${balance.toLocaleString()}</p>
           </div>
+
           {lastWin > 0 && (
             <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
               <p className="text-[10px] uppercase tracking-widest text-green-400">Gewinn</p>
               <p className="text-2xl font-bold text-green-400 tabular-nums">+${lastWin.toLocaleString()}</p>
             </div>
           )}
-          {/* Daily Gift */}
+
           <div className="text-center">
             {canClaimDaily() ? (
-              <Button onClick={claimDailyGift} variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300">
+              <Button
+                onClick={claimDailyGift}
+                variant="outline"
+                className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300"
+              >
                 <Gift className="w-4 h-4" /> $500 Tagesgeschenk
               </Button>
             ) : (
@@ -205,11 +305,19 @@ const GamblingPage = () => {
 
         <div className="w-full bg-card border-2 border-border rounded-2xl p-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+
           <div className="flex justify-center gap-3 mb-8 relative">
             {reels.map((symbolId, i) => {
               const sym = getSymbol(symbolId);
               return (
-                <div key={i} className={`w-24 h-24 rounded-xl flex items-center justify-center border-2 transition-all duration-200 ${spinning ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]" : "border-border bg-background shadow-inner"}`}>
+                <div
+                  key={i}
+                  className={`w-24 h-24 rounded-xl flex items-center justify-center border-2 transition-all duration-200 ${
+                    spinning
+                      ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]"
+                      : "border-border bg-background shadow-inner"
+                  }`}
+                >
                   <img src={sym.src} alt={sym.name} className={`w-16 h-16 rounded-full object-cover ${spinning ? "animate-pulse" : ""}`} />
                 </div>
               );
@@ -218,13 +326,36 @@ const GamblingPage = () => {
 
           <div className="h-8 flex items-center justify-center">
             {message && (
-              <p className={`text-lg font-bold animate-in fade-in zoom-in-95 duration-300 ${message.includes("JACKPOT") ? "text-yellow-400" : message.includes("Doppel") ? "text-green-400" : "text-muted-foreground"}`}>{message}</p>
+              <p
+                className={`text-lg font-bold animate-in fade-in zoom-in-95 duration-300 ${
+                  message.includes("JACKPOT")
+                    ? "text-yellow-400"
+                    : message.includes("Dreifach") || message.includes("Paar")
+                    ? "text-green-400"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {message}
+              </p>
             )}
           </div>
 
           <div className="flex justify-center gap-2 mb-6 mt-4">
             {[50, 100, 250, 500, 1000].map((b) => (
-              <button key={b} onClick={() => setBet(b)} disabled={b > balance} className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-150 active:scale-95 ${bet === b ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]" : b > balance ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50" : "bg-background border border-border hover:border-primary/40 text-foreground"}`}>${b}</button>
+              <button
+                key={b}
+                onClick={() => setBet(b)}
+                disabled={b > balance}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-150 active:scale-95 ${
+                  bet === b
+                    ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
+                    : b > balance
+                    ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                    : "bg-background border border-border hover:border-primary/40 text-foreground"
+                }`}
+              >
+                ${b}
+              </button>
             ))}
           </div>
 
@@ -235,7 +366,6 @@ const GamblingPage = () => {
           </div>
         </div>
 
-        {/* Payout Table - bigger */}
         <div className="w-full bg-card border border-border rounded-lg p-5">
           <h3 className="text-sm font-semibold text-primary mb-4">Auszahlungstabelle</h3>
           <div className="space-y-3">
@@ -250,6 +380,7 @@ const GamblingPage = () => {
                 </div>
               ))}
             </div>
+
             <div className="grid grid-cols-3 gap-3">
               <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
                 <span className="font-medium">3x gleich</span>
@@ -267,7 +398,6 @@ const GamblingPage = () => {
           </div>
         </div>
 
-        {/* History with logos */}
         {history.length > 0 && (
           <div className="w-full bg-card border border-border rounded-lg p-4">
             <h3 className="text-sm font-semibold text-primary mb-3">Deine letzten Spiele</h3>
@@ -275,14 +405,15 @@ const GamblingPage = () => {
               {history.map((h, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg bg-background/50">
                   <div className="flex items-center gap-2">
-                    {h.symbols.map((sId, j) => {
-                      const sym = getSymbol(sId);
-                      return (
-                        <img key={j} src={sym.src} alt={sym.name} className="w-8 h-8 rounded-full object-cover" />
-                      );
+                    {h.symbols.map((symbolId, j) => {
+                      const sym = getSymbol(symbolId);
+                      return <img key={`${symbolId}-${j}`} src={sym.src} alt={sym.name} className="w-8 h-8 rounded-full object-cover" />;
                     })}
                   </div>
-                  <span className={`font-bold tabular-nums ${h.amount > 0 ? "text-green-400" : "text-red-400"}`}>{h.amount > 0 ? "+" : ""}{h.amount}$</span>
+                  <span className={`font-bold tabular-nums ${h.amount > 0 ? "text-green-400" : "text-red-400"}`}>
+                    {h.amount > 0 ? "+" : ""}
+                    {h.amount}$
+                  </span>
                 </div>
               ))}
             </div>
@@ -290,37 +421,55 @@ const GamblingPage = () => {
         )}
       </div>
 
-      {/* Leaderboard */}
       <div className="w-72 shrink-0 hidden lg:block">
         <div className="bg-card border border-border rounded-lg p-4 sticky top-24">
           <div className="flex items-center gap-2 mb-4">
             <Trophy className="w-5 h-5 text-yellow-400" />
             <h2 className="font-bold text-primary">Rangliste</h2>
           </div>
+
           <div className="space-y-1.5">
             {displayLeaderboard?.map((entry, i) => {
               const isMe = entry.user_id === user?.id;
               return (
-                <div key={entry.user_id} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${isMe ? "bg-primary/10 border border-primary/30" : "bg-background/50 border border-transparent hover:border-border"}`}>
+                <div
+                  key={entry.user_id}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${
+                    isMe ? "bg-primary/10 border border-primary/30" : "bg-background/50 border border-transparent hover:border-border"
+                  }`}
+                >
                   <div className="w-6 text-center shrink-0">
                     {i === 0 ? <Crown className="w-4 h-4 text-yellow-400 mx-auto" /> : <span className="text-[10px] text-muted-foreground font-bold">{i + 1}</span>}
                   </div>
                   <div className="w-7 h-7 rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
-                    {entry.image_url ? <img src={entry.image_url} alt="" className="w-full h-full object-cover" /> : <span className="text-xs font-bold text-muted-foreground">{entry.name?.charAt(0)?.toUpperCase()}</span>}
+                    {entry.image_url ? (
+                      <img src={entry.image_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">{entry.name?.charAt(0)?.toUpperCase()}</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-xs font-medium truncate ${isMe ? "text-primary" : "text-foreground"}`}>{entry.name}</p>
                     {entry.dienstnummer && <p className="text-[9px] text-muted-foreground font-mono">{entry.dienstnummer}</p>}
                   </div>
-                  <span className={`text-xs font-bold tabular-nums shrink-0 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-muted-foreground" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>${entry.balance.toLocaleString()}</span>
+                  <span
+                    className={`text-xs font-bold tabular-nums shrink-0 ${
+                      i === 0 ? "text-yellow-400" : i === 1 ? "text-muted-foreground" : i === 2 ? "text-amber-600" : "text-muted-foreground"
+                    }`}
+                  >
+                    ${entry.balance.toLocaleString()}
+                  </span>
                 </div>
               );
             })}
             {(!displayLeaderboard || displayLeaderboard.length === 0) && <p className="text-xs text-muted-foreground text-center py-6">Noch keine Spieler</p>}
           </div>
+
           {myRank >= 0 && (
             <div className="mt-4 pt-3 border-t border-border">
-              <p className="text-[10px] text-muted-foreground text-center">Dein Platz: <span className="text-primary font-bold">#{myRank + 1}</span></p>
+              <p className="text-[10px] text-muted-foreground text-center">
+                Dein Platz: <span className="text-primary font-bold">#{myRank + 1}</span>
+              </p>
             </div>
           )}
         </div>

@@ -48,17 +48,17 @@
 @layer base {
   * {
     @apply border-border;
-    cursor: url('/helicopter-cursor-48.png') 4 4, auto;
+    cursor: url('/helicopter-cursor-neon-96.png') 80 48, auto;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    cursor: url('/helicopter-cursor-48.png') 4 4, auto;
+    cursor: url('/helicopter-cursor-neon-96.png') 80 48, auto;
   }
 
   a, button, [role="button"], input[type="submit"], select {
-    cursor: url('/helicopter-cursor-48.png') 4 4, pointer;
+    cursor: url('/helicopter-cursor-neon-96.png') 80 48, pointer;
   }
 }
 
