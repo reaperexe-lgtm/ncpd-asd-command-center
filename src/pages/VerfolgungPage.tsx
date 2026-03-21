@@ -15,6 +15,7 @@ const VerfolgungPage = () => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Form state
   const [vehicleModel, setVehicleModel] = useState("");
@@ -26,6 +27,7 @@ const VerfolgungPage = () => {
   const [leftGunner, setLeftGunner] = useState("");
   const [rightGunner, setRightGunner] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
 
   const { data: pursuits, isLoading } = useQuery({
     queryKey: ["pursuits"],
@@ -91,14 +93,69 @@ const VerfolgungPage = () => {
     },
   });
 
+  const deletePhoto = useMutation({
+    mutationFn: async (photo: { id: string; image_url: string }) => {
+      // Extract storage path from URL
+      const urlParts = photo.image_url.split("/pursuit-photos/");
+      if (urlParts[1]) {
+        await supabase.storage.from("pursuit-photos").remove([decodeURIComponent(urlParts[1])]);
+      }
+      const { error } = await supabase.from("pursuit_photos").delete().eq("id", photo.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pursuits"] });
+      toast.success("Foto gelöscht");
+    },
+  });
+
+  const addPhotosToExisting = useMutation({
+    mutationFn: async ({ pursuitId, files }: { pursuitId: string; files: File[] }) => {
+      for (const file of files) {
+        const ext = file.name.split(".").pop();
+        const path = `${pursuitId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("pursuit-photos").upload(path, file);
+        if (upErr) continue;
+        const { data: urlData } = supabase.storage.from("pursuit-photos").getPublicUrl(path);
+        await supabase.from("pursuit_photos").insert({ pursuit_id: pursuitId, image_url: urlData.publicUrl });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pursuits"] });
+      toast.success("Foto(s) hinzugefügt");
+    },
+  });
+
+  const handlePhotoSelect = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files);
+    setPhotos(arr);
+    setPhotoPreviewUrls(arr.map((f) => URL.createObjectURL(f)));
+  };
+
+  const removePreviewPhoto = (idx: number) => {
+    setPhotos((p) => p.filter((_, i) => i !== idx));
+    setPhotoPreviewUrls((p) => p.filter((_, i) => i !== idx));
+  };
+
   const resetForm = () => {
     setVehicleModel(""); setLicensePlate("");
     setDescription(""); setPursuitDate(""); setPilot(""); setCoPilot("");
-    setLeftGunner(""); setRightGunner(""); setPhotos([]); setShowForm(false);
+    setLeftGunner(""); setRightGunner(""); setPhotos([]); setPhotoPreviewUrls([]); setShowForm(false);
   };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxUrl(null)}>
+            <X className="w-8 h-8" />
+          </button>
+          <img src={lightboxUrl} alt="Foto" className="max-w-full max-h-[90vh] rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Siren className="w-7 h-7 text-primary" />
@@ -137,8 +194,22 @@ const VerfolgungPage = () => {
 
           <div>
             <Label className="flex items-center gap-1.5"><Image className="w-4 h-4" /> Fotos (z.B. Kennzeichen)</Label>
-            <Input type="file" multiple accept="image/*" className="mt-1 bg-background border-border" onChange={(e) => setPhotos(Array.from(e.target.files || []))} />
-            {photos.length > 0 && <p className="text-xs text-muted-foreground mt-1">{photos.length} Foto(s) ausgewählt</p>}
+            <Input type="file" multiple accept="image/*" className="mt-1 bg-background border-border" onChange={(e) => handlePhotoSelect(e.target.files)} />
+            {photoPreviewUrls.length > 0 && (
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                {photoPreviewUrls.map((url, idx) => (
+                  <div key={idx} className="relative group">
+                    <img src={url} alt="Vorschau" className="rounded-md border border-border object-cover w-full h-24" />
+                    <button
+                      onClick={() => removePreviewPhoto(idx)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -223,16 +294,48 @@ const VerfolgungPage = () => {
                       ))}
                     </div>
 
-                    {pPhotos.length > 0 && (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Image className="w-3 h-3" /> Fotos ({pPhotos.length})</p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {/* Photos section */}
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Image className="w-3 h-3" /> Fotos ({pPhotos.length})</p>
+                      {pPhotos.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
                           {pPhotos.map((ph: any) => (
-                            <img key={ph.id} src={ph.image_url} alt="Verfolgungsfoto" className="rounded-md border border-border object-cover w-full h-32" />
+                            <div key={ph.id} className="relative group">
+                              <img
+                                src={ph.image_url}
+                                alt="Verfolgungsfoto"
+                                className="rounded-md border border-border object-cover w-full h-32 cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => setLightboxUrl(ph.image_url)}
+                              />
+                              {isAdmin && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); deletePhoto.mutate({ id: ph.id, image_url: ph.image_url }); }}
+                                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      )}
+                      {/* Add more photos */}
+                      <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors">
+                        <Plus className="w-3.5 h-3.5" /> Foto hinzufügen
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.length) {
+                              addPhotosToExisting.mutate({ pursuitId: p.id, files: Array.from(e.target.files) });
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
 
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Users className="w-3 h-3" /> Besatzung</p>

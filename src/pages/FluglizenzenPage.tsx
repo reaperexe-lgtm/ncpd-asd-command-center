@@ -7,10 +7,27 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Plane } from "lucide-react";
+import { Plus, Trash2, Plane, AlertTriangle, Clock } from "lucide-react";
 
 const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
 const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division"];
+
+const EXPIRY_MONTHS = 3;
+
+function getExpiryDate(licenseDate: string): Date {
+  const d = new Date(licenseDate);
+  d.setMonth(d.getMonth() + EXPIRY_MONTHS);
+  return d;
+}
+
+function getExpiryStatus(licenseDate: string): "expired" | "expiring_soon" | "active" {
+  const now = new Date();
+  const expiry = getExpiryDate(licenseDate);
+  if (expiry <= now) return "expired";
+  const oneWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  if (expiry <= oneWeek) return "expiring_soon";
+  return "active";
+}
 
 const FluglizenzenPage = () => {
   const { isAdmin } = useAuth();
@@ -87,12 +104,22 @@ const FluglizenzenPage = () => {
   licenses?.forEach((l) => {
     if (l.unit && unitCounts[l.unit]) {
       unitCounts[l.unit].total++;
-      if (l.status === "Aktiv") unitCounts[l.unit].active++;
+      if (getExpiryStatus(l.license_date) !== "expired") unitCounts[l.unit].active++;
     }
   });
 
   const filtered = licenses?.filter((l) => filterUnit === "all" || l.unit === filterUnit) || [];
-  const totalActive = licenses?.filter((l) => l.status === "Aktiv").length || 0;
+
+  // Sort: expired first, then expiring soon, then active
+  const sorted = [...filtered].sort((a, b) => {
+    const order = { expired: 0, expiring_soon: 1, active: 2 };
+    const sa = order[getExpiryStatus(a.license_date)];
+    const sb = order[getExpiryStatus(b.license_date)];
+    if (sa !== sb) return sa - sb;
+    return new Date(a.license_date).getTime() - new Date(b.license_date).getTime();
+  });
+
+  const totalActive = licenses?.filter((l) => getExpiryStatus(l.license_date) !== "expired").length || 0;
 
   return (
     <div className="space-y-6">
@@ -162,7 +189,7 @@ const FluglizenzenPage = () => {
           <h3 className="font-semibold text-primary text-sm">Neue Fluglizenz</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div><Label>Name</Label><Input className="mt-1 bg-background border-border" placeholder="Vor- und Nachname" value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div><Label>Datum</Label><Input type="date" className="mt-1 bg-background border-border" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div><Label>Ausstellungsdatum</Label><Input type="date" className="mt-1 bg-background border-border" value={date} onChange={(e) => setDate(e.target.value)} /></div>
             <div>
               <Label>Team</Label>
               <Select value={team} onValueChange={setTeam}>
@@ -192,7 +219,8 @@ const FluglizenzenPage = () => {
             <thead>
               <tr className="border-b border-border bg-background/50">
                 <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Datum</th>
+                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Ausgestellt</th>
+                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Ablauf</th>
                 <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Team</th>
                 <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Unit</th>
                 <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
@@ -200,30 +228,45 @@ const FluglizenzenPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
-                <tr key={l.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
-                  <td className="px-4 py-3 font-medium">{l.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(l.license_date).toLocaleDateString("de-DE")}</td>
-                  <td className="px-4 py-3"><span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{l.team}</span></td>
-                  <td className="px-4 py-3 text-muted-foreground">{l.unit || "–"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      l.status === "Aktiv" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-                    }`}>
-                      {l.status}
-                    </span>
-                  </td>
-                  {isAdmin && (
-                    <td className="px-4 py-3">
-                      <button onClick={() => deleteLicense.mutate(l.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {sorted.map((l) => {
+                const status = getExpiryStatus(l.license_date);
+                const expiry = getExpiryDate(l.license_date);
+                return (
+                  <tr key={l.id} className={`border-b border-border/30 hover:bg-primary/[0.02] transition-colors ${status === "expired" ? "opacity-60" : ""}`}>
+                    <td className="px-4 py-3 font-medium">{l.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(l.license_date).toLocaleDateString("de-DE")}</td>
+                    <td className="px-4 py-3 tabular-nums">
+                      <span className={status === "expired" ? "text-red-400" : status === "expiring_soon" ? "text-yellow-400" : "text-muted-foreground"}>
+                        {expiry.toLocaleDateString("de-DE")}
+                      </span>
                     </td>
-                  )}
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                    <td className="px-4 py-3"><span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{l.team}</span></td>
+                    <td className="px-4 py-3 text-muted-foreground">{l.unit || "–"}</td>
+                    <td className="px-4 py-3">
+                      {status === "expired" ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/10 text-red-400 inline-flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Abgelaufen
+                        </span>
+                      ) : status === "expiring_soon" ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-500/10 text-yellow-400 inline-flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Läuft bald ab
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-500/10 text-green-400">Aktiv</span>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3">
+                        <button onClick={() => deleteLicense.mutate(l.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+              {sorted.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                   {filterUnit !== "all" ? `Keine Lizenzen für ${filterUnit}` : "Keine Einträge vorhanden"}
                 </td></tr>
               )}
