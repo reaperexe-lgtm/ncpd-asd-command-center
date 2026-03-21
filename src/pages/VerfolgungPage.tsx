@@ -94,6 +94,7 @@ const VerfolgungPage = () => {
       queryClient.invalidateQueries({ queryKey: ["pursuits"] });
       toast.success("Verfolgung gelöscht");
       logActivity("Verfolgung gelöscht", "verfolgung", { pursuit_id: id });
+      logActivity("Verfolgung gelöscht", "verfolgung", { pursuit_id: id });
     },
   });
 
