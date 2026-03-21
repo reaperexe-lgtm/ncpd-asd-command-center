@@ -284,8 +284,9 @@ const GamblingPage = () => {
   };
 
   const spin = async () => {
-    if (spinningRef.current || balance < bet) {
-      if (balance < bet) {
+    const currentBal = balanceRef.current;
+    if (spinningRef.current || currentBal < bet) {
+      if (currentBal < bet) {
         toast.error("Nicht genug Guthaben!");
         stopAutoSpin();
       }
@@ -298,14 +299,14 @@ const GamblingPage = () => {
     setLastWin(0);
     playSound("/spin-sound.wav");
 
-    // Generate spinning reel strips (random symbols scrolling down)
     const strips = Array.from({ length: 4 }, () =>
-      Array.from({ length: 20 }, () => getRandomSymbolId(balance))
+      Array.from({ length: 20 }, () => getRandomSymbolId(currentBal))
     );
     setDisplayReels(strips);
 
     setTimeout(async () => {
-      const final = [getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance)];
+      const bal = balanceRef.current;
+      const final = [getRandomSymbolId(bal), getRandomSymbolId(bal), getRandomSymbolId(bal), getRandomSymbolId(bal)];
       setReels(final);
       setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
@@ -350,8 +351,8 @@ const GamblingPage = () => {
         resultMsg = "Kein Glück!";
       }
 
-      const nextBalance = Math.max(0, balance + (winAmount > 0 ? winAmount - bet : winAmount));
-      await persistCasinoState(nextBalance, lastDailyGift);
+      const nextBalance = Math.max(0, bal + (winAmount > 0 ? winAmount - bet : winAmount));
+      await persistCasinoState(nextBalance, lastDailyGiftRef.current);
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
       setHistory((prev) => [{ symbols: final, amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
