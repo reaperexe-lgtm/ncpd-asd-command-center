@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Trophy, Crown, Gift } from "lucide-react";
+import { Trophy, Crown, Gift, Volume2, VolumeX } from "lucide-react";
 import hpLogo from "@/assets/hp-logo.png";
 import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
