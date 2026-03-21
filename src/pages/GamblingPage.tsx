@@ -12,11 +12,24 @@ import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
 import ncpdLogo from "@/assets/ncpd-logo.png";
 
+const DEFAULT_MULTIPLIERS = { ncpd: 5, asd: 4, swat: 3, hp: 2 };
+const PAIR_MULT_KEY = "casino_pair_mult";
+const TWO_PAIR_MULT_KEY = "casino_two_pair_mult";
+
+const loadMultipliers = (): Record<string, number> => {
+  try {
+    const raw = localStorage.getItem("casino_multipliers");
+    return raw ? JSON.parse(raw) : { ...DEFAULT_MULTIPLIERS };
+  } catch { return { ...DEFAULT_MULTIPLIERS }; }
+};
+const loadPairMult = () => { try { return parseFloat(localStorage.getItem(PAIR_MULT_KEY) || "1.5"); } catch { return 1.5; } };
+const loadTwoPairMult = () => { try { return parseFloat(localStorage.getItem(TWO_PAIR_MULT_KEY) || "2"); } catch { return 2; } };
+
 const REEL_SYMBOLS = [
-  { id: "ncpd", src: ncpdLogo, name: "NCPD", weight: 20, multiplier: 5 },
-  { id: "asd", src: asdLogo, name: "ASD", weight: 25, multiplier: 4 },
-  { id: "swat", src: swatLogo, name: "SWAT", weight: 25, multiplier: 3 },
-  { id: "hp", src: hpLogo, name: "HP", weight: 30, multiplier: 2 },
+  { id: "ncpd", src: ncpdLogo, name: "NCPD", weight: 20 },
+  { id: "asd", src: asdLogo, name: "ASD", weight: 25 },
+  { id: "swat", src: swatLogo, name: "SWAT", weight: 25 },
+  { id: "hp", src: hpLogo, name: "HP", weight: 30 },
 ] as const;
 
 const DAILY_GIFT_AMOUNT = 500;
