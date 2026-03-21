@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Trophy, Crown, Gift, Volume2, VolumeX } from "lucide-react";
+import { Trophy, Crown, Gift, Volume2, VolumeX, RotateCw } from "lucide-react";
 import hpLogo from "@/assets/hp-logo.png";
 import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
