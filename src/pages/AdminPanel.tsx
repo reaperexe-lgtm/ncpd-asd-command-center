@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, UserCheck, UserX, Trash2 } from "lucide-react";
 
-const ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
+const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
 const ROLE_LABELS: Record<string, string> = {
-  director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+  admin: "Admin", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
 };
 

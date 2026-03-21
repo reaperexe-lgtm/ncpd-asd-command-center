@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type AppRole = "director" | "co_director" | "supervisor" | "ausbilder" | "trial_ausbilder" | "member" | "trial_member";
+type AppRole = "admin" | "director" | "co_director" | "supervisor" | "ausbilder" | "trial_ausbilder" | "member" | "trial_member";
 
 interface AuthContextType {
   session: Session | null;
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const isAdmin = role === "director" || role === "co_director";
+  const isAdmin = role === "director" || role === "co_director" || role === "admin";
 
   return (
     <AuthContext.Provider value={{ session, user, role, isApproved, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => {}), profile }}>

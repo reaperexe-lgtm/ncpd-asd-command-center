@@ -67,6 +67,11 @@ const StatistikPage = () => {
     queryFn: async () => { const { data } = await supabase.from("missions").select("*"); return data || []; },
   });
 
+  const { data: pursuits } = useQuery({
+    queryKey: ["pursuits-stats"],
+    queryFn: async () => { const { data } = await supabase.from("pursuits").select("*"); return data || []; },
+  });
+
   const { data: profiles } = useQuery({
     queryKey: ["profiles-map"],
     queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },
@@ -95,10 +100,12 @@ const StatistikPage = () => {
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
-  // --- Location stats ---
+  // --- Location stats (include 10-80 as a type) ---
   const locationCounts: Record<string, number> = {};
   missions?.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
-  const total = missions?.length || 0;
+  const pursuitCount = pursuits?.length || 0;
+  if (pursuitCount > 0) locationCounts["10-80 Verfolgung"] = pursuitCount;
+  const total = (missions?.length || 0) + pursuitCount;
   const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
 
   const donutData = sortedLocations.map(([name, value]) => ({ name, value }));
