@@ -232,11 +232,15 @@ const GamblingPage = () => {
   };
 
   const spin = async () => {
-    if (spinning || balance < bet) {
-      if (balance < bet) toast.error("Nicht genug Guthaben!");
+    if (spinningRef.current || balance < bet) {
+      if (balance < bet) {
+        toast.error("Nicht genug Guthaben!");
+        stopAutoSpin();
+      }
       return;
     }
 
+    spinningRef.current = true;
     setSpinning(true);
     setMessage("");
     setLastWin(0);
@@ -250,6 +254,7 @@ const GamblingPage = () => {
       clearInterval(interval);
       const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
+      spinningRef.current = false;
       setSpinning(false);
 
       let winAmount = 0;
@@ -289,7 +294,32 @@ const GamblingPage = () => {
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
       setHistory((prev) => [{ symbols: final, amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
+
+      // Auto-spin: trigger next spin after a short delay
+      if (autoSpinRef.current && nextBalance >= bet) {
+        setTimeout(() => {
+          if (autoSpinRef.current) spin();
+        }, 800);
+      } else if (autoSpinRef.current) {
+        stopAutoSpin();
+        toast.error("Auto-Spin gestoppt – nicht genug Guthaben!");
+      }
     }, 1800);
+  };
+
+  const toggleAutoSpin = () => {
+    if (autoSpin) {
+      stopAutoSpin();
+    } else {
+      autoSpinRef.current = true;
+      setAutoSpin(true);
+      if (!spinningRef.current) spin();
+    }
+  };
+
+  const stopAutoSpin = () => {
+    autoSpinRef.current = false;
+    setAutoSpin(false);
   };
 
   const myRank = leaderboard?.findIndex((l) => l.user_id === user?.id) ?? -1;
