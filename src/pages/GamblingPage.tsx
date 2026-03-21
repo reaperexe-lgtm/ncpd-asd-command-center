@@ -502,6 +502,34 @@ const GamblingPage = () => {
           )}
         </div>
       </div>
+
+      {/* Volume Control - Bottom Left */}
+      <div className="fixed bottom-6 left-6 z-50">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleMute}
+            className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors active:scale-95"
+          >
+            {volume === 0 ? (
+              <VolumeX className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-primary" />
+            )}
+          </button>
+          {showVolumeSlider && (
+            <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg animate-in fade-in slide-in-from-left-2 duration-200">
+              <Slider
+                value={[volume]}
+                onValueChange={handleVolumeChange}
+                min={0}
+                max={1}
+                step={0.05}
+                className="w-28"
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
