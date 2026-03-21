@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { playSpinSound, playJackpotSound, playWinSound } from "@/lib/casinoSounds";
+import { logActivity } from "@/lib/activityLog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
