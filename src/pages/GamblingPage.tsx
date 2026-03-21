@@ -87,25 +87,48 @@ const GamblingPage = () => {
     setLastWin(0);
 
     const interval = setInterval(() => {
-      setReels([getRandomSymbol(), getRandomSymbol(), getRandomSymbol()]);
+      setReels([getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()]);
     }, 70);
 
     setTimeout(() => {
       clearInterval(interval);
-      const final = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+      const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
       setSpinning(false);
 
       let winAmount = 0;
       let resultMsg = "";
 
-      if (final[0] === final[1] && final[1] === final[2]) {
-        const mult = MULTIPLIERS[final[0]] || 3;
+      const allSame = final.every((s) => s === final[0]);
+      const pairs = new Set(final).size;
+
+      if (allSame) {
+        const mult = getSymbol(final[0]).multiplier * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
-      } else if (final[0] === final[1] || final[1] === final[2] || final[0] === final[2]) {
-        winAmount = bet * 2;
-        resultMsg = "✨ Doppel! x2";
+      } else if (pairs === 1) {
+        // 3 of a kind (impossible with 4 reels and size=1, but kept for safety)
+        winAmount = bet * 4;
+        resultMsg = "🔥 Dreifach! x4";
+      } else if (pairs <= 2) {
+        // At least 3 of same or two pairs
+        const counts: Record<string, number> = {};
+        final.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
+        const maxCount = Math.max(...Object.values(counts));
+        if (maxCount >= 3) {
+          const sym = Object.entries(counts).find(([, c]) => c >= 3)![0];
+          const mult = getSymbol(sym).multiplier;
+          winAmount = bet * mult;
+          resultMsg = `🔥 Dreifach! x${mult}`;
+        } else {
+          // Two pairs
+          winAmount = bet * 2;
+          resultMsg = "✨ Zwei Paare! x2";
+        }
+      } else if (pairs === 3) {
+        // One pair
+        winAmount = Math.floor(bet * 1.5);
+        resultMsg = "✨ Ein Paar! x1.5";
       } else {
         winAmount = -bet;
         resultMsg = "Kein Glück!";
@@ -115,7 +138,8 @@ const GamblingPage = () => {
       updateBalance(Math.max(0, newBalance));
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
-      setHistory((prev) => [{ result: final.join(" "), amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
+      const names = final.map((s) => getSymbol(s).name);
+      setHistory((prev) => [{ result: names.join(" | "), amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
     }, 1800);
   };
 
