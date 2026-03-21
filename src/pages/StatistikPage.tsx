@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, TrendingUp, Calendar } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, Trophy, FileText } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "hsl(160, 60%, 45%)",
@@ -13,7 +14,52 @@ const LOCATION_COLORS: Record<string, string> = {
   "1000 Laden": "hsl(195, 60%, 50%)",
   "Paleto Bank": "hsl(175, 55%, 45%)",
   "Sandy Laden": "hsl(35, 70%, 55%)",
+  "Shots Fired": "hsl(120, 50%, 45%)",
+  "Mirror Park Tanke": "hsl(310, 50%, 50%)",
+  "Laden Davis": "hsl(50, 60%, 45%)",
 };
+
+const PIE_COLORS = [
+  "hsl(160, 60%, 45%)", "hsl(40, 80%, 55%)", "hsl(270, 60%, 55%)", "hsl(30, 80%, 55%)",
+  "hsl(0, 65%, 50%)", "hsl(85, 60%, 45%)", "hsl(200, 60%, 55%)", "hsl(175, 55%, 45%)",
+  "hsl(45, 80%, 55%)", "hsl(310, 50%, 50%)", "hsl(120, 50%, 45%)", "hsl(50, 60%, 45%)",
+];
+
+/** Get current ASD week: Sunday 18:30 → next Sunday 18:29 */
+function getASDWeekRange(): { start: Date; end: Date } {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const h = now.getHours();
+  const m = now.getMinutes();
+
+  // Find the most recent Sunday 18:30
+  const start = new Date(now);
+  start.setHours(18, 30, 0, 0);
+
+  // If today is Sunday and we're past 18:30, start is today
+  // Otherwise, go back to the previous Sunday
+  if (day === 0 && (h > 18 || (h === 18 && m >= 30))) {
+    // start is today
+  } else {
+    // Go back to previous Sunday
+    const daysBack = day === 0 ? 7 : day;
+    start.setDate(start.getDate() - daysBack);
+  }
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  end.setMinutes(29);
+
+  return { start, end };
+}
+
+const MEDAL = ["🥇", "🥈", "🥉"];
+const BAR_COLORS = [
+  "hsl(45, 90%, 55%)", "hsl(210, 50%, 60%)", "hsl(25, 60%, 50%)",
+  "hsl(160, 50%, 40%)", "hsl(270, 40%, 50%)", "hsl(0, 50%, 50%)",
+  "hsl(200, 45%, 50%)", "hsl(30, 55%, 45%)", "hsl(85, 45%, 45%)",
+  "hsl(175, 40%, 45%)", "hsl(310, 40%, 45%)", "hsl(50, 50%, 45%)",
+];
 
 const StatistikPage = () => {
   const { data: missions } = useQuery({
@@ -21,11 +67,41 @@ const StatistikPage = () => {
     queryFn: async () => { const { data } = await supabase.from("missions").select("*"); return data || []; },
   });
 
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-map"],
+    queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },
+  });
+
+  const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
+
+  // --- Weekly leaderboard ---
+  const { start: weekStart, end: weekEnd } = getASDWeekRange();
+  const weeklyMissions = missions?.filter((m) => {
+    const d = new Date(m.created_at);
+    return d >= weekStart && d < weekEnd;
+  }) || [];
+
+  const weeklyCounts: Record<string, number> = {};
+  weeklyMissions.forEach((m) => {
+    if (m.protokollschreiber) weeklyCounts[m.protokollschreiber] = (weeklyCounts[m.protokollschreiber] || 0) + 1;
+  });
+  const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
+
+  // --- All-time leaderboard ---
+  const allTimeCounts: Record<string, number> = {};
+  missions?.forEach((m) => {
+    if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
+  });
+  const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
+  const maxAllTime = allTimeRanking[0]?.[1] || 1;
+
+  // --- Location stats ---
   const locationCounts: Record<string, number> = {};
   missions?.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
   const total = missions?.length || 0;
   const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
-  const maxCount = sortedLocations[0]?.[1] || 1;
+
+  const donutData = sortedLocations.map(([name, value]) => ({ name, value }));
 
   const totalSuspects = missions?.reduce((s, m) => s + m.suspects_count, 0) || 0;
   const totalHostages = missions?.reduce((s, m) => s + m.hostages_count, 0) || 0;
@@ -49,6 +125,64 @@ const StatistikPage = () => {
         </div>
       </div>
 
+      {/* Weekly Protokollschreiber Leaderboard */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-primary flex items-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Top-Protokollschreiber (aktuelle ASD-Woche)
+          </h2>
+          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
+        </div>
+        {weeklyRanking.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle diese Woche</p>
+        ) : (
+          <div className="space-y-2">
+            {weeklyRanking.map(([id, count], i) => (
+              <div key={id} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{MEDAL[i] || ""}</span>
+                  <span className="text-sm font-medium text-primary">{profileName(id)}</span>
+                </div>
+                <span className="text-sm font-bold text-primary tabular-nums">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* All-time Protokollschreiber Leaderboard */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <h2 className="font-semibold text-primary flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5" />
+          Top-Protokollschreiber – Gesamt
+        </h2>
+        {allTimeRanking.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
+        ) : (
+          <div className="space-y-2">
+            {allTimeRanking.map(([id, count], i) => (
+              <div key={id} className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-base w-6 text-center">{MEDAL[i] || ""}</span>
+                  <div
+                    className="h-8 rounded-md flex items-center px-3 transition-all duration-500"
+                    style={{
+                      width: `${Math.max((count / maxAllTime) * 100, 15)}%`,
+                      backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
+                      opacity: 0.85,
+                    }}
+                  >
+                    <span className="text-xs font-medium text-white truncate drop-shadow-sm">{profileName(id)}</span>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-primary tabular-nums ml-3">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
@@ -67,32 +201,45 @@ const StatistikPage = () => {
         ))}
       </div>
 
-      {/* Bar chart – by location */}
+      {/* Donut chart */}
       <div className="bg-card border border-border rounded-lg p-5">
         <h2 className="font-semibold text-primary mb-5">Einsätze nach Raubart</h2>
-        {sortedLocations.length === 0 ? (
+        {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
         ) : (
-          <div className="space-y-3">
-            {sortedLocations.map(([loc, count]) => (
-              <div key={loc} className="group">
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium">{loc}</span>
-                  <span className="text-muted-foreground tabular-nums">{count} <span className="text-xs">({((count / total) * 100).toFixed(0)}%)</span></span>
-                </div>
-                <div className="h-6 bg-background rounded-md overflow-hidden border border-border/50">
-                  <div
-                    className="h-full rounded-md transition-all duration-500 flex items-center px-2"
-                    style={{
-                      width: `${Math.max((count / maxCount) * 100, 8)}%`,
-                      background: LOCATION_COLORS[loc] || "hsl(var(--primary))",
-                    }}
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-64 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                   >
-                    <span className="text-[10px] font-bold text-white drop-shadow-sm">{count}</span>
+                    {donutData.map((_, i) => (
+                      <Cell key={i} fill={LOCATION_COLORS[donutData[i].name] || PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => [`${value} (${((value / total) * 100).toFixed(1)}%)`, "Einsätze"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex-1 space-y-2">
+              {sortedLocations.map(([loc, count], i) => (
+                <div key={loc} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: LOCATION_COLORS[loc] || PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span>{loc}</span>
                   </div>
+                  <span className="text-muted-foreground tabular-nums">{count} · {((count / total) * 100).toFixed(1)}%</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
