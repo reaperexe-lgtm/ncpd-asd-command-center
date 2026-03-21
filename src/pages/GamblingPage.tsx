@@ -33,7 +33,7 @@ const GamblingPage = () => {
   const { user } = useAuth();
   const [balance, setBalance] = useState(1000);
   const [bet, setBet] = useState(100);
-  const [reels, setReels] = useState(["🎰", "🎰", "🎰"]);
+  const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
   const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState("");
   const [lastWin, setLastWin] = useState(0);
