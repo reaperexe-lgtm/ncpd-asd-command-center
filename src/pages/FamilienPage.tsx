@@ -97,17 +97,35 @@ const FamilienPage = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["gangs"] }); toast.success("Gelöscht"); },
   });
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `gangs/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file);
+    if (error) { toast.error("Upload fehlgeschlagen"); return null; }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `gangs/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file);
-    if (error) { toast.error("Upload fehlgeschlagen"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-    setImageUrl(urlData.publicUrl);
+    const url = await uploadImage(file);
+    if (url) setImageUrl(url);
     setUploading(false);
+  };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditUploading(true);
+    const url = await uploadImage(file);
+    if (url) setEditData({ ...editData, image_url: url });
+    setEditUploading(false);
+  };
+
+  const removeEditImage = () => {
+    setEditData({ ...editData, image_url: null });
   };
 
   const startEdit = (g: Gang) => {
@@ -119,6 +137,7 @@ const FamilienPage = () => {
       erkennungsmerkmale: g.erkennungsmerkmale || "",
       location: g.location || "",
       description: g.description || "",
+      image_url: g.image_url || null,
     });
   };
 
@@ -133,6 +152,7 @@ const FamilienPage = () => {
         erkennungsmerkmale: editData.erkennungsmerkmale || null,
         location: editData.location || null,
         description: editData.description || null,
+        image_url: editData.image_url || null,
       },
     });
   };
