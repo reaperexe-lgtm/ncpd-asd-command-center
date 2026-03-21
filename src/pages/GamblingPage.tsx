@@ -311,11 +311,10 @@ const GamblingPage = () => {
       const pairGroups = Object.values(counts).filter((c) => c >= 2).length;
 
       if (allSame) {
-        const mult = getSymbol(final[0]).multiplier * 3;
+        const mult = (multipliers[final[0]] || 2) * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
         playSound("/jackpot-sound.wav");
-        // Confetti burst
         const end = Date.now() + 2500;
         const frame = () => {
           confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
@@ -325,15 +324,15 @@ const GamblingPage = () => {
         frame();
       } else if (maxCount >= 3) {
         const sym = Object.entries(counts).find(([, c]) => c >= 3)?.[0] || final[0];
-        const mult = getSymbol(sym).multiplier;
+        const mult = multipliers[sym] || 2;
         winAmount = bet * mult;
         resultMsg = `🔥 Dreifach! x${mult}`;
       } else if (pairGroups >= 2) {
-        winAmount = bet * 2;
-        resultMsg = "✨ Zwei Paare! x2";
+        winAmount = Math.floor(bet * twoPairMult);
+        resultMsg = `✨ Zwei Paare! x${twoPairMult}`;
       } else if (maxCount >= 2) {
-        winAmount = Math.floor(bet * 1.5);
-        resultMsg = "✨ Ein Paar! x1.5";
+        winAmount = Math.floor(bet * pairMult);
+        resultMsg = `✨ Ein Paar! x${pairMult}`;
       } else {
         winAmount = -bet;
         resultMsg = "Kein Glück!";
