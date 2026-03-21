@@ -10,31 +10,24 @@ import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
 import ncpdLogo from "@/assets/ncpd-logo.png";
 
-const LOGOS = [ncpdLogo, asdLogo, swatLogo, hpLogo];
-
-const SYMBOLS = [
-  { emoji: "7️⃣", name: "Seven", weight: 5 },
-  { emoji: "💎", name: "Diamond", weight: 8 },
-  { emoji: "🔔", name: "Bell", weight: 12 },
-  { emoji: "🍒", name: "Cherry", weight: 15 },
-  { emoji: "⭐", name: "Star", weight: 20 },
-  { emoji: "🎲", name: "Dice", weight: 20 },
-  { emoji: "🍋", name: "Lemon", weight: 20 },
+const REEL_SYMBOLS = [
+  { id: "ncpd", src: ncpdLogo, name: "NCPD", weight: 20, multiplier: 5 },
+  { id: "asd", src: asdLogo, name: "ASD", weight: 25, multiplier: 4 },
+  { id: "swat", src: swatLogo, name: "SWAT", weight: 25, multiplier: 3 },
+  { id: "hp", src: hpLogo, name: "HP", weight: 30, multiplier: 2 },
 ];
 
-const getRandomSymbol = () => {
-  const totalWeight = SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
+const getRandomSymbolId = () => {
+  const totalWeight = REEL_SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
   let r = Math.random() * totalWeight;
-  for (const sym of SYMBOLS) {
+  for (const sym of REEL_SYMBOLS) {
     r -= sym.weight;
-    if (r <= 0) return sym.emoji;
+    if (r <= 0) return sym.id;
   }
-  return SYMBOLS[0].emoji;
+  return REEL_SYMBOLS[0].id;
 };
 
-const MULTIPLIERS: Record<string, number> = {
-  "7️⃣": 10, "💎": 7, "🔔": 5, "🍒": 4, "⭐": 3, "🎲": 2, "🍋": 2,
-};
+const getSymbol = (id: string) => REEL_SYMBOLS.find((s) => s.id === id) || REEL_SYMBOLS[0];
 
 const GamblingPage = () => {
   const { user } = useAuth();
