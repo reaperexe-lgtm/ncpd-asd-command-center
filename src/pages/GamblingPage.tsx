@@ -550,7 +550,18 @@ const GamblingPage = () => {
         </div>
 
         <div className="w-full bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-semibold text-primary mb-4">Auszahlungstabelle</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-primary">Auszahlungstabelle</h3>
+            {isAdmin && (
+              <button
+                onClick={() => setEditingPayouts(!editingPayouts)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                {editingPayouts ? "Fertig" : "Bearbeiten"}
+              </button>
+            )}
+          </div>
           <div className="space-y-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {REEL_SYMBOLS.map((s) => (
@@ -558,7 +569,23 @@ const GamblingPage = () => {
                   <img src={s.src} alt={s.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
                     <p className="font-bold text-sm">{s.name} x4</p>
-                    <p className="text-primary font-bold text-lg tabular-nums">x{s.multiplier * 3}</p>
+                    {editingPayouts ? (
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        value={multipliers[s.id] || 2}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 1;
+                          const next = { ...multipliers, [s.id]: val };
+                          setMultipliers(next);
+                          localStorage.setItem("casino_multipliers", JSON.stringify(next));
+                        }}
+                        className="w-16 px-2 py-1 text-sm rounded bg-muted border border-border text-primary font-bold tabular-nums text-center"
+                      />
+                    ) : (
+                      <p className="text-primary font-bold text-lg tabular-nums">x{(multipliers[s.id] || 2) * 3}</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -571,11 +598,41 @@ const GamblingPage = () => {
               </div>
               <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
                 <span className="font-medium">2 Paare</span>
-                <span className="text-primary font-bold text-lg">x2</span>
+                {editingPayouts ? (
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    value={twoPairMult}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 1;
+                      setTwoPairMult(val);
+                      localStorage.setItem(TWO_PAIR_MULT_KEY, String(val));
+                    }}
+                    className="w-16 px-2 py-1 text-sm rounded bg-muted border border-border text-primary font-bold tabular-nums text-center"
+                  />
+                ) : (
+                  <span className="text-primary font-bold text-lg">x{twoPairMult}</span>
+                )}
               </div>
               <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
                 <span className="font-medium">1 Paar</span>
-                <span className="text-primary font-bold text-lg">x1.5</span>
+                {editingPayouts ? (
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    value={pairMult}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 1;
+                      setPairMult(val);
+                      localStorage.setItem(PAIR_MULT_KEY, String(val));
+                    }}
+                    className="w-16 px-2 py-1 text-sm rounded bg-muted border border-border text-primary font-bold tabular-nums text-center"
+                  />
+                ) : (
+                  <span className="text-primary font-bold text-lg">x{pairMult}</span>
+                )}
               </div>
             </div>
           </div>
