@@ -5,27 +5,59 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Trophy, Crown, Gift, Volume2, VolumeX, RotateCw } from "lucide-react";
+import { Trophy, Crown, Gift, Volume2, VolumeX, RotateCw, Settings } from "lucide-react";
 import confetti from "canvas-confetti";
 import hpLogo from "@/assets/hp-logo.png";
 import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
 import ncpdLogo from "@/assets/ncpd-logo.png";
 
+const DEFAULT_MULTIPLIERS = { ncpd: 5, asd: 4, swat: 3, hp: 2 };
+const PAIR_MULT_KEY = "casino_pair_mult";
+const TWO_PAIR_MULT_KEY = "casino_two_pair_mult";
+
+const loadMultipliers = (): Record<string, number> => {
+  try {
+    const raw = localStorage.getItem("casino_multipliers");
+    return raw ? JSON.parse(raw) : { ...DEFAULT_MULTIPLIERS };
+  } catch { return { ...DEFAULT_MULTIPLIERS }; }
+};
+const loadPairMult = () => { try { return parseFloat(localStorage.getItem(PAIR_MULT_KEY) || "1.5"); } catch { return 1.5; } };
+const loadTwoPairMult = () => { try { return parseFloat(localStorage.getItem(TWO_PAIR_MULT_KEY) || "2"); } catch { return 2; } };
+
 const REEL_SYMBOLS = [
-  { id: "ncpd", src: ncpdLogo, name: "NCPD", weight: 20, multiplier: 5 },
-  { id: "asd", src: asdLogo, name: "ASD", weight: 25, multiplier: 4 },
-  { id: "swat", src: swatLogo, name: "SWAT", weight: 25, multiplier: 3 },
-  { id: "hp", src: hpLogo, name: "HP", weight: 30, multiplier: 2 },
+  { id: "ncpd", src: ncpdLogo, name: "NCPD", weight: 20 },
+  { id: "asd", src: asdLogo, name: "ASD", weight: 25 },
+  { id: "swat", src: swatLogo, name: "SWAT", weight: 25 },
+  { id: "hp", src: hpLogo, name: "HP", weight: 30 },
 ] as const;
 
 const DAILY_GIFT_AMOUNT = 500;
 const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-const getRandomSymbolId = () => {
-  const totalWeight = REEL_SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
+const getRandomSymbolId = (currentBalance: number) => {
+  // Higher balance = more likely to lose (get mixed symbols)
+  // Above 1 billion, heavily penalize by reducing weight of matching
+  let lossBoost = 0;
+  if (currentBalance >= 1_000_000_000) {
+    lossBoost = 60; // massive loss bias above 1B
+  } else if (currentBalance >= 500_000_000) {
+    lossBoost = 40;
+  } else if (currentBalance >= 100_000_000) {
+    lossBoost = 25;
+  } else if (currentBalance >= 10_000_000) {
+    lossBoost = 12;
+  }
+
+  // Spread weights more evenly with lossBoost to reduce matching
+  const adjustedSymbols = REEL_SYMBOLS.map((sym, i) => ({
+    ...sym,
+    weight: sym.weight + lossBoost + (i * lossBoost * 0.3),
+  }));
+
+  const totalWeight = adjustedSymbols.reduce((s, sym) => s + sym.weight, 0);
   let r = Math.random() * totalWeight;
-  for (const sym of REEL_SYMBOLS) {
+  for (const sym of adjustedSymbols) {
     r -= sym.weight;
     if (r <= 0) return sym.id;
   }
@@ -56,8 +88,12 @@ const writeLocalCasinoState = (userId: string, balance: number, lastDailyGift: s
 };
 
 const GamblingPage = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [balance, setBalance] = useState(1000);
+  const [multipliers, setMultipliers] = useState(loadMultipliers);
+  const [pairMult, setPairMult] = useState(loadPairMult);
+  const [twoPairMult, setTwoPairMult] = useState(loadTwoPairMult);
+  const [editingPayouts, setEditingPayouts] = useState(false);
   const [bet, setBet] = useState(100);
   const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
   const [displayReels, setDisplayReels] = useState<string[][]>([[], [], [], []]);
@@ -252,12 +288,12 @@ const GamblingPage = () => {
 
     // Generate spinning reel strips (random symbols scrolling down)
     const strips = Array.from({ length: 4 }, () =>
-      Array.from({ length: 20 }, () => getRandomSymbolId())
+      Array.from({ length: 20 }, () => getRandomSymbolId(balance))
     );
     setDisplayReels(strips);
 
     setTimeout(async () => {
-      const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
+      const final = [getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance)];
       setReels(final);
       setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
@@ -275,11 +311,10 @@ const GamblingPage = () => {
       const pairGroups = Object.values(counts).filter((c) => c >= 2).length;
 
       if (allSame) {
-        const mult = getSymbol(final[0]).multiplier * 3;
+        const mult = (multipliers[final[0]] || 2) * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
         playSound("/jackpot-sound.wav");
-        // Confetti burst
         const end = Date.now() + 2500;
         const frame = () => {
           confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
@@ -289,15 +324,15 @@ const GamblingPage = () => {
         frame();
       } else if (maxCount >= 3) {
         const sym = Object.entries(counts).find(([, c]) => c >= 3)?.[0] || final[0];
-        const mult = getSymbol(sym).multiplier;
+        const mult = multipliers[sym] || 2;
         winAmount = bet * mult;
         resultMsg = `🔥 Dreifach! x${mult}`;
       } else if (pairGroups >= 2) {
-        winAmount = bet * 2;
-        resultMsg = "✨ Zwei Paare! x2";
+        winAmount = Math.floor(bet * twoPairMult);
+        resultMsg = `✨ Zwei Paare! x${twoPairMult}`;
       } else if (maxCount >= 2) {
-        winAmount = Math.floor(bet * 1.5);
-        resultMsg = "✨ Ein Paar! x1.5";
+        winAmount = Math.floor(bet * pairMult);
+        resultMsg = `✨ Ein Paar! x${pairMult}`;
       } else {
         winAmount = -bet;
         resultMsg = "Kein Glück!";
@@ -515,7 +550,18 @@ const GamblingPage = () => {
         </div>
 
         <div className="w-full bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-semibold text-primary mb-4">Auszahlungstabelle</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-primary">Auszahlungstabelle</h3>
+            {isAdmin && (
+              <button
+                onClick={() => setEditingPayouts(!editingPayouts)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                {editingPayouts ? "Fertig" : "Bearbeiten"}
+              </button>
+            )}
+          </div>
           <div className="space-y-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {REEL_SYMBOLS.map((s) => (
@@ -523,7 +569,23 @@ const GamblingPage = () => {
                   <img src={s.src} alt={s.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
                     <p className="font-bold text-sm">{s.name} x4</p>
-                    <p className="text-primary font-bold text-lg tabular-nums">x{s.multiplier * 3}</p>
+                    {editingPayouts ? (
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        value={multipliers[s.id] || 2}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 1;
+                          const next = { ...multipliers, [s.id]: val };
+                          setMultipliers(next);
+                          localStorage.setItem("casino_multipliers", JSON.stringify(next));
+                        }}
+                        className="w-16 px-2 py-1 text-sm rounded bg-muted border border-border text-primary font-bold tabular-nums text-center"
+                      />
+                    ) : (
+                      <p className="text-primary font-bold text-lg tabular-nums">x{(multipliers[s.id] || 2) * 3}</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -536,11 +598,41 @@ const GamblingPage = () => {
               </div>
               <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
                 <span className="font-medium">2 Paare</span>
-                <span className="text-primary font-bold text-lg">x2</span>
+                {editingPayouts ? (
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    value={twoPairMult}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 1;
+                      setTwoPairMult(val);
+                      localStorage.setItem(TWO_PAIR_MULT_KEY, String(val));
+                    }}
+                    className="w-16 px-2 py-1 text-sm rounded bg-muted border border-border text-primary font-bold tabular-nums text-center"
+                  />
+                ) : (
+                  <span className="text-primary font-bold text-lg">x{twoPairMult}</span>
+                )}
               </div>
               <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
                 <span className="font-medium">1 Paar</span>
-                <span className="text-primary font-bold text-lg">x1.5</span>
+                {editingPayouts ? (
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    value={pairMult}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 1;
+                      setPairMult(val);
+                      localStorage.setItem(PAIR_MULT_KEY, String(val));
+                    }}
+                    className="w-16 px-2 py-1 text-sm rounded bg-muted border border-border text-primary font-bold tabular-nums text-center"
+                  />
+                ) : (
+                  <span className="text-primary font-bold text-lg">x{pairMult}</span>
+                )}
               </div>
             </div>
           </div>
