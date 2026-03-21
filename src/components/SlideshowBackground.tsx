@@ -29,7 +29,7 @@ const SlideshowBackground = () => {
       timeoutRef.current = setTimeout(() => {
         setPrev(null);
         setFading(false);
-      }, 2000);
+      }, 4500);
     }, 6000);
     return () => {
       clearInterval(interval);
@@ -42,7 +42,7 @@ const SlideshowBackground = () => {
       {/* Previous image fading out */}
       {prev !== null && (
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[2000ms] ease-in-out"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[4500ms] ease-in-out"
           style={{
             backgroundImage: `url('${BG_IMAGES[prev]}')`,
             opacity: fading ? 0 : 1,
@@ -51,7 +51,7 @@ const SlideshowBackground = () => {
       )}
       {/* Current image fading in */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[2000ms] ease-in-out"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[4500ms] ease-in-out"
         style={{
           backgroundImage: `url('${BG_IMAGES[current]}')`,
           opacity: 1,
