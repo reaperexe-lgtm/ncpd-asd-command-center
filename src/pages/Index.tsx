@@ -73,6 +73,7 @@ const Index = () => {
           {members?.length === 0 && <p className="text-sm text-muted-foreground">Noch keine Mitglieder.</p>}
         </div>
       </div>
+      </div>
     </div>
   );
 };
