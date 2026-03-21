@@ -67,6 +67,11 @@ const StatistikPage = () => {
     queryFn: async () => { const { data } = await supabase.from("missions").select("*"); return data || []; },
   });
 
+  const { data: pursuits } = useQuery({
+    queryKey: ["pursuits-stats"],
+    queryFn: async () => { const { data } = await supabase.from("pursuits").select("*"); return data || []; },
+  });
+
   const { data: profiles } = useQuery({
     queryKey: ["profiles-map"],
     queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },

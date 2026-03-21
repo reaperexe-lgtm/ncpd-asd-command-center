@@ -57,7 +57,7 @@ const GamblingPage = () => {
         return { ...b, name: p?.name || "Unbekannt", dienstnummer: p?.dienstnummer, image_url: p?.image_url };
       });
     },
-    refetchInterval: 10000,
+    refetchInterval: 3000,
   });
 
   useEffect(() => {
