@@ -353,8 +353,8 @@ const GamblingPage = () => {
     setTimeout(async () => {
       const bal = balanceRef.current;
       
-      // 3% win chance — decide outcome first, then generate symbols
-      const WIN_CHANCE = 0.30;
+      // 40% win chance (60% loss)
+      const WIN_CHANCE = 0.40;
       const roll = Math.random();
       let final: string[];
       
