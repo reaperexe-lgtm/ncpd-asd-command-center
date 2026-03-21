@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { User, Hash, Camera, Save } from "lucide-react";
 
 const ProfilePage = () => {
   const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
   const [dienstnummer, setDienstnummer] = useState("");
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -29,8 +31,8 @@ const ProfilePage = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `profiles/${user.id}.${ext}`;
-      const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      const path = `profiles/${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("avatars").upload(path, file);
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
       setImageUrl(urlData.publicUrl + "?t=" + Date.now());
@@ -46,12 +48,19 @@ const ProfilePage = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("profiles").update({
-        name,
-        dienstnummer,
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        name: name.trim() || "Unbenannt",
+        dienstnummer: dienstnummer.trim() || null,
         image_url: imageUrl,
-      }).eq("id", user.id);
+      }, { onConflict: "id" });
       if (error) throw error;
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["members"] }),
+        queryClient.invalidateQueries({ queryKey: ["casino-leaderboard"] }),
+      ]);
+
       toast.success("Profil gespeichert!");
     } catch (err: any) {
       toast.error(err.message);

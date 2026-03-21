@@ -45,8 +45,7 @@ const GamblingPage = () => {
       const { data: balances } = await supabase
         .from("casino_balances")
         .select("user_id, balance")
-        .order("balance", { ascending: false })
-        .limit(20);
+        .order("balance", { ascending: false });
       if (!balances?.length) return [];
       const userIds = balances.map((b) => b.user_id);
       const { data: profiles } = await supabase
@@ -149,12 +148,6 @@ const GamblingPage = () => {
     <div className="flex gap-6 max-w-6xl mx-auto">
       {/* Main Slot */}
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
-        <div className="flex items-center gap-4">
-          {REEL_SYMBOLS.map((s) => (
-            <img key={s.id} src={s.src} alt={s.name} className="w-12 h-12 rounded-full object-cover border-2 border-border shadow-md" />
-          ))}
-        </div>
-
         <h1 className="text-2xl font-bold text-primary">🎰 NCPD Casino</h1>
 
         <div className="flex items-center gap-6">
