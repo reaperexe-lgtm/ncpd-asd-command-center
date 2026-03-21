@@ -1,3 +1,4 @@
+import { logActivity } from "@/lib/activityLog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,7 +57,7 @@ const ProtokollePage = () => {
       const { error } = await supabase.from("missions").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["missions"] }); toast.success("Protokoll gelöscht"); },
+    onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["missions"] }); toast.success("Protokoll gelöscht"); logActivity("Einsatz-Protokoll gelöscht", "einsatz", { mission_id: id }); },
   });
 
   const deletePursuit = useMutation({
@@ -65,7 +66,7 @@ const ProtokollePage = () => {
       const { error } = await supabase.from("pursuits").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["pursuits"] }); toast.success("Verfolgung gelöscht"); },
+    onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["pursuits"] }); toast.success("Verfolgung gelöscht"); logActivity("Verfolgung gelöscht", "verfolgung", { pursuit_id: id }); },
   });
 
   const getProfileName = (id: string | null) => {
