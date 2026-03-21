@@ -307,7 +307,51 @@ const GamblingPage = () => {
 
     setTimeout(async () => {
       const bal = balanceRef.current;
-      const final = [getRandomSymbolId(bal), getRandomSymbolId(bal), getRandomSymbolId(bal), getRandomSymbolId(bal)];
+      
+      // 3% win chance — decide outcome first, then generate symbols
+      const WIN_CHANCE = 0.03;
+      const roll = Math.random();
+      let final: string[];
+      
+      if (roll < WIN_CHANCE) {
+        // Win! Decide win type randomly
+        const winTypeRoll = Math.random();
+        const ids = REEL_SYMBOLS.map(s => s.id);
+        const pickRandom = () => ids[Math.floor(Math.random() * ids.length)];
+        
+        if (winTypeRoll < 0.05) {
+          // Jackpot — all 4 same (5% of wins)
+          const sym = pickRandom();
+          final = [sym, sym, sym, sym];
+        } else if (winTypeRoll < 0.20) {
+          // Triple — 3 same (15% of wins)
+          const sym = pickRandom();
+          const other = ids.filter(id => id !== sym);
+          final = [sym, sym, sym, other[Math.floor(Math.random() * other.length)]];
+          // Shuffle
+          final.sort(() => Math.random() - 0.5);
+        } else if (winTypeRoll < 0.45) {
+          // Two pairs (25% of wins)
+          const shuffled = [...ids].sort(() => Math.random() - 0.5);
+          final = [shuffled[0], shuffled[0], shuffled[1], shuffled[1]];
+          final.sort(() => Math.random() - 0.5);
+        } else {
+          // Single pair (55% of wins)
+          const sym = pickRandom();
+          const others = ids.filter(id => id !== sym);
+          const o1 = others[Math.floor(Math.random() * others.length)];
+          const o2 = others.filter(id => id !== o1).length > 0
+            ? others.filter(id => id !== o1)[Math.floor(Math.random() * others.filter(id => id !== o1).length)]
+            : others[0];
+          final = [sym, sym, o1, o2];
+          final.sort(() => Math.random() - 0.5);
+        }
+      } else {
+        // Loss — ensure no pairs by picking 4 different symbols
+        const ids = REEL_SYMBOLS.map(s => s.id);
+        final = [...ids].sort(() => Math.random() - 0.5);
+      }
+      
       setReels(final);
       setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
