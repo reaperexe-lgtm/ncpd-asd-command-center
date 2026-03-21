@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -89,8 +89,19 @@ const AdminPanel = () => {
       });
     },
     enabled: isAdmin && showLogs,
-    refetchInterval: showLogs ? 5000 : false,
   });
+
+  // Realtime subscription for activity logs
+  useEffect(() => {
+    if (!showLogs || !isAdmin) return;
+    const channel = supabase
+      .channel('activity-logs-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_logs' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["activity-logs"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [showLogs, isAdmin, queryClient]);
 
   const approveMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
