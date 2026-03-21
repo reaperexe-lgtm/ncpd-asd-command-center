@@ -6,29 +6,37 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
+const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
+  const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [vorname, setVorname] = useState("");
+  const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const email = toEmail(dienstnummer);
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Erfolgreich angemeldet!");
       } else {
+        const fullName = `${vorname} ${nachname}`.trim();
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { name }, emailRedirectTo: window.location.origin },
+          options: {
+            data: { name: fullName, dienstnummer },
+            emailRedirectTo: window.location.origin,
+          },
         });
         if (error) throw error;
-        toast.success("Registrierung erfolgreich! Bitte warte auf die Freischaltung durch einen Director/Co-Director.");
+        toast.success("Registrierung erfolgreich! Bitte warte auf die Freischaltung.");
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -50,14 +58,22 @@ const Auth = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div className="space-y-2">
-              <Label htmlFor="name">Name (IC)</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" required className="bg-card border-border" />
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="vorname">Vorname</Label>
+                  <Input id="vorname" value={vorname} onChange={(e) => setVorname(e.target.value)} placeholder="Max" required className="bg-card border-border" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nachname">Nachname</Label>
+                  <Input id="nachname" value={nachname} onChange={(e) => setNachname(e.target.value)} placeholder="Mustermann" required className="bg-card border-border" />
+                </div>
+              </div>
+            </>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@beispiel.de" required className="bg-card border-border" />
+            <Label htmlFor="dienstnummer">Dienstnummer</Label>
+            <Input id="dienstnummer" value={dienstnummer} onChange={(e) => setDienstnummer(e.target.value)} placeholder="DN-00" required className="bg-card border-border" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Passwort</Label>
