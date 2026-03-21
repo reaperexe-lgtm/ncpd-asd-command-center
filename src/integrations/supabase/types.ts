@@ -276,6 +276,86 @@ export type Database = {
         }
         Relationships: []
       }
+      pursuit_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          image_url: string
+          pursuit_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          pursuit_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          pursuit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pursuit_photos_pursuit_id_fkey"
+            columns: ["pursuit_id"]
+            isOneToOne: false
+            referencedRelation: "pursuits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pursuits: {
+        Row: {
+          co_pilot: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          left_gunner: string | null
+          license_plate: string | null
+          pilot: string | null
+          pursuer: string
+          pursuit_date: string
+          right_gunner: string | null
+          supporters: string | null
+          vehicle_model: string | null
+        }
+        Insert: {
+          co_pilot?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          left_gunner?: string | null
+          license_plate?: string | null
+          pilot?: string | null
+          pursuer: string
+          pursuit_date?: string
+          right_gunner?: string | null
+          supporters?: string | null
+          vehicle_model?: string | null
+        }
+        Update: {
+          co_pilot?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          left_gunner?: string | null
+          license_plate?: string | null
+          pilot?: string | null
+          pursuer?: string
+          pursuit_date?: string
+          right_gunner?: string | null
+          supporters?: string | null
+          vehicle_model?: string | null
+        }
+        Relationships: []
+      }
       team_license_limits: {
         Row: {
           id: string
