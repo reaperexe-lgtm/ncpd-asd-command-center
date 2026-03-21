@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { Plus, Trash2, Car, Siren, Users, Image, Clock, X } from "lucide-react";
 
 const VerfolgungPage = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, role } = useAuth();
+  const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -357,7 +358,7 @@ const VerfolgungPage = () => {
                       </div>
                     </div>
 
-                    {isAdmin && (
+                    {canDelete && (
                       <div className="flex justify-end pt-2">
                         <Button size="sm" variant="destructive" onClick={() => deletePursuit.mutate(p.id)} className="gap-1.5">
                           <Trash2 className="w-3.5 h-3.5" /> Löschen

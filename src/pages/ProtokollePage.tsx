@@ -20,7 +20,8 @@ const LOCATION_COLORS: Record<string, string> = {
 };
 
 const ProtokollePage = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
+  const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">("all");
@@ -189,7 +190,7 @@ const ProtokollePage = () => {
                           ))}
                         </div>
                       </div>
-                      {isAdmin && (
+                      {canDelete && (
                         <div className="flex justify-end pt-2">
                           <Button size="sm" variant="destructive" onClick={() => deleteMission.mutate(m.id)} className="gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Löschen</Button>
                         </div>
@@ -246,7 +247,7 @@ const ProtokollePage = () => {
                           ))}
                         </div>
                       </div>
-                      {isAdmin && (
+                      {canDelete && (
                         <div className="flex justify-end pt-2">
                           <Button size="sm" variant="destructive" onClick={() => deletePursuit.mutate(p.id)} className="gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Löschen</Button>
                         </div>
