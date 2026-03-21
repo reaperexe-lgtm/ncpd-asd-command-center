@@ -11,14 +11,16 @@ import asdLogo from "@/assets/asd-logo.png";
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
 
 const Auth = () => {
-  const { user, loading } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
   const [vorname, setVorname] = useState("");
   const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (authLoading) return null;
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,18 +64,16 @@ const Auth = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="vorname">Vorname</Label>
-                  <Input id="vorname" value={vorname} onChange={(e) => setVorname(e.target.value)} placeholder="Max" required className="bg-card border-border" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nachname">Nachname</Label>
-                  <Input id="nachname" value={nachname} onChange={(e) => setNachname(e.target.value)} placeholder="Mustermann" required className="bg-card border-border" />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="vorname">Vorname</Label>
+                <Input id="vorname" value={vorname} onChange={(e) => setVorname(e.target.value)} placeholder="Max" required className="bg-card border-border" />
               </div>
-            </>
+              <div className="space-y-2">
+                <Label htmlFor="nachname">Nachname</Label>
+                <Input id="nachname" value={nachname} onChange={(e) => setNachname(e.target.value)} placeholder="Mustermann" required className="bg-card border-border" />
+              </div>
+            </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="dienstnummer">Dienstnummer</Label>
