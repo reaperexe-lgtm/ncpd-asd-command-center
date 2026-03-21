@@ -14,16 +14,305 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      application_bans: {
+        Row: {
+          created_at: string
+          from_date: string
+          id: string
+          name: string
+          reason: string | null
+          to_date: string
+        }
+        Insert: {
+          created_at?: string
+          from_date: string
+          id?: string
+          name: string
+          reason?: string | null
+          to_date: string
+        }
+        Update: {
+          created_at?: string
+          from_date?: string
+          id?: string
+          name?: string
+          reason?: string | null
+          to_date?: string
+        }
+        Relationships: []
+      }
+      casino_balances: {
+        Row: {
+          balance: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flight_licenses: {
+        Row: {
+          created_at: string
+          id: string
+          license_date: string
+          name: string
+          status: string
+          team: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          license_date?: string
+          name: string
+          status?: string
+          team: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          license_date?: string
+          name?: string
+          status?: string
+          team?: string
+          unit?: string | null
+        }
+        Relationships: []
+      }
+      gangs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      mission_vehicles: {
+        Row: {
+          custom_model: string | null
+          id: string
+          license_plate: string | null
+          mission_id: string
+          model: string
+          neon_color: string | null
+          owner_info: string | null
+          pearl_color: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          vehicle_type: string
+          xenon: boolean | null
+        }
+        Insert: {
+          custom_model?: string | null
+          id?: string
+          license_plate?: string | null
+          mission_id: string
+          model: string
+          neon_color?: string | null
+          owner_info?: string | null
+          pearl_color?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          vehicle_type: string
+          xenon?: boolean | null
+        }
+        Update: {
+          custom_model?: string | null
+          id?: string
+          license_plate?: string | null
+          mission_id?: string
+          model?: string
+          neon_color?: string | null
+          owner_info?: string | null
+          pearl_color?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          vehicle_type?: string
+          xenon?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_vehicles_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missions: {
+        Row: {
+          co_pilot: string | null
+          created_at: string
+          created_by: string
+          custom_location: string | null
+          description: string | null
+          gang_id: string | null
+          gang_info: string | null
+          hostages_count: number
+          id: string
+          left_gunner: string | null
+          location_type: string
+          pilot: string | null
+          protokollschreiber: string | null
+          right_gunner: string | null
+          suspects_count: number
+          tatzeit: string
+        }
+        Insert: {
+          co_pilot?: string | null
+          created_at?: string
+          created_by: string
+          custom_location?: string | null
+          description?: string | null
+          gang_id?: string | null
+          gang_info?: string | null
+          hostages_count?: number
+          id?: string
+          left_gunner?: string | null
+          location_type: string
+          pilot?: string | null
+          protokollschreiber?: string | null
+          right_gunner?: string | null
+          suspects_count?: number
+          tatzeit?: string
+        }
+        Update: {
+          co_pilot?: string | null
+          created_at?: string
+          created_by?: string
+          custom_location?: string | null
+          description?: string | null
+          gang_id?: string | null
+          gang_info?: string | null
+          hostages_count?: number
+          id?: string
+          left_gunner?: string | null
+          location_type?: string
+          pilot?: string | null
+          protokollschreiber?: string | null
+          right_gunner?: string | null
+          suspects_count?: number
+          tatzeit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missions_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          dienstnummer: string | null
+          id: string
+          image_url: string | null
+          is_approved: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dienstnummer?: string | null
+          id: string
+          image_url?: string | null
+          is_approved?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dienstnummer?: string | null
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "director"
+        | "co_director"
+        | "supervisor"
+        | "ausbilder"
+        | "trial_ausbilder"
+        | "member"
+        | "trial_member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +439,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "director",
+        "co_director",
+        "supervisor",
+        "ausbilder",
+        "trial_ausbilder",
+        "member",
+        "trial_member",
+      ],
+    },
   },
 } as const
