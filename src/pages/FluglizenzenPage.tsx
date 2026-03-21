@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Plus, Trash2, Plane } from "lucide-react";
 
-const TEAMS = ["Police Academy","Justice Division","Public Relations","S.W.A.T","I.A.D","NCD","Highway Patrol","Air Support Division"];
-const UNITS = ["PA","A.S.D","SWAT","NCD","HP"];
+const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
+const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division"];
 
 const FluglizenzenPage = () => {
   const { isAdmin } = useAuth();
@@ -40,10 +40,16 @@ const FluglizenzenPage = () => {
     },
   });
 
-  const updateLimit = useMutation({
+  const upsertLimit = useMutation({
     mutationFn: async ({ teamName, max }: { teamName: string; max: number }) => {
-      const { error } = await supabase.from("team_license_limits").update({ max_licenses: max }).eq("team", teamName);
-      if (error) throw error;
+      const existing = limits?.find((l) => l.team === teamName);
+      if (existing) {
+        const { error } = await supabase.from("team_license_limits").update({ max_licenses: max }).eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("team_license_limits").insert({ team: teamName, max_licenses: max });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team-license-limits"] });
@@ -75,7 +81,6 @@ const FluglizenzenPage = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["flight-licenses"] }); toast.success("Gelöscht"); },
   });
 
-  // Team stats
   const teamCounts: Record<string, { total: number; active: number }> = {};
   TEAMS.forEach((t) => { teamCounts[t] = { total: 0, active: 0 }; });
   licenses?.forEach((l) => {
@@ -105,40 +110,39 @@ const FluglizenzenPage = () => {
         )}
       </div>
 
-      {/* Team overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+      {/* Team overview – 4 Teams */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {TEAMS.map((t) => (
           <button
             key={t}
             onClick={() => setFilterTeam(filterTeam === t ? "all" : t)}
-            className={`rounded-lg p-3 text-center transition-all duration-150 border active:scale-95
+            className={`rounded-lg p-4 text-center transition-all duration-150 border active:scale-95
               ${filterTeam === t
                 ? "bg-primary/10 border-primary/40 shadow-[0_0_8px_hsl(var(--primary)/0.1)]"
                 : "bg-card border-border hover:border-primary/20"
               }`}
           >
-            <p className="text-[9px] text-muted-foreground truncate leading-tight">{t}</p>
-            <p className="text-primary font-bold text-lg tabular-nums mt-0.5">{teamCounts[t]?.active || 0}</p>
+            <p className="text-xs text-muted-foreground font-medium">{t}</p>
+            <p className="text-primary font-bold text-2xl tabular-nums mt-1">{teamCounts[t]?.active || 0}</p>
             {isAdmin && editingLimit === t ? (
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-[9px] text-muted-foreground">von</span>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-[10px] text-muted-foreground">von</span>
                 <input
                   type="number"
                   min={0}
-                  className="w-10 text-center text-[11px] bg-background border border-primary/40 rounded px-1 py-0.5 text-primary tabular-nums"
+                  className="w-12 text-center text-xs bg-background border border-primary/40 rounded px-1 py-0.5 text-primary tabular-nums"
                   value={editLimitValue}
                   onChange={(e) => setEditLimitValue(e.target.value)}
-                  onBlur={() => {
-                    updateLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 });
-                  }}
-                  onKeyDown={(e) => { if (e.key === "Enter") updateLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 }); }}
+                  onBlur={() => upsertLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 })}
+                  onKeyDown={(e) => { if (e.key === "Enter") upsertLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 }); }}
                   autoFocus
                 />
               </div>
             ) : (
               <p
-                className={`text-[9px] text-muted-foreground ${isAdmin ? "cursor-pointer hover:text-primary" : ""}`}
-                onClick={() => {
+                className={`text-[10px] text-muted-foreground mt-1 ${isAdmin ? "cursor-pointer hover:text-primary" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (isAdmin) {
                     setEditingLimit(t);
                     setEditLimitValue(String(getLimit(t)));
@@ -152,7 +156,6 @@ const FluglizenzenPage = () => {
         ))}
       </div>
 
-      {/* Add form */}
       {showForm && (
         <div className="bg-card border border-primary/20 rounded-lg p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
           <h3 className="font-semibold text-primary text-sm">Neue Fluglizenz</h3>
@@ -180,11 +183,8 @@ const FluglizenzenPage = () => {
         </div>
       )}
 
-      {/* Table */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="text-primary animate-pulse">Lade Lizenzen...</div>
-        </div>
+        <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade Lizenzen...</div></div>
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
