@@ -45,6 +45,16 @@ const AdminPanel = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Rolle aktualisiert"); },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await supabase.from("user_roles").delete().eq("user_id", userId);
+      const { error } = await supabase.from("profiles").delete().eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Anfrage gelöscht"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
   const pending = users?.filter((u) => !u.is_approved) || [];
