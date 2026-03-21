@@ -20,7 +20,7 @@ const FluglizenzenPage = () => {
   const [team, setTeam] = useState("");
   const [unit, setUnit] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [filterTeam, setFilterTeam] = useState<string>("all");
+  const [filterUnit, setFilterUnit] = useState<string>("all");
   const [editingLimit, setEditingLimit] = useState<string | null>(null);
   const [editLimitValue, setEditLimitValue] = useState("");
 
@@ -41,13 +41,13 @@ const FluglizenzenPage = () => {
   });
 
   const upsertLimit = useMutation({
-    mutationFn: async ({ teamName, max }: { teamName: string; max: number }) => {
-      const existing = limits?.find((l) => l.team === teamName);
+    mutationFn: async ({ unitName, max }: { unitName: string; max: number }) => {
+      const existing = limits?.find((l) => l.team === unitName);
       if (existing) {
         const { error } = await supabase.from("team_license_limits").update({ max_licenses: max }).eq("id", existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("team_license_limits").insert({ team: teamName, max_licenses: max });
+        const { error } = await supabase.from("team_license_limits").insert({ team: unitName, max_licenses: max });
         if (error) throw error;
       }
     },
@@ -58,7 +58,7 @@ const FluglizenzenPage = () => {
     },
   });
 
-  const getLimit = (teamName: string) => limits?.find((l) => l.team === teamName)?.max_licenses ?? 0;
+  const getLimit = (unitName: string) => limits?.find((l) => l.team === unitName)?.max_licenses ?? 0;
 
   const addLicense = useMutation({
     mutationFn: async () => {
@@ -81,16 +81,17 @@ const FluglizenzenPage = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["flight-licenses"] }); toast.success("Gelöscht"); },
   });
 
-  const teamCounts: Record<string, { total: number; active: number }> = {};
-  TEAMS.forEach((t) => { teamCounts[t] = { total: 0, active: 0 }; });
+  // Count per unit
+  const unitCounts: Record<string, { total: number; active: number }> = {};
+  UNITS.forEach((u) => { unitCounts[u] = { total: 0, active: 0 }; });
   licenses?.forEach((l) => {
-    if (teamCounts[l.team]) {
-      teamCounts[l.team].total++;
-      if (l.status === "Aktiv") teamCounts[l.team].active++;
+    if (l.unit && unitCounts[l.unit]) {
+      unitCounts[l.unit].total++;
+      if (l.status === "Aktiv") unitCounts[l.unit].active++;
     }
   });
 
-  const filtered = licenses?.filter((l) => filterTeam === "all" || l.team === filterTeam) || [];
+  const filtered = licenses?.filter((l) => filterUnit === "all" || l.unit === filterUnit) || [];
   const totalActive = licenses?.filter((l) => l.status === "Aktiv").length || 0;
 
   return (
@@ -110,46 +111,46 @@ const FluglizenzenPage = () => {
         )}
       </div>
 
-      {/* Team overview – 4 Teams */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {TEAMS.map((t) => (
+      {/* Unit overview cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+        {UNITS.map((u) => (
           <button
-            key={t}
-            onClick={() => setFilterTeam(filterTeam === t ? "all" : t)}
-            className={`rounded-lg p-4 text-center transition-all duration-150 border active:scale-95
-              ${filterTeam === t
+            key={u}
+            onClick={() => setFilterUnit(filterUnit === u ? "all" : u)}
+            className={`rounded-lg p-3 text-center transition-all duration-150 border active:scale-95
+              ${filterUnit === u
                 ? "bg-primary/10 border-primary/40 shadow-[0_0_8px_hsl(var(--primary)/0.1)]"
                 : "bg-card border-border hover:border-primary/20"
               }`}
           >
-            <p className="text-xs text-muted-foreground font-medium">{t}</p>
-            <p className="text-primary font-bold text-2xl tabular-nums mt-1">{teamCounts[t]?.active || 0}</p>
-            {isAdmin && editingLimit === t ? (
-              <div className="flex items-center justify-center gap-1 mt-1">
-                <span className="text-[10px] text-muted-foreground">von</span>
+            <p className="text-[9px] text-muted-foreground truncate leading-tight font-medium">{u}</p>
+            <p className="text-primary font-bold text-lg tabular-nums mt-0.5">{unitCounts[u]?.active || 0}</p>
+            {isAdmin && editingLimit === u ? (
+              <div className="flex items-center justify-center gap-1 mt-0.5">
+                <span className="text-[9px] text-muted-foreground">von</span>
                 <input
                   type="number"
                   min={0}
-                  className="w-12 text-center text-xs bg-background border border-primary/40 rounded px-1 py-0.5 text-primary tabular-nums"
+                  className="w-10 text-center text-[11px] bg-background border border-primary/40 rounded px-1 py-0.5 text-primary tabular-nums"
                   value={editLimitValue}
                   onChange={(e) => setEditLimitValue(e.target.value)}
-                  onBlur={() => upsertLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 })}
-                  onKeyDown={(e) => { if (e.key === "Enter") upsertLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 }); }}
+                  onBlur={() => upsertLimit.mutate({ unitName: u, max: parseInt(editLimitValue) || 0 })}
+                  onKeyDown={(e) => { if (e.key === "Enter") upsertLimit.mutate({ unitName: u, max: parseInt(editLimitValue) || 0 }); }}
                   autoFocus
                 />
               </div>
             ) : (
               <p
-                className={`text-[10px] text-muted-foreground mt-1 ${isAdmin ? "cursor-pointer hover:text-primary" : ""}`}
+                className={`text-[9px] text-muted-foreground mt-0.5 ${isAdmin ? "cursor-pointer hover:text-primary" : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isAdmin) {
-                    setEditingLimit(t);
-                    setEditLimitValue(String(getLimit(t)));
+                    setEditingLimit(u);
+                    setEditLimitValue(String(getLimit(u)));
                   }
                 }}
               >
-                von {getLimit(t)}
+                von {getLimit(u)}
               </p>
             )}
           </button>
@@ -223,7 +224,7 @@ const FluglizenzenPage = () => {
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  {filterTeam !== "all" ? `Keine Lizenzen für ${filterTeam}` : "Keine Einträge vorhanden"}
+                  {filterUnit !== "all" ? `Keine Lizenzen für ${filterUnit}` : "Keine Einträge vorhanden"}
                 </td></tr>
               )}
             </tbody>

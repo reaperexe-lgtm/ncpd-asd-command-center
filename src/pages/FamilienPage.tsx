@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair } from "lucide-react";
+import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check } from "lucide-react";
 
 const CATEGORIES = [
   { value: "Street Gang", label: "Street Gang", icon: Skull },
@@ -16,6 +16,18 @@ const CATEGORIES = [
   { value: "Kartell", label: "Kartell", icon: Crosshair },
   { value: "Biker Club", label: "Biker Club", icon: Bike },
 ] as const;
+
+type Gang = {
+  id: string;
+  name: string;
+  location: string | null;
+  description: string | null;
+  image_url: string | null;
+  category: string;
+  hood: string | null;
+  erkennungsmerkmale: string | null;
+  created_at: string;
+};
 
 const FamilienPage = () => {
   const { isAdmin } = useAuth();
@@ -25,15 +37,19 @@ const FamilienPage = () => {
   const [desc, setDesc] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [category, setCategory] = useState("Familie");
+  const [hood, setHood] = useState("");
+  const [erkennungsmerkmale, setErkennungsmerkmale] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Gang>>({});
 
   const { data: gangs, isLoading } = useQuery({
     queryKey: ["gangs"],
     queryFn: async () => {
       const { data } = await supabase.from("gangs").select("*").order("name");
-      return data || [];
+      return (data || []) as Gang[];
     },
   });
 
@@ -45,13 +61,29 @@ const FamilienPage = () => {
         description: desc || null,
         image_url: imageUrl || null,
         category,
-      });
+        hood: hood || null,
+        erkennungsmerkmale: erkennungsmerkmale || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gangs"] });
       toast.success("Familie hinzugefügt");
-      setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setShowForm(false);
+      setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setHood(""); setErkennungsmerkmale(""); setShowForm(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateGang = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { error } = await supabase.from("gangs").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gangs"] });
+      toast.success("Gespeichert");
+      setEditingId(null);
+      setEditData({});
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -77,16 +109,43 @@ const FamilienPage = () => {
     setUploading(false);
   };
 
-  const filtered = gangs?.filter((g) => filterCat === "all" || (g as any).category === filterCat) || [];
+  const startEdit = (g: Gang) => {
+    setEditingId(g.id);
+    setEditData({
+      name: g.name,
+      category: g.category,
+      hood: g.hood || "",
+      erkennungsmerkmale: g.erkennungsmerkmale || "",
+      location: g.location || "",
+      description: g.description || "",
+    });
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    updateGang.mutate({
+      id: editingId,
+      updates: {
+        name: editData.name,
+        category: editData.category,
+        hood: editData.hood || null,
+        erkennungsmerkmale: editData.erkennungsmerkmale || null,
+        location: editData.location || null,
+        description: editData.description || null,
+      },
+    });
+  };
+
+  const filtered = gangs?.filter((g) => filterCat === "all" || g.category === filterCat) || [];
 
   const grouped = CATEGORIES.map((cat) => ({
     ...cat,
-    items: filtered.filter((g) => (g as any).category === cat.value),
-  })).filter((group) => filterCat === "all" ? group.items.length > 0 : group.items.length >= 0);
+    items: filtered.filter((g) => g.category === cat.value),
+  })).filter((group) => group.items.length > 0);
 
   const catCounts = CATEGORIES.map((c) => ({
     ...c,
-    count: gangs?.filter((g) => (g as any).category === c.value).length || 0,
+    count: gangs?.filter((g) => g.category === c.value).length || 0,
   }));
 
   return (
@@ -133,11 +192,11 @@ const FamilienPage = () => {
         })}
       </div>
 
+      {/* Add form */}
       {showForm && (
         <div className="bg-card border border-primary/20 rounded-lg p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><Label>Name</Label><Input className="mt-1 bg-background border-border" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div><Label>Standort / Gebiet</Label><Input className="mt-1 bg-background border-border" placeholder="z.B. South LS..." value={location} onChange={(e) => setLocation(e.target.value)} /></div>
             <div>
               <Label>Kategorie</Label>
               <Select value={category} onValueChange={setCategory}>
@@ -145,8 +204,13 @@ const FamilienPage = () => {
                 <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div><Label>Hood / Chapter</Label><Input className="mt-1 bg-background border-border" placeholder="z.B. South LS, Paleto Bay..." value={hood} onChange={(e) => setHood(e.target.value)} /></div>
           </div>
-          <div><Label>Beschreibung</Label><Textarea className="mt-1 bg-background border-border min-h-[80px]" placeholder="Farben, Fahrzeuge, Merkmale..." value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><Label>Erkennungsmerkmale</Label><Input className="mt-1 bg-background border-border" placeholder="Farben, Kleidung, Tattoos..." value={erkennungsmerkmale} onChange={(e) => setErkennungsmerkmale(e.target.value)} /></div>
+            <div><Label>Standort (alt.)</Label><Input className="mt-1 bg-background border-border" placeholder="Allgemeiner Standort" value={location} onChange={(e) => setLocation(e.target.value)} /></div>
+          </div>
+          <div><Label>Beschreibung</Label><Textarea className="mt-1 bg-background border-border min-h-[80px]" placeholder="Weitere Infos..." value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
           <div>
             <Label>Bild (optional)</Label>
             <div className="mt-1 flex items-center gap-3">
@@ -168,7 +232,7 @@ const FamilienPage = () => {
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade Familien...</div></div>
       ) : (
         <div className="space-y-8">
-          {grouped.filter((g) => g.items.length > 0).map((group) => {
+          {grouped.map((group) => {
             const Icon = group.icon;
             return (
               <div key={group.value}>
@@ -179,27 +243,64 @@ const FamilienPage = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {group.items.map((g) => (
-                    <div key={g.id} className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-all duration-200 group">
+                    <div key={g.id} className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-all duration-200 group/card">
                       {g.image_url && (
                         <div className="aspect-video overflow-hidden">
-                          <img src={g.image_url} alt={g.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                          <img src={g.image_url} alt={g.name} className="w-full h-full object-cover group-hover/card:scale-[1.02] transition-transform duration-300" />
                         </div>
                       )}
                       <div className="p-3 space-y-1.5">
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-bold text-primary text-sm">{g.name}</h3>
-                          {isAdmin && (
-                            <button onClick={() => deleteGang.mutate(g.id)} className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                        {g.location && (
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {g.location}
-                          </p>
+                        {editingId === g.id ? (
+                          /* Edit mode */
+                          <div className="space-y-2">
+                            <Input value={editData.name || ""} onChange={(e) => setEditData({ ...editData, name: e.target.value })} placeholder="Name" className="h-7 text-xs bg-background border-border" />
+                            <Select value={editData.category || "Familie"} onValueChange={(v) => setEditData({ ...editData, category: v })}>
+                              <SelectTrigger className="h-7 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                              <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Input value={editData.hood || ""} onChange={(e) => setEditData({ ...editData, hood: e.target.value })} placeholder="Hood / Chapter" className="h-7 text-xs bg-background border-border" />
+                            <Input value={editData.erkennungsmerkmale || ""} onChange={(e) => setEditData({ ...editData, erkennungsmerkmale: e.target.value })} placeholder="Erkennungsmerkmale" className="h-7 text-xs bg-background border-border" />
+                            <Input value={editData.location || ""} onChange={(e) => setEditData({ ...editData, location: e.target.value })} placeholder="Standort" className="h-7 text-xs bg-background border-border" />
+                            <Textarea value={editData.description || ""} onChange={(e) => setEditData({ ...editData, description: e.target.value })} placeholder="Beschreibung" className="text-xs bg-background border-border min-h-[50px]" />
+                            <div className="flex gap-1.5 justify-end">
+                              <button onClick={() => { setEditingId(null); setEditData({}); }} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"><X className="w-3.5 h-3.5" /></button>
+                              <button onClick={saveEdit} className="p-1 rounded text-primary hover:text-primary/80 transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* View mode */
+                          <>
+                            <div className="flex justify-between items-start">
+                              <h3 className="font-bold text-primary text-sm">{g.name}</h3>
+                              {isAdmin && (
+                                <div className="flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                  <button onClick={() => startEdit(g)} className="text-muted-foreground hover:text-primary transition-colors">
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => deleteGang.mutate(g.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            {g.hood && (
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3 h-3 shrink-0" /> <span className="font-medium text-foreground/70">Hood:</span> {g.hood}
+                              </p>
+                            )}
+                            {g.location && !g.hood && (
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3 h-3 shrink-0" /> {g.location}
+                              </p>
+                            )}
+                            {g.erkennungsmerkmale && (
+                              <p className="text-[10px] text-muted-foreground">
+                                <span className="font-medium text-foreground/70">Merkmale:</span> {g.erkennungsmerkmale}
+                              </p>
+                            )}
+                            {g.description && <p className="text-xs text-secondary-foreground leading-relaxed">{g.description}</p>}
+                          </>
                         )}
-                        {g.description && <p className="text-xs text-secondary-foreground leading-relaxed">{g.description}</p>}
                       </div>
                     </div>
                   ))}
