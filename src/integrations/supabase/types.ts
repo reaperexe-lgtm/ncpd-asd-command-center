@@ -94,6 +94,7 @@ export type Database = {
       }
       gangs: {
         Row: {
+          category: string
           created_at: string
           description: string | null
           id: string
@@ -102,6 +103,7 @@ export type Database = {
           name: string
         }
         Insert: {
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -110,6 +112,7 @@ export type Database = {
           name: string
         }
         Update: {
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
