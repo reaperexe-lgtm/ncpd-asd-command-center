@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SlideshowBackground from "@/components/SlideshowBackground";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,9 +55,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      {/* Background image */}
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/auth-bg.png')" }} />
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      <SlideshowBackground />
 
       <div className="w-full max-w-md space-y-8 relative">
         {/* Logo area */}
