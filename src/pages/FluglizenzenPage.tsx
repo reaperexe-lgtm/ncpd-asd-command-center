@@ -21,6 +21,8 @@ const FluglizenzenPage = () => {
   const [unit, setUnit] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [filterTeam, setFilterTeam] = useState<string>("all");
+  const [editingLimit, setEditingLimit] = useState<string | null>(null);
+  const [editLimitValue, setEditLimitValue] = useState("");
 
   const { data: licenses, isLoading } = useQuery({
     queryKey: ["flight-licenses"],
@@ -29,6 +31,28 @@ const FluglizenzenPage = () => {
       return data || [];
     },
   });
+
+  const { data: limits } = useQuery({
+    queryKey: ["team-license-limits"],
+    queryFn: async () => {
+      const { data } = await supabase.from("team_license_limits").select("*");
+      return data || [];
+    },
+  });
+
+  const updateLimit = useMutation({
+    mutationFn: async ({ teamName, max }: { teamName: string; max: number }) => {
+      const { error } = await supabase.from("team_license_limits").update({ max_licenses: max }).eq("team", teamName);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team-license-limits"] });
+      setEditingLimit(null);
+      toast.success("Limit gespeichert");
+    },
+  });
+
+  const getLimit = (teamName: string) => limits?.find((l) => l.team === teamName)?.max_licenses ?? 0;
 
   const addLicense = useMutation({
     mutationFn: async () => {
@@ -95,7 +119,35 @@ const FluglizenzenPage = () => {
           >
             <p className="text-[9px] text-muted-foreground truncate leading-tight">{t}</p>
             <p className="text-primary font-bold text-lg tabular-nums mt-0.5">{teamCounts[t]?.active || 0}</p>
-            <p className="text-[9px] text-muted-foreground">von {teamCounts[t]?.total || 0}</p>
+            {isAdmin && editingLimit === t ? (
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-[9px] text-muted-foreground">von</span>
+                <input
+                  type="number"
+                  min={0}
+                  className="w-10 text-center text-[11px] bg-background border border-primary/40 rounded px-1 py-0.5 text-primary tabular-nums"
+                  value={editLimitValue}
+                  onChange={(e) => setEditLimitValue(e.target.value)}
+                  onBlur={() => {
+                    updateLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 });
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") updateLimit.mutate({ teamName: t, max: parseInt(editLimitValue) || 0 }); }}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <p
+                className={`text-[9px] text-muted-foreground ${isAdmin ? "cursor-pointer hover:text-primary" : ""}`}
+                onClick={() => {
+                  if (isAdmin) {
+                    setEditingLimit(t);
+                    setEditLimitValue(String(getLimit(t)));
+                  }
+                }}
+              >
+                von {getLimit(t)}
+              </p>
+            )}
           </button>
         ))}
       </div>
