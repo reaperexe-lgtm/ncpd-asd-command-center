@@ -276,6 +276,14 @@ const GamblingPage = () => {
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
         playSound("/jackpot-sound.wav");
+        // Confetti burst
+        const end = Date.now() + 2500;
+        const frame = () => {
+          confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
+          confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        };
+        frame();
       } else if (maxCount >= 3) {
         const sym = Object.entries(counts).find(([, c]) => c >= 3)?.[0] || final[0];
         const mult = getSymbol(sym).multiplier;
