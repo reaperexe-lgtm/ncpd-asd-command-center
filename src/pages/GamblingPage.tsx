@@ -203,6 +203,14 @@ const GamblingPage = () => {
     toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt!`);
   };
 
+  const playSound = (src: string) => {
+    try {
+      const audio = new Audio(src);
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+    } catch {}
+  };
+
   const spin = async () => {
     if (spinning || balance < bet) {
       if (balance < bet) toast.error("Nicht genug Guthaben!");
@@ -212,6 +220,7 @@ const GamblingPage = () => {
     setSpinning(true);
     setMessage("");
     setLastWin(0);
+    playSound("/spin-sound.wav");
 
     const interval = setInterval(() => {
       setReels([getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()]);
