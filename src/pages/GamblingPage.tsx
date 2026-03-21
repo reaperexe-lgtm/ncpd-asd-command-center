@@ -250,9 +250,11 @@ const GamblingPage = () => {
     setLastWin(0);
     playSound("/spin-sound.wav");
 
-    const interval = setInterval(() => {
-      setReels([getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()]);
-    }, 70);
+    // Generate spinning reel strips (random symbols scrolling down)
+    const strips = Array.from({ length: 4 }, () =>
+      Array.from({ length: 20 }, () => getRandomSymbolId())
+    );
+    setDisplayReels(strips);
 
     setTimeout(async () => {
       clearInterval(interval);
