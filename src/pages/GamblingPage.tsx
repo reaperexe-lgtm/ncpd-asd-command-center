@@ -60,6 +60,7 @@ const GamblingPage = () => {
   const [balance, setBalance] = useState(1000);
   const [bet, setBet] = useState(100);
   const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
+  const [displayReels, setDisplayReels] = useState<string[][]>([[], [], [], []]);
   const [spinning, setSpinning] = useState(false);
   const [autoSpin, setAutoSpin] = useState(false);
   const autoSpinRef = useRef(false);
