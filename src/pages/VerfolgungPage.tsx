@@ -310,9 +310,9 @@ const VerfolgungPage = () => {
                               {isAdmin && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); deletePhoto.mutate({ id: ph.id, image_url: ph.image_url }); }}
-                                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-5 h-5" />
                                 </button>
                               )}
                             </div>
