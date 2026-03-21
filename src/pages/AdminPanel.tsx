@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, UserCheck, UserX } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2 } from "lucide-react";
 
 const ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -45,6 +45,16 @@ const AdminPanel = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Rolle aktualisiert"); },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await supabase.from("user_roles").delete().eq("user_id", userId);
+      const { error } = await supabase.from("profiles").delete().eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Anfrage gelöscht"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
   const pending = users?.filter((u) => !u.is_approved) || [];
@@ -81,6 +91,9 @@ const AdminPanel = () => {
                     </Select>
                     <Button size="sm" onClick={() => approveMutation.mutate({ userId: u.id, approve: true })} className="gap-1.5">
                       <UserCheck className="w-3.5 h-3.5" /> Freischalten
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(u.id)} className="gap-1.5">
+                      <Trash2 className="w-3.5 h-3.5" /> Löschen
                     </Button>
                   </div>
                 </div>
