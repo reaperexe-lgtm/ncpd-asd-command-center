@@ -142,7 +142,11 @@ const GamblingPage = () => {
     }, 1800);
   };
 
+  // Update leaderboard entry with current local balance for instant display
   const myRank = leaderboard?.findIndex((l) => l.user_id === user?.id) ?? -1;
+  const displayLeaderboard = leaderboard?.map((l) =>
+    l.user_id === user?.id ? { ...l, balance } : l
+  )?.sort((a, b) => b.balance - a.balance);
 
   return (
     <div className="flex gap-6 max-w-6xl mx-auto">
@@ -243,7 +247,7 @@ const GamblingPage = () => {
             <h2 className="font-bold text-primary">Rangliste</h2>
           </div>
           <div className="space-y-1.5">
-            {leaderboard?.map((entry, i) => {
+            {displayLeaderboard?.map((entry, i) => {
               const isMe = entry.user_id === user?.id;
               return (
                 <div key={entry.user_id} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${isMe ? "bg-primary/10 border border-primary/30" : "bg-background/50 border border-transparent hover:border-border"}`}>
@@ -261,7 +265,7 @@ const GamblingPage = () => {
                 </div>
               );
             })}
-            {(!leaderboard || leaderboard.length === 0) && <p className="text-xs text-muted-foreground text-center py-6">Noch keine Spieler</p>}
+            {(!displayLeaderboard || displayLeaderboard.length === 0) && <p className="text-xs text-muted-foreground text-center py-6">Noch keine Spieler</p>}
           </div>
           {myRank >= 0 && (
             <div className="mt-4 pt-3 border-t border-border">
