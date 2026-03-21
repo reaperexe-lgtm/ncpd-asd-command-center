@@ -92,6 +92,9 @@ const AdminPanel = () => {
                     <Button size="sm" onClick={() => approveMutation.mutate({ userId: u.id, approve: true })} className="gap-1.5">
                       <UserCheck className="w-3.5 h-3.5" /> Freischalten
                     </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(u.id)} className="gap-1.5">
+                      <Trash2 className="w-3.5 h-3.5" /> Löschen
+                    </Button>
                   </div>
                 </div>
               ))}
