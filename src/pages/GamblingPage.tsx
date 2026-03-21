@@ -172,12 +172,15 @@ const GamblingPage = () => {
 
         <div className="w-full bg-card border-2 border-border rounded-2xl p-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-          <div className="flex justify-center gap-4 mb-8 relative">
-            {reels.map((symbol, i) => (
-              <div key={i} className={`w-28 h-28 rounded-xl flex items-center justify-center text-6xl border-2 transition-all duration-200 ${spinning ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]" : "border-border bg-background shadow-inner"}`}>
-                <span className={spinning ? "animate-pulse" : ""}>{symbol}</span>
-              </div>
-            ))}
+          <div className="flex justify-center gap-3 mb-8 relative">
+            {reels.map((symbolId, i) => {
+              const sym = getSymbol(symbolId);
+              return (
+                <div key={i} className={`w-24 h-24 rounded-xl flex items-center justify-center border-2 transition-all duration-200 ${spinning ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]" : "border-border bg-background shadow-inner"}`}>
+                  <img src={sym.src} alt={sym.name} className={`w-16 h-16 rounded-full object-cover ${spinning ? "animate-pulse" : ""}`} />
+                </div>
+              );
+            })}
           </div>
 
           <div className="h-8 flex items-center justify-center">
