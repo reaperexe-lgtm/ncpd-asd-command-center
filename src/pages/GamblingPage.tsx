@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Trophy, Crown, Gift } from "lucide-react";
+import { Trophy, Crown, Gift, Volume2, VolumeX } from "lucide-react";
 import hpLogo from "@/assets/hp-logo.png";
 import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
@@ -64,6 +65,11 @@ const GamblingPage = () => {
   const [history, setHistory] = useState<{ symbols: string[]; amount: number }[]>([]);
   const [lastDailyGift, setLastDailyGift] = useState<string | null>(null);
   const [nowTs, setNowTs] = useState(Date.now());
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem("casino_volume");
+    return saved !== null ? parseFloat(saved) : 0.5;
+  });
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const { data: leaderboard, refetch: refetchLeaderboard } = useQuery({
     queryKey: ["casino-leaderboard"],
@@ -206,9 +212,20 @@ const GamblingPage = () => {
   const playSound = (src: string) => {
     try {
       const audio = new Audio(src);
-      audio.volume = 0.5;
+      audio.volume = volume;
       audio.play().catch(() => {});
     } catch {}
+  };
+
+  const handleVolumeChange = (val: number[]) => {
+    setVolume(val[0]);
+    localStorage.setItem("casino_volume", String(val[0]));
+  };
+
+  const toggleMute = () => {
+    const newVol = volume === 0 ? 0.5 : 0;
+    setVolume(newVol);
+    localStorage.setItem("casino_volume", String(newVol));
   };
 
   const spin = async () => {
@@ -278,7 +295,8 @@ const GamblingPage = () => {
     ?.sort((a, b) => b.balance - a.balance);
 
   return (
-    <div className="flex gap-6 max-w-6xl mx-auto">
+    <div className="relative">
+      <div className="flex gap-6 max-w-6xl mx-auto">
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
         <h1 className="text-2xl font-bold text-primary">🎰 NCPD Casino</h1>
 
@@ -480,6 +498,36 @@ const GamblingPage = () => {
               <p className="text-[10px] text-muted-foreground text-center">
                 Dein Platz: <span className="text-primary font-bold">#{myRank + 1}</span>
               </p>
+            </div>
+          )}
+        </div>
+      </div>
+      </div>
+
+      {/* Volume Control - Bottom Left */}
+      <div className="fixed bottom-6 left-6 z-50">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+            onContextMenu={(e) => { e.preventDefault(); toggleMute(); }}
+            className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors active:scale-95"
+          >
+            {volume === 0 ? (
+              <VolumeX className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-primary" />
+            )}
+          </button>
+          {showVolumeSlider && (
+            <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg animate-in fade-in slide-in-from-left-2 duration-200">
+              <Slider
+                value={[volume]}
+                onValueChange={handleVolumeChange}
+                min={0}
+                max={1}
+                step={0.05}
+                className="w-28"
+              />
             </div>
           )}
         </div>
