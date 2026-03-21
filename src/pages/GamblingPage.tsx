@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { playSpinSound, playJackpotSound, playWinSound } from "@/lib/casinoSounds";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -264,7 +265,7 @@ const GamblingPage = () => {
     toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt!`);
   };
 
-  const playSound = (src: string) => {
+  const playSoundOld = (src: string) => {
     try {
       const audio = new Audio(src);
       audio.volume = volume;
@@ -297,7 +298,7 @@ const GamblingPage = () => {
     setSpinning(true);
     setMessage("");
     setLastWin(0);
-    playSound("/spin-sound.wav");
+    playSpinSound(volume);
 
     const strips = Array.from({ length: 4 }, () =>
       Array.from({ length: 20 }, () => getRandomSymbolId(currentBal))
@@ -327,7 +328,7 @@ const GamblingPage = () => {
         const mult = (multipliers[final[0]] || 2) * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
-        playSound("/jackpot-sound.wav");
+        playJackpotSound(volume);
         const end = Date.now() + 2500;
         const frame = () => {
           confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
