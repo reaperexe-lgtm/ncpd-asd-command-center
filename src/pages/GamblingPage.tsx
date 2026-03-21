@@ -205,15 +205,24 @@ const GamblingPage = () => {
         <div className="w-full bg-card border border-border rounded-lg p-4">
           <h3 className="text-sm font-semibold text-primary mb-3">Auszahlungstabelle</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            {SYMBOLS.map((s) => (
-              <div key={s.name} className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-                <span className="text-xl">{s.emoji}{s.emoji}{s.emoji}</span>
-                <span className="text-primary font-bold">x{MULTIPLIERS[s.emoji]}</span>
+            {REEL_SYMBOLS.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
+                <img src={s.src} alt={s.name} className="w-6 h-6 rounded-full object-cover" />
+                <span className="font-medium">{s.name} x4</span>
+                <span className="text-primary font-bold ml-auto">x{s.multiplier * 3}</span>
               </div>
             ))}
             <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-              <span className="text-lg">2x gleich</span>
-              <span className="text-primary font-bold">x2</span>
+              <span className="text-sm">3x gleich</span>
+              <span className="text-primary font-bold ml-auto">x Mult</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
+              <span className="text-sm">2 Paare</span>
+              <span className="text-primary font-bold ml-auto">x2</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
+              <span className="text-sm">1 Paar</span>
+              <span className="text-primary font-bold ml-auto">x1.5</span>
             </div>
           </div>
         </div>
