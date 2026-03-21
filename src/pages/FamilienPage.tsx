@@ -44,6 +44,7 @@ const FamilienPage = () => {
   const [filterCat, setFilterCat] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Gang>>({});
+  const [editUploading, setEditUploading] = useState(false);
 
   const { data: gangs, isLoading } = useQuery({
     queryKey: ["gangs"],
