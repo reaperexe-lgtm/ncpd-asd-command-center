@@ -1,70 +1,73 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import asdLogo from "@/assets/asd-logo.png";
-import { demoMembers } from "@/lib/demoData";
-import { ROLE_ORDER, ROLE_COLORS, type MemberRole } from "@/lib/types";
+
+const ROLE_LABELS: Record<string, string> = {
+  director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+  ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
+};
+const ROLE_COLORS: Record<string, string> = {
+  director: "text-red-400", co_director: "text-orange-400", supervisor: "text-yellow-400",
+  ausbilder: "text-amber-300", trial_ausbilder: "text-lime-400", member: "text-primary", trial_member: "text-purple-400",
+};
 
 const Index = () => {
-  const leitung = demoMembers.filter((m) =>
-    ["Director", "Co-Director", "Supervisor"].includes(m.role)
-  );
-  const ausbilder = demoMembers.filter((m) =>
-    ["Ausbilder", "Trial-Ausbilder"].includes(m.role)
-  );
-  const mitglieder = demoMembers.filter((m) => m.role === "Member");
-  const trials = demoMembers.filter((m) => m.role === "Trial Member");
+  const { data: members } = useQuery({
+    queryKey: ["home-members"],
+    queryFn: async () => {
+      const { data: profiles } = await supabase.from("profiles").select("*").eq("is_approved", true);
+      const { data: roles } = await supabase.from("user_roles").select("*");
+      return (profiles || []).map((p) => ({
+        ...p,
+        role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
+      }));
+    },
+  });
+
+  const { data: missions } = useQuery({
+    queryKey: ["home-missions"],
+    queryFn: async () => { const { data } = await supabase.from("missions").select("id"); return data || []; },
+  });
+
+  const today = new Date().toDateString();
+  const todayCount = missions?.filter((m) => new Date(m.id).toDateString() === today).length || 0;
+
+  const leitung = members?.filter((m) => ["director","co_director","supervisor"].includes(m.role)) || [];
+  const ausbilder = members?.filter((m) => ["ausbilder","trial_ausbilder"].includes(m.role)) || [];
+  const mitglieder = members?.filter((m) => m.role === "member") || [];
+  const trials = members?.filter((m) => m.role === "trial_member") || [];
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Logo */}
       <div className="mt-4 w-40 h-40 rounded-full border-2 border-border p-2 shadow-[0_0_30px_hsl(185_100%_50%/0.08)]">
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-contain rounded-full" />
       </div>
 
-      {/* Stats */}
       <div className="flex gap-4">
-        <StatBox label="Gesamt Einsätze" value="54" />
-        <StatBox label="Heute erstellt" value="0" />
+        <StatBox label="Gesamt Einsätze" value={String(missions?.length || 0)} />
+        <StatBox label="Heute erstellt" value={String(todayCount)} />
       </div>
 
-      {/* Title */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-primary tracking-tight">
-          Einsatzprotokoll Dashboard
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Aus der Luft. Für den Boden. (Späzi für die A.S.D!)
-        </p>
+        <h1 className="text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Aus der Luft. Für den Boden. (Späzi für die A.S.D!)</p>
       </div>
 
-      {/* Member Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-        {/* Leitung */}
         <div className="bg-card border border-border rounded-lg p-5">
           <h2 className="font-bold text-primary mb-4">Air Support Division – Leitung</h2>
-          
           <SectionLabel emoji="👑" label="Leitung" />
-          {leitung.map((m) => (
-            <MemberLine key={m.id} name={m.name} role={m.role} />
-          ))}
-
+          {leitung.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} />)}
           <SectionLabel emoji="⭐" label="Ausbilder" className="mt-4" />
-          {ausbilder.map((m) => (
-            <MemberLine key={m.id} name={m.name} role={m.role} />
-          ))}
+          {ausbilder.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} />)}
         </div>
-
-        {/* Mitglieder */}
         <div className="bg-card border border-border rounded-lg p-5">
           <h2 className="font-bold text-primary mb-4">Air Support Division – Mitglieder</h2>
-          
           <SectionLabel emoji="👥" label="Mitglied" />
-          {mitglieder.map((m) => (
-            <MemberLine key={m.id} name={m.name} role={m.role} prefix="A.S.D · Mitglied:" />
-          ))}
-
+          {mitglieder.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} prefix="A.S.D · Mitglied:" />)}
           <SectionLabel emoji="🔴" label="Trial" className="mt-4" />
-          {trials.map((m) => (
-            <MemberLine key={m.id} name={m.name} role={m.role} prefix="A.S.D · Trial:" />
-          ))}
+          {trials.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} prefix="A.S.D · Trial:" />)}
+          {members?.length === 0 && <p className="text-sm text-muted-foreground">Noch keine Mitglieder.</p>}
         </div>
       </div>
     </div>
@@ -84,9 +87,9 @@ const SectionLabel = ({ emoji, label, className = "" }: { emoji: string; label: 
   </p>
 );
 
-const MemberLine = ({ name, role, prefix }: { name: string; role: MemberRole; prefix?: string }) => (
-  <p className={`text-sm pl-5 py-0.5 ${ROLE_COLORS[role]}`}>
-    {prefix ? `${prefix} ${name}` : `${role}: ${name}`}
+const MemberLine = ({ name, role, prefix }: { name: string; role: string; prefix?: string }) => (
+  <p className={`text-sm pl-5 py-0.5 ${ROLE_COLORS[role] || "text-primary"}`}>
+    {prefix ? `${prefix} ${name}` : `${ROLE_LABELS[role] || role}: ${name}`}
   </p>
 );
 

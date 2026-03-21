@@ -1,8 +1,9 @@
-import { Outlet } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import TopNav from "./TopNav";
 import asdLogo from "@/assets/asd-logo.png";
+import { ReactNode } from "react";
 
-const Layout = () => {
+const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
@@ -10,7 +11,7 @@ const Layout = () => {
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-contain" />
       </div>
       <main className="px-6 py-8 max-w-7xl mx-auto">
-        <Outlet />
+        {children}
       </main>
     </div>
   );
