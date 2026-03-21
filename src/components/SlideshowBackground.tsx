@@ -23,7 +23,7 @@ const SlideshowBackground = () => {
   }, []);
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden -z-10">
       {BG_IMAGES.map((src, i) => (
         <div
           key={src}
@@ -34,7 +34,7 @@ const SlideshowBackground = () => {
           }}
         />
       ))}
-      <div className="absolute inset-0 bg-background/75 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-background/70" />
     </div>
   );
 };
