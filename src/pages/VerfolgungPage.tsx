@@ -358,7 +358,7 @@ const VerfolgungPage = () => {
                       </div>
                     </div>
 
-                    {isAdmin && (
+                    {canDelete && (
                       <div className="flex justify-end pt-2">
                         <Button size="sm" variant="destructive" onClick={() => deletePursuit.mutate(p.id)} className="gap-1.5">
                           <Trash2 className="w-3.5 h-3.5" /> Löschen
