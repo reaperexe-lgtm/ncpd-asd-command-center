@@ -116,6 +116,8 @@ const GamblingPage = () => {
     return saved !== null ? parseFloat(saved) : 0.5;
   });
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [giveMoneyUserId, setGiveMoneyUserId] = useState<string | null>(null);
+  const [giveMoneyAmount, setGiveMoneyAmount] = useState("");
 
   const { data: leaderboard, refetch: refetchLeaderboard } = useQuery({
     queryKey: ["casino-leaderboard"],
