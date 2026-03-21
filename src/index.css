@@ -76,3 +76,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(140 50% 35%);
 }
+
+@keyframes slotScroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(calc(-100% + 128px));
+  }
+}

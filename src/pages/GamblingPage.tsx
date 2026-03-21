@@ -60,6 +60,7 @@ const GamblingPage = () => {
   const [balance, setBalance] = useState(1000);
   const [bet, setBet] = useState(100);
   const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
+  const [displayReels, setDisplayReels] = useState<string[][]>([[], [], [], []]);
   const [spinning, setSpinning] = useState(false);
   const [autoSpin, setAutoSpin] = useState(false);
   const autoSpinRef = useRef(false);
@@ -249,14 +250,16 @@ const GamblingPage = () => {
     setLastWin(0);
     playSound("/spin-sound.wav");
 
-    const interval = setInterval(() => {
-      setReels([getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()]);
-    }, 70);
+    // Generate spinning reel strips (random symbols scrolling down)
+    const strips = Array.from({ length: 4 }, () =>
+      Array.from({ length: 20 }, () => getRandomSymbolId())
+    );
+    setDisplayReels(strips);
 
     setTimeout(async () => {
-      clearInterval(interval);
       const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
+      setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
       setSpinning(false);
 
@@ -380,17 +383,38 @@ const GamblingPage = () => {
 
           <div className="flex justify-center gap-4 mb-8 relative">
             {reels.map((symbolId, i) => {
+              const strip = displayReels[i] || [symbolId];
               const sym = getSymbol(symbolId);
               return (
                 <div
                   key={i}
-                  className={`w-32 h-32 rounded-xl flex items-center justify-center border-2 transition-all duration-200 ${
+                  className={`w-32 h-32 rounded-xl border-2 overflow-hidden relative ${
                     spinning
                       ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]"
                       : "border-border bg-background shadow-inner"
                   }`}
                 >
-                  <img src={sym.src} alt={sym.name} className={`w-24 h-24 rounded-full object-cover ${spinning ? "animate-pulse" : ""}`} />
+                  {spinning ? (
+                    <div
+                      className="flex flex-col items-center"
+                      style={{
+                        animation: `slotScroll ${1.2 + i * 0.25}s cubic-bezier(0.2, 0.8, 0.3, 1) forwards`,
+                      }}
+                    >
+                      {strip.map((sId, j) => {
+                        const s = getSymbol(sId);
+                        return (
+                          <div key={j} className="w-32 h-32 flex-shrink-0 flex items-center justify-center">
+                            <img src={s.src} alt={s.name} className="w-24 h-24 rounded-full object-cover" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <img src={sym.src} alt={sym.name} className="w-24 h-24 rounded-full object-cover" />
+                    </div>
+                  )}
                 </div>
               );
             })}
