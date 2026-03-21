@@ -1,0 +1,1 @@
+ALTER TABLE public.casino_balances ALTER COLUMN balance TYPE bigint;
