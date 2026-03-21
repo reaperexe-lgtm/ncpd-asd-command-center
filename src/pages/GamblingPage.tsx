@@ -502,6 +502,7 @@ const GamblingPage = () => {
           )}
         </div>
       </div>
+      </div>
 
       {/* Volume Control - Bottom Left */}
       <div className="fixed bottom-6 left-6 z-50">
