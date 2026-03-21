@@ -63,6 +63,7 @@ const GamblingPage = () => {
   const [autoSpin, setAutoSpin] = useState(false);
   const autoSpinRef = useRef(false);
   const spinningRef = useRef(false);
+  const [message, setMessage] = useState("");
   const [lastWin, setLastWin] = useState(0);
   const [history, setHistory] = useState<{ symbols: string[]; amount: number }[]>([]);
   const [lastDailyGift, setLastDailyGift] = useState<string | null>(null);
