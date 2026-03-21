@@ -150,8 +150,8 @@ const GamblingPage = () => {
       {/* Main Slot */}
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
         <div className="flex items-center gap-4">
-          {LOGOS.map((logo, i) => (
-            <img key={i} src={logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-border shadow-md" />
+          {REEL_SYMBOLS.map((s) => (
+            <img key={s.id} src={s.src} alt={s.name} className="w-12 h-12 rounded-full object-cover border-2 border-border shadow-md" />
           ))}
         </div>
 
