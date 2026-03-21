@@ -258,8 +258,8 @@ const GamblingPage = () => {
 
     setTimeout(async () => {
       const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
-      const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
+      setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
       setSpinning(false);
 
