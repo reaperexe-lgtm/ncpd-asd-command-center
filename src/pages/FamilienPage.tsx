@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ const FamilienPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gangs"] });
       toast.success("Familie hinzugefügt");
+      logActivity("Familie/Gang erstellt", "familie", { name, category });
       setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setHood(""); setErkennungsmerkmale(""); setShowForm(false);
     },
     onError: (e: any) => toast.error(e.message),
@@ -94,7 +96,7 @@ const FamilienPage = () => {
       const { error } = await supabase.from("gangs").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["gangs"] }); toast.success("Gelöscht"); },
+    onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["gangs"] }); toast.success("Gelöscht"); logActivity("Familie/Gang gelöscht", "familie", { gang_id: id }); },
   });
 
   const uploadImage = async (file: File): Promise<string | null> => {

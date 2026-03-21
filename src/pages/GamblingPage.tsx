@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { playSpinSound, playJackpotSound, playWinSound } from "@/lib/casinoSounds";
+import { logActivity } from "@/lib/activityLog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -297,6 +298,7 @@ const GamblingPage = () => {
     } else {
       const appliedBalance = updated.balance ?? newBalance;
       toast.success(`$${amount.toLocaleString()} an Spieler gesendet!`);
+      logActivity("Casino Geld gesendet", "casino", { target_user_id: targetUserId, amount, new_balance: appliedBalance });
       refetchLeaderboard();
       // If it's the current user, update local state too
       if (targetUserId === user?.id) {

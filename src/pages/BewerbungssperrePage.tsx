@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const BewerbungssperrePage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["application-bans"] });
       toast.success("Sperre hinzugefügt");
+      logActivity("Bewerbungssperre erstellt", "bewerbungssperre", { name, from_date: from, to_date: to, reason });
       setName(""); setFrom(""); setTo(""); setReason(""); setShowForm(false);
     },
     onError: (e: any) => toast.error(e.message),
@@ -41,7 +43,7 @@ const BewerbungssperrePage = () => {
       const { error } = await supabase.from("application_bans").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["application-bans"] }); toast.success("Gelöscht"); },
+    onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["application-bans"] }); toast.success("Gelöscht"); logActivity("Bewerbungssperre gelöscht", "bewerbungssperre", { ban_id: id }); },
   });
 
   const isActive = (toDate: string) => new Date(toDate) >= new Date();

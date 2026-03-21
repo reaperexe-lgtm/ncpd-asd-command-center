@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logActivity } from "@/lib/activityLog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -100,9 +101,10 @@ const EinsatzPage = () => {
       }
       return mission;
     },
-    onSuccess: () => {
+    onSuccess: (mission) => {
       toast.success("Einsatz erfolgreich gespeichert!");
       queryClient.invalidateQueries({ queryKey: ["missions"] });
+      logActivity("Einsatz erstellt", "einsatz", { location: location === "Sonstiges" ? customLocation : location, suspects: parseInt(suspects), hostages: parseInt(hostages) });
       resetForm();
     },
     onError: (e: any) => toast.error(e.message),
