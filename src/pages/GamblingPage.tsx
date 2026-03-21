@@ -295,7 +295,8 @@ const GamblingPage = () => {
     ?.sort((a, b) => b.balance - a.balance);
 
   return (
-    <div className="flex gap-6 max-w-6xl mx-auto">
+    <div className="relative">
+      <div className="flex gap-6 max-w-6xl mx-auto">
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
         <h1 className="text-2xl font-bold text-primary">🎰 NCPD Casino</h1>
 
