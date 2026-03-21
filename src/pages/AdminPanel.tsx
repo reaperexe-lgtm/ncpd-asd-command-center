@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, UserCheck, UserX } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2 } from "lucide-react";
 
 const ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
 const ROLE_LABELS: Record<string, string> = {
