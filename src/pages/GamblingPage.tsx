@@ -116,6 +116,8 @@ const GamblingPage = () => {
     return saved !== null ? parseFloat(saved) : 0.5;
   });
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [giveMoneyUserId, setGiveMoneyUserId] = useState<string | null>(null);
+  const [giveMoneyAmount, setGiveMoneyAmount] = useState("");
 
   const { data: leaderboard, refetch: refetchLeaderboard } = useQuery({
     queryKey: ["casino-leaderboard"],
@@ -263,6 +265,42 @@ const GamblingPage = () => {
     const nowIso = new Date().toISOString();
     await persistCasinoState(balance + DAILY_GIFT_AMOUNT, nowIso);
     toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt!`);
+  };
+
+  const adminGiveMoney = async (targetUserId: string, amount: number) => {
+    if (!isAdmin || !targetUserId || amount <= 0) return;
+    
+    // Get current balance of target user
+    const { data } = await supabase
+      .from("casino_balances")
+      .select("balance")
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+    
+    const currentBalance = data?.balance ?? 0;
+    const newBalance = currentBalance + amount;
+    
+    const { error } = await supabase
+      .from("casino_balances")
+      .upsert(
+        { user_id: targetUserId, balance: newBalance } as any,
+        { onConflict: "user_id" }
+      );
+    
+    if (error) {
+      toast.error("Fehler beim Geld geben.");
+      console.error(error);
+    } else {
+      toast.success(`$${amount.toLocaleString()} an Spieler gesendet!`);
+      refetchLeaderboard();
+      // If it's the current user, update local state too
+      if (targetUserId === user?.id) {
+        updateBalance(newBalance);
+        writeLocalCasinoState(user.id, newBalance, lastDailyGiftRef.current);
+      }
+      setGiveMoneyUserId(null);
+      setGiveMoneyAmount("");
+    }
   };
 
   const playSoundOld = (src: string) => {
@@ -751,13 +789,54 @@ const GamblingPage = () => {
                     <p className={`text-xs font-medium truncate ${isMe ? "text-primary" : "text-foreground"}`}>{entry.name}</p>
                     {entry.dienstnummer && <p className="text-[9px] text-muted-foreground font-mono">{entry.dienstnummer}</p>}
                   </div>
-                  <span
-                    className={`text-xs font-bold tabular-nums shrink-0 ${
-                      i === 0 ? "text-yellow-400" : i === 1 ? "text-muted-foreground" : i === 2 ? "text-amber-600" : "text-muted-foreground"
-                    }`}
-                  >
-                    ${entry.balance.toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span
+                      className={`text-xs font-bold tabular-nums ${
+                        i === 0 ? "text-yellow-400" : i === 1 ? "text-muted-foreground" : i === 2 ? "text-amber-600" : "text-muted-foreground"
+                      }`}
+                    >
+                      ${entry.balance.toLocaleString()}
+                    </span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setGiveMoneyUserId(giveMoneyUserId === entry.user_id ? null : entry.user_id)}
+                        className="ml-1 text-xs hover:scale-110 transition-transform active:scale-95"
+                        title="Geld geben"
+                      >
+                        💰
+                      </button>
+                    )}
+                  </div>
+                  {isAdmin && giveMoneyUserId === entry.user_id && (
+                    <div className="col-span-full flex items-center gap-1.5 mt-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <span className="text-[10px] text-muted-foreground">$</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={giveMoneyAmount}
+                        onChange={(e) => setGiveMoneyAmount(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const val = parseInt(giveMoneyAmount) || 0;
+                            if (val > 0) adminGiveMoney(entry.user_id, val);
+                          }
+                        }}
+                        placeholder="Betrag"
+                        className="flex-1 w-0 px-2 py-1 text-[11px] rounded bg-background border border-border text-foreground tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        className="h-6 px-2 text-[10px]"
+                        onClick={() => {
+                          const val = parseInt(giveMoneyAmount) || 0;
+                          if (val > 0) adminGiveMoney(entry.user_id, val);
+                        }}
+                      >
+                        Senden
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
