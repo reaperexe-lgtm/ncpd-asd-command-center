@@ -44,6 +44,7 @@ const FamilienPage = () => {
   const [filterCat, setFilterCat] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Gang>>({});
+  const [editUploading, setEditUploading] = useState(false);
 
   const { data: gangs, isLoading } = useQuery({
     queryKey: ["gangs"],
@@ -96,17 +97,35 @@ const FamilienPage = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["gangs"] }); toast.success("Gelöscht"); },
   });
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `gangs/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file);
+    if (error) { toast.error("Upload fehlgeschlagen"); return null; }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `gangs/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file);
-    if (error) { toast.error("Upload fehlgeschlagen"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-    setImageUrl(urlData.publicUrl);
+    const url = await uploadImage(file);
+    if (url) setImageUrl(url);
     setUploading(false);
+  };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditUploading(true);
+    const url = await uploadImage(file);
+    if (url) setEditData({ ...editData, image_url: url });
+    setEditUploading(false);
+  };
+
+  const removeEditImage = () => {
+    setEditData({ ...editData, image_url: null });
   };
 
   const startEdit = (g: Gang) => {
@@ -118,6 +137,7 @@ const FamilienPage = () => {
       erkennungsmerkmale: g.erkennungsmerkmale || "",
       location: g.location || "",
       description: g.description || "",
+      image_url: g.image_url || null,
     });
   };
 
@@ -132,6 +152,7 @@ const FamilienPage = () => {
         erkennungsmerkmale: editData.erkennungsmerkmale || null,
         location: editData.location || null,
         description: editData.description || null,
+        image_url: editData.image_url || null,
       },
     });
   };
@@ -244,11 +265,35 @@ const FamilienPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {group.items.map((g) => (
                     <div key={g.id} className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-all duration-200 group/card">
-                      {g.image_url && (
+                      {editingId === g.id ? (
+                        /* Edit mode image */
+                        <div className="aspect-video bg-background/50 flex items-center justify-center relative">
+                          {editData.image_url ? (
+                            <>
+                              <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
+                              <button onClick={removeEditImage} className="absolute top-1.5 right-1.5 bg-destructive/90 text-white rounded-full p-1 hover:bg-destructive transition-colors">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <label className="flex flex-col items-center gap-1 cursor-pointer text-muted-foreground hover:text-primary transition-colors">
+                              <Upload className="w-5 h-5" />
+                              <span className="text-[10px]">{editUploading ? "Hochladen..." : "Foto hinzufügen"}</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={handleEditImageUpload} disabled={editUploading} />
+                            </label>
+                          )}
+                          {editData.image_url && (
+                            <label className="absolute bottom-1.5 right-1.5 bg-primary/90 text-white rounded-full p-1 cursor-pointer hover:bg-primary transition-colors">
+                              <Upload className="w-3 h-3" />
+                              <input type="file" accept="image/*" className="hidden" onChange={handleEditImageUpload} disabled={editUploading} />
+                            </label>
+                          )}
+                        </div>
+                      ) : g.image_url ? (
                         <div className="aspect-video overflow-hidden">
                           <img src={g.image_url} alt={g.name} className="w-full h-full object-cover group-hover/card:scale-[1.02] transition-transform duration-300" />
                         </div>
-                      )}
+                      ) : null}
                       <div className="p-3 space-y-1.5">
                         {editingId === g.id ? (
                           /* Edit mode */
