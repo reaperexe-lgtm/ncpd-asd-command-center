@@ -60,7 +60,7 @@ const TopNav = () => {
       </div>
       <div className="ml-4 flex items-center gap-3">
         <NavLink to="/profil" className={({ isActive }) => `transition-colors ${isActive ? "text-primary" : "text-muted-foreground hover:text-primary"}`} title="Profil">
-          <User className="w-4 h-4" />
+          <User className="w-6 h-6" />
         </NavLink>
         <span className="text-primary font-mono text-sm tabular-nums">
           {time.toLocaleTimeString("de-DE")}
