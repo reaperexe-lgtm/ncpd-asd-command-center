@@ -97,6 +97,8 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          erkennungsmerkmale: string | null
+          hood: string | null
           id: string
           image_url: string | null
           location: string | null
@@ -106,6 +108,8 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          erkennungsmerkmale?: string | null
+          hood?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -115,6 +119,8 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          erkennungsmerkmale?: string | null
+          hood?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
