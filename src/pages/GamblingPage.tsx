@@ -507,7 +507,8 @@ const GamblingPage = () => {
       <div className="fixed bottom-6 left-6 z-50">
         <div className="flex items-center gap-2">
           <button
-            onClick={toggleMute}
+            onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+            onContextMenu={(e) => { e.preventDefault(); toggleMute(); }}
             className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors active:scale-95"
           >
             {volume === 0 ? (
