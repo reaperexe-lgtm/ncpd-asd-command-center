@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logActivity } from "@/lib/activityLog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -76,6 +77,7 @@ const VerfolgungPage = () => {
     onSuccess: () => {
       toast.success("Verfolgung gespeichert!");
       queryClient.invalidateQueries({ queryKey: ["pursuits"] });
+      logActivity("Verfolgung erstellt", "verfolgung", { vehicle: vehicleModel, plate: licensePlate });
       resetForm();
     },
     onError: (e: any) => toast.error(e.message),
@@ -87,9 +89,10 @@ const VerfolgungPage = () => {
       const { error } = await supabase.from("pursuits").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["pursuits"] });
       toast.success("Verfolgung gelöscht");
+      logActivity("Verfolgung gelöscht", "verfolgung", { pursuit_id: id });
     },
   });
 

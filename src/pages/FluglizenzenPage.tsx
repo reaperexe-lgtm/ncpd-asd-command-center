@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,7 @@ const FluglizenzenPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["flight-licenses"] });
       toast.success("Fluglizenz hinzugefügt");
+      logActivity("Fluglizenz erstellt", "fluglizenz", { name, team, unit });
       setName(""); setDate(""); setTeam(""); setUnit(""); setShowForm(false);
     },
     onError: (e: any) => toast.error(e.message),
@@ -95,7 +97,7 @@ const FluglizenzenPage = () => {
       const { error } = await supabase.from("flight_licenses").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["flight-licenses"] }); toast.success("Gelöscht"); },
+    onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["flight-licenses"] }); toast.success("Gelöscht"); logActivity("Fluglizenz gelöscht", "fluglizenz", { license_id: id }); },
   });
 
   // Count per unit
