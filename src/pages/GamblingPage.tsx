@@ -420,9 +420,19 @@ const GamblingPage = () => {
             ))}
           </div>
 
-          <div className="flex justify-center">
-            <Button onClick={spin} disabled={spinning || balance < bet} size="lg" className="px-12 text-lg font-bold active:scale-95 transition-transform">
+          <div className="flex justify-center gap-3">
+            <Button onClick={spin} disabled={spinning || balance < bet || autoSpin} size="lg" className="px-12 text-lg font-bold active:scale-95 transition-transform">
               {spinning ? "Dreht..." : `SPIN – $${bet}`}
+            </Button>
+            <Button
+              onClick={toggleAutoSpin}
+              disabled={balance < bet && !autoSpin}
+              size="lg"
+              variant={autoSpin ? "destructive" : "outline"}
+              className="gap-2 active:scale-95 transition-transform"
+            >
+              <RotateCw className={`w-5 h-5 ${autoSpin ? "animate-spin" : ""}`} />
+              {autoSpin ? "STOP" : "Auto"}
             </Button>
           </div>
         </div>
