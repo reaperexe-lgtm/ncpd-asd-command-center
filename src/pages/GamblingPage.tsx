@@ -65,6 +65,11 @@ const GamblingPage = () => {
   const [history, setHistory] = useState<{ symbols: string[]; amount: number }[]>([]);
   const [lastDailyGift, setLastDailyGift] = useState<string | null>(null);
   const [nowTs, setNowTs] = useState(Date.now());
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem("casino_volume");
+    return saved !== null ? parseFloat(saved) : 0.5;
+  });
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const { data: leaderboard, refetch: refetchLeaderboard } = useQuery({
     queryKey: ["casino-leaderboard"],
