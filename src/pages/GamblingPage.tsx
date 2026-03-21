@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trophy, Crown } from "lucide-react";
+import { Trophy, Crown, Gift } from "lucide-react";
 import hpLogo from "@/assets/hp-logo.png";
 import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
@@ -37,7 +37,8 @@ const GamblingPage = () => {
   const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState("");
   const [lastWin, setLastWin] = useState(0);
-  const [history, setHistory] = useState<{ result: string; amount: number }[]>([]);
+  const [history, setHistory] = useState<{ symbols: string[]; amount: number }[]>([]);
+  const [lastDailyGift, setLastDailyGift] = useState<string | null>(null);
 
   const { data: leaderboard, refetch: refetchLeaderboard } = useQuery({
     queryKey: ["casino-leaderboard"],
@@ -62,11 +63,44 @@ const GamblingPage = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("casino_balances").select("balance").eq("user_id", user.id).single().then(({ data, error }) => {
-      if (data) setBalance(data.balance);
-      else if (error) supabase.from("casino_balances").insert({ user_id: user.id, balance: 1000 });
+    supabase.from("casino_balances").select("balance, last_daily_gift").eq("user_id", user.id).single().then(({ data, error }: any) => {
+      if (data) {
+        setBalance(data.balance);
+        setLastDailyGift(data.last_daily_gift);
+      } else if (error) {
+        supabase.from("casino_balances").insert({ user_id: user.id, balance: 1000 });
+      }
     });
   }, [user]);
+
+  const canClaimDaily = () => {
+    if (!lastDailyGift) return true;
+    const last = new Date(lastDailyGift);
+    const now = new Date();
+    return now.getTime() - last.getTime() >= 24 * 60 * 60 * 1000;
+  };
+
+  const getTimeUntilDaily = () => {
+    if (!lastDailyGift) return null;
+    const last = new Date(lastDailyGift);
+    const next = new Date(last.getTime() + 24 * 60 * 60 * 1000);
+    const diff = next.getTime() - Date.now();
+    if (diff <= 0) return null;
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return `${h}h ${m}m`;
+  };
+
+  const claimDailyGift = async () => {
+    if (!canClaimDaily() || !user) return;
+    const newBalance = balance + 500;
+    const now = new Date().toISOString();
+    setBalance(newBalance);
+    setLastDailyGift(now);
+    await supabase.from("casino_balances").update({ balance: newBalance, last_daily_gift: now } as any).eq("user_id", user.id);
+    refetchLeaderboard();
+    toast.success("$500 Tagesgeschenk abgeholt!");
+  };
 
   const updateBalance = useCallback(async (newBalance: number) => {
     setBalance(newBalance);
@@ -99,33 +133,24 @@ const GamblingPage = () => {
       let resultMsg = "";
 
       const allSame = final.every((s) => s === final[0]);
-      const pairs = new Set(final).size;
+      const counts: Record<string, number> = {};
+      final.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
+      const maxCount = Math.max(...Object.values(counts));
+      const pairs = Object.values(counts).filter((c) => c >= 2).length;
 
       if (allSame) {
         const mult = getSymbol(final[0]).multiplier * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
-      } else if (pairs === 1) {
-        // 3 of a kind (impossible with 4 reels and size=1, but kept for safety)
-        winAmount = bet * 4;
-        resultMsg = "🔥 Dreifach! x4";
-      } else if (pairs <= 2) {
-        // At least 3 of same or two pairs
-        const counts: Record<string, number> = {};
-        final.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
-        const maxCount = Math.max(...Object.values(counts));
-        if (maxCount >= 3) {
-          const sym = Object.entries(counts).find(([, c]) => c >= 3)![0];
-          const mult = getSymbol(sym).multiplier;
-          winAmount = bet * mult;
-          resultMsg = `🔥 Dreifach! x${mult}`;
-        } else {
-          // Two pairs
-          winAmount = bet * 2;
-          resultMsg = "✨ Zwei Paare! x2";
-        }
-      } else if (pairs === 3) {
-        // One pair
+      } else if (maxCount >= 3) {
+        const sym = Object.entries(counts).find(([, c]) => c >= 3)![0];
+        const mult = getSymbol(sym).multiplier;
+        winAmount = bet * mult;
+        resultMsg = `🔥 Dreifach! x${mult}`;
+      } else if (pairs >= 2) {
+        winAmount = bet * 2;
+        resultMsg = "✨ Zwei Paare! x2";
+      } else if (maxCount >= 2) {
         winAmount = Math.floor(bet * 1.5);
         resultMsg = "✨ Ein Paar! x1.5";
       } else {
@@ -137,12 +162,10 @@ const GamblingPage = () => {
       updateBalance(Math.max(0, newBalance));
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
-      const names = final.map((s) => getSymbol(s).name);
-      setHistory((prev) => [{ result: names.join(" | "), amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
+      setHistory((prev) => [{ symbols: [...final], amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
     }, 1800);
   };
 
-  // Update leaderboard entry with current local balance for instant display
   const myRank = leaderboard?.findIndex((l) => l.user_id === user?.id) ?? -1;
   const displayLeaderboard = leaderboard?.map((l) =>
     l.user_id === user?.id ? { ...l, balance } : l
@@ -165,6 +188,19 @@ const GamblingPage = () => {
               <p className="text-2xl font-bold text-green-400 tabular-nums">+${lastWin.toLocaleString()}</p>
             </div>
           )}
+          {/* Daily Gift */}
+          <div className="text-center">
+            {canClaimDaily() ? (
+              <Button onClick={claimDailyGift} variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300">
+                <Gift className="w-4 h-4" /> $500 Tagesgeschenk
+              </Button>
+            ) : (
+              <div className="px-4 py-2 rounded-lg border border-border bg-muted/30">
+                <p className="text-[9px] uppercase tracking-widest text-muted-foreground">Nächstes Geschenk</p>
+                <p className="text-sm font-bold text-muted-foreground tabular-nums">{getTimeUntilDaily()}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="w-full bg-card border-2 border-border rounded-2xl p-8 relative overflow-hidden">
@@ -199,38 +235,53 @@ const GamblingPage = () => {
           </div>
         </div>
 
-        <div className="w-full bg-card border border-border rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-primary mb-3">Auszahlungstabelle</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            {REEL_SYMBOLS.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-                <img src={s.src} alt={s.name} className="w-6 h-6 rounded-full object-cover" />
-                <span className="font-medium">{s.name} x4</span>
-                <span className="text-primary font-bold ml-auto">x{s.multiplier * 3}</span>
+        {/* Payout Table - bigger */}
+        <div className="w-full bg-card border border-border rounded-lg p-5">
+          <h3 className="text-sm font-semibold text-primary mb-4">Auszahlungstabelle</h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {REEL_SYMBOLS.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 bg-background rounded-lg px-4 py-3 border border-border/50">
+                  <img src={s.src} alt={s.name} className="w-10 h-10 rounded-full object-cover" />
+                  <div>
+                    <p className="font-bold text-sm">{s.name} x4</p>
+                    <p className="text-primary font-bold text-lg tabular-nums">x{s.multiplier * 3}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
+                <span className="font-medium">3x gleich</span>
+                <span className="text-primary font-bold text-lg">x Mult</span>
               </div>
-            ))}
-            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-              <span className="text-sm">3x gleich</span>
-              <span className="text-primary font-bold ml-auto">x Mult</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-              <span className="text-sm">2 Paare</span>
-              <span className="text-primary font-bold ml-auto">x2</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-              <span className="text-sm">1 Paar</span>
-              <span className="text-primary font-bold ml-auto">x1.5</span>
+              <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
+                <span className="font-medium">2 Paare</span>
+                <span className="text-primary font-bold text-lg">x2</span>
+              </div>
+              <div className="flex items-center justify-between bg-background rounded-lg px-4 py-3 border border-border/50">
+                <span className="font-medium">1 Paar</span>
+                <span className="text-primary font-bold text-lg">x1.5</span>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* History with logos */}
         {history.length > 0 && (
           <div className="w-full bg-card border border-border rounded-lg p-4">
             <h3 className="text-sm font-semibold text-primary mb-3">Deine letzten Spiele</h3>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {history.map((h, i) => (
-                <div key={i} className="flex justify-between text-sm px-2 py-1 rounded bg-background/50">
-                  <span className="text-lg">{h.result}</span>
+                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg bg-background/50">
+                  <div className="flex items-center gap-2">
+                    {h.symbols.map((sId, j) => {
+                      const sym = getSymbol(sId);
+                      return (
+                        <img key={j} src={sym.src} alt={sym.name} className="w-8 h-8 rounded-full object-cover" />
+                      );
+                    })}
+                  </div>
                   <span className={`font-bold tabular-nums ${h.amount > 0 ? "text-green-400" : "text-red-400"}`}>{h.amount > 0 ? "+" : ""}{h.amount}$</span>
                 </div>
               ))}
