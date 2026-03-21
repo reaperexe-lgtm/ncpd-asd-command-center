@@ -17,8 +17,6 @@ const VerfolgungPage = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Form state
-  const [pursuer, setPursuer] = useState("");
-  const [supporters, setSupporters] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [description, setDescription] = useState("");
@@ -28,7 +26,6 @@ const VerfolgungPage = () => {
   const [leftGunner, setLeftGunner] = useState("");
   const [rightGunner, setRightGunner] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
 
   const { data: pursuits, isLoading } = useQuery({
     queryKey: ["pursuits"],
@@ -50,8 +47,7 @@ const VerfolgungPage = () => {
     mutationFn: async () => {
       const { data: pursuit, error } = await supabase.from("pursuits").insert({
         created_by: user!.id,
-        pursuer,
-        supporters: supporters || null,
+        pursuer: "–",
         vehicle_model: vehicleModel || null,
         license_plate: licensePlate || null,
         description: description || null,
@@ -63,7 +59,6 @@ const VerfolgungPage = () => {
       }).select().single();
       if (error) throw error;
 
-      // Upload photos
       if (photos.length > 0) {
         for (const photo of photos) {
           const ext = photo.name.split(".").pop();
@@ -97,7 +92,7 @@ const VerfolgungPage = () => {
   });
 
   const resetForm = () => {
-    setPursuer(""); setSupporters(""); setVehicleModel(""); setLicensePlate("");
+    setVehicleModel(""); setLicensePlate("");
     setDescription(""); setPursuitDate(""); setPilot(""); setCoPilot("");
     setLeftGunner(""); setRightGunner(""); setPhotos([]); setShowForm(false);
   };
@@ -118,20 +113,8 @@ const VerfolgungPage = () => {
         </Button>
       </div>
 
-      {/* Create form */}
       {showForm && (
         <div className="space-y-5 bg-card border border-border rounded-lg p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Wer hat verfolgt? *</Label>
-              <Input className="mt-1 bg-background border-border" placeholder="Name des Verfolgers" value={pursuer} onChange={(e) => setPursuer(e.target.value)} />
-            </div>
-            <div>
-              <Label>Unterstützer</Label>
-              <Input className="mt-1 bg-background border-border" placeholder="Namen der Unterstützer" value={supporters} onChange={(e) => setSupporters(e.target.value)} />
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>Fahrzeug</Label>
@@ -152,14 +135,12 @@ const VerfolgungPage = () => {
             <Textarea className="mt-1 bg-background border-border min-h-[80px]" placeholder="Details zur Verfolgungsjagd..." value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 
-          {/* Photos */}
           <div>
             <Label className="flex items-center gap-1.5"><Image className="w-4 h-4" /> Fotos (z.B. Kennzeichen)</Label>
             <Input type="file" multiple accept="image/*" className="mt-1 bg-background border-border" onChange={(e) => setPhotos(Array.from(e.target.files || []))} />
             {photos.length > 0 && <p className="text-xs text-muted-foreground mt-1">{photos.length} Foto(s) ausgewählt</p>}
           </div>
 
-          {/* Crew */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
@@ -189,14 +170,13 @@ const VerfolgungPage = () => {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => savePursuit.mutate()} disabled={!pursuer || savePursuit.isPending}>
+            <Button onClick={() => savePursuit.mutate()} disabled={savePursuit.isPending}>
               {savePursuit.isPending ? "Speichern..." : "Verfolgung speichern"}
             </Button>
           </div>
         </div>
       )}
 
-      {/* List */}
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade Verfolgungen...</div></div>
       ) : pursuits?.length === 0 ? (
@@ -214,14 +194,13 @@ const VerfolgungPage = () => {
                 <button onClick={() => setExpandedId(expanded ? null : p.id)} className="w-full px-5 py-4 flex items-center justify-between text-left">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-xs px-3 py-1 rounded-full border font-medium bg-primary/10 text-primary border-primary/20">10-80</span>
-                    <span className="text-sm font-medium text-primary">{p.pursuer}</span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(p.pursuit_date).toLocaleDateString("de-DE")} · {new Date(p.pursuit_date).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
                     </span>
-                    {p.vehicle_model && <span className="text-xs text-muted-foreground flex items-center gap-1"><Car className="w-3 h-3" />{p.vehicle_model}</span>}
+                    {p.vehicle_model && <span className="text-xs text-muted-foreground flex items-center gap-1"><Car className="w-3 h-3" /> {p.vehicle_model}</span>}
                     {p.license_plate && <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">{p.license_plate}</span>}
-                    {pPhotos.length > 0 && <span className="text-xs text-muted-foreground flex items-center gap-1"><Image className="w-3 h-3" />{pPhotos.length}</span>}
+                    {pPhotos.length > 0 && <span className="text-xs text-muted-foreground flex items-center gap-1"><Image className="w-3 h-3" /> {pPhotos.length}</span>}
                   </div>
                   <svg className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -232,10 +211,8 @@ const VerfolgungPage = () => {
                   <div className="px-5 pb-5 space-y-4 border-t border-border/50 pt-4 animate-in fade-in slide-in-from-top-1 duration-200">
                     {p.description && <p className="text-sm leading-relaxed">{p.description}</p>}
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {[
-                        { label: "Verfolger", value: p.pursuer },
-                        { label: "Unterstützer", value: p.supporters },
                         { label: "Fahrzeug", value: p.vehicle_model },
                         { label: "Kennzeichen", value: p.license_plate },
                       ].map(({ label, value }) => (
@@ -246,7 +223,6 @@ const VerfolgungPage = () => {
                       ))}
                     </div>
 
-                    {/* Photos */}
                     {pPhotos.length > 0 && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Image className="w-3 h-3" /> Fotos ({pPhotos.length})</p>
@@ -258,7 +234,6 @@ const VerfolgungPage = () => {
                       </div>
                     )}
 
-                    {/* Crew */}
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Users className="w-3 h-3" /> Besatzung</p>
                       <div className="grid grid-cols-2 gap-2 text-sm">
