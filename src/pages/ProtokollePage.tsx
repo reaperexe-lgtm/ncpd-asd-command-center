@@ -144,6 +144,7 @@ const ProtokollePage = () => {
                       </span>
                       <span className="text-xs text-muted-foreground">{m.suspects_count} TV · {m.hostages_count} Geiseln</span>
                       {vehicles.length > 0 && <span className="text-xs text-muted-foreground flex items-center gap-1"><Car className="w-3 h-3" /> {vehicles.length}</span>}
+                      {m.gang_info && <span className="text-xs px-2.5 py-1 rounded-full border font-semibold bg-red-500/15 text-red-400 border-red-500/30 flex items-center gap-1"><Siren className="w-3 h-3" />{m.gang_info}</span>}
                     </div>
                     <svg className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -164,9 +165,9 @@ const ProtokollePage = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {vehicles.map((v: any) => (
                               <div key={v.id} className="bg-background border border-border rounded-md p-3 space-y-2">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-2">
                                   <p className="text-sm font-medium">{v.vehicle_type} – {v.model}</p>
-                                  {v.license_plate && <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">{v.license_plate}</span>}
+                                  {v.license_plate && <span className="text-sm font-bold font-mono bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded border-2 border-yellow-400/50 tracking-widest shadow-[0_0_8px_rgba(250,204,21,0.15)]">{v.license_plate}</span>}
                                 </div>
                                 {v.owner_info && <p className="text-xs text-muted-foreground">Besitzer: {v.owner_info}</p>}
                                 <div className="flex items-center gap-2">
@@ -215,7 +216,7 @@ const ProtokollePage = () => {
                         {new Date(p.pursuit_date).toLocaleDateString("de-DE")} · {new Date(p.pursuit_date).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
                       </span>
                       {p.vehicle_model && <span className="text-xs text-muted-foreground flex items-center gap-1"><Car className="w-3 h-3" /> {p.vehicle_model}</span>}
-                      {p.license_plate && <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">{p.license_plate}</span>}
+                      {p.license_plate && <span className="text-sm font-bold font-mono bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded border-2 border-yellow-400/50 tracking-widest shadow-[0_0_8px_rgba(250,204,21,0.15)]">{p.license_plate}</span>}
                       {pPhotos.length > 0 && <span className="text-xs text-muted-foreground flex items-center gap-1"><Image className="w-3 h-3" /> {pPhotos.length}</span>}
                     </div>
                     <svg className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,7 +228,7 @@ const ProtokollePage = () => {
                       {p.description && <p className="text-sm leading-relaxed">{p.description}</p>}
                       <div className="grid grid-cols-2 gap-3">
                         <div><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Fahrzeug</p><p className="text-sm text-primary mt-0.5">{p.vehicle_model || "–"}</p></div>
-                        <div><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Kennzeichen</p><p className="text-sm text-primary mt-0.5">{p.license_plate || "–"}</p></div>
+                        <div><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Kennzeichen</p><p className="text-base font-bold font-mono text-yellow-300 mt-0.5 tracking-widest">{p.license_plate || "–"}</p></div>
                       </div>
                       {pPhotos.length > 0 && (
                         <div>
