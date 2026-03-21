@@ -212,9 +212,20 @@ const GamblingPage = () => {
   const playSound = (src: string) => {
     try {
       const audio = new Audio(src);
-      audio.volume = 0.5;
+      audio.volume = volume;
       audio.play().catch(() => {});
     } catch {}
+  };
+
+  const handleVolumeChange = (val: number[]) => {
+    setVolume(val[0]);
+    localStorage.setItem("casino_volume", String(val[0]));
+  };
+
+  const toggleMute = () => {
+    const newVol = volume === 0 ? 0.5 : 0;
+    setVolume(newVol);
+    localStorage.setItem("casino_volume", String(newVol));
   };
 
   const spin = async () => {
