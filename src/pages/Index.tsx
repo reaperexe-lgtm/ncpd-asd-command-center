@@ -39,8 +39,9 @@ const Index = () => {
   const trials = members?.filter((m) => m.role === "trial_member") || [];
 
   return (
-    <div className="flex flex-col items-center gap-8 relative">
+    <div className="flex flex-col items-center gap-8 relative min-h-screen">
       <SlideshowBackground />
+      <div className="relative z-10 flex flex-col items-center gap-8 w-full pb-8">
       <div className="mt-4 w-48 h-48 rounded-full border-2 border-border p-2 shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-contain rounded-full" />
       </div>
