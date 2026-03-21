@@ -65,8 +65,8 @@ const TopNav = () => {
         <span className="text-primary font-mono text-sm tabular-nums">
           {time.toLocaleTimeString("de-DE")}
         </span>
-        <button onClick={signOut} className="text-muted-foreground hover:text-destructive transition-colors" title="Abmelden">
-          <LogOut className="w-4 h-4" />
+        <button onClick={signOut} className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10" title="Abmelden">
+          <LogOut className="w-6 h-6" />
         </button>
       </div>
     </nav>
