@@ -48,11 +48,17 @@
 @layer base {
   * {
     @apply border-border;
+    cursor: url('/helicopter-cursor-32.png'), auto;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    cursor: url('/helicopter-cursor-32.png'), auto;
+  }
+
+  a, button, [role="button"], input[type="submit"], select {
+    cursor: url('/helicopter-cursor-32.png'), pointer;
   }
 }
 
