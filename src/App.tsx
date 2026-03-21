@@ -17,6 +17,7 @@ import FluglizenzenPage from "./pages/FluglizenzenPage";
 import BewerbungssperrePage from "./pages/BewerbungssperrePage";
 import GamblingPage from "./pages/GamblingPage";
 import AdminPanel from "./pages/AdminPanel";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const ProtectedRoutes = () => {
         <Route path="/fluglizenzen" element={<FluglizenzenPage />} />
         <Route path="/bewerbungssperre" element={<BewerbungssperrePage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/profil" element={<ProfilePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

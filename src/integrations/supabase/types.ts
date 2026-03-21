@@ -267,6 +267,24 @@ export type Database = {
         }
         Relationships: []
       }
+      team_license_limits: {
+        Row: {
+          id: string
+          max_licenses: number
+          team: string
+        }
+        Insert: {
+          id?: string
+          max_licenses?: number
+          team: string
+        }
+        Update: {
+          id?: string
+          max_licenses?: number
+          team?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
