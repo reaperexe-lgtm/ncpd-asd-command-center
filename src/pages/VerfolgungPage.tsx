@@ -129,8 +129,8 @@ const VerfolgungPage = () => {
   const handlePhotoSelect = (files: FileList | null) => {
     if (!files) return;
     const arr = Array.from(files);
-    setPhotos(arr);
-    setPhotoPreviewUrls(arr.map((f) => URL.createObjectURL(f)));
+    setPhotos((prev) => [...prev, ...arr]);
+    setPhotoPreviewUrls((prev) => [...prev, ...arr.map((f) => URL.createObjectURL(f))]);
   };
 
   const removePreviewPhoto = (idx: number) => {
