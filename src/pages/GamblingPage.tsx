@@ -90,6 +90,7 @@ const writeLocalCasinoState = (userId: string, balance: number, lastDailyGift: s
 const GamblingPage = () => {
   const { user, isAdmin } = useAuth();
   const [balance, setBalance] = useState(1000);
+  const balanceRef = useRef(1000);
   const [multipliers, setMultipliers] = useState(loadMultipliers);
   const [pairMult, setPairMult] = useState(loadPairMult);
   const [twoPairMult, setTwoPairMult] = useState(loadTwoPairMult);
@@ -101,6 +102,7 @@ const GamblingPage = () => {
   const [autoSpin, setAutoSpin] = useState(false);
   const autoSpinRef = useRef(false);
   const spinningRef = useRef(false);
+  const lastDailyGiftRef = useRef<string | null>(null);
   const [message, setMessage] = useState("");
   const [showCustomBet, setShowCustomBet] = useState(false);
   const [customBetInput, setCustomBetInput] = useState("");
@@ -147,10 +149,20 @@ const GamblingPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const updateBalance = useCallback((val: number) => {
+    balanceRef.current = val;
+    setBalance(val);
+  }, []);
+
+  const updateLastDailyGift = useCallback((val: string | null) => {
+    lastDailyGiftRef.current = val;
+    setLastDailyGift(val);
+  }, []);
+
   const persistCasinoState = useCallback(
     async (nextBalance: number, nextLastDailyGift: string | null) => {
-      setBalance(nextBalance);
-      setLastDailyGift(nextLastDailyGift);
+      updateBalance(nextBalance);
+      updateLastDailyGift(nextLastDailyGift);
 
       if (!user) return;
 
@@ -173,7 +185,7 @@ const GamblingPage = () => {
         refetchLeaderboard();
       }
     },
-    [user, refetchLeaderboard]
+    [user, refetchLeaderboard, updateBalance, updateLastDailyGift]
   );
 
   useEffect(() => {
@@ -181,8 +193,8 @@ const GamblingPage = () => {
 
     const local = readLocalCasinoState(user.id);
     if (local) {
-      setBalance(local.balance);
-      setLastDailyGift(local.lastDailyGift);
+      updateBalance(local.balance);
+      updateLastDailyGift(local.lastDailyGift);
     }
 
     const load = async () => {
@@ -200,8 +212,8 @@ const GamblingPage = () => {
       if (data) {
         const serverBalance = typeof data.balance === "number" ? data.balance : local?.balance ?? 1000;
         const serverLastDailyGift = ((data as any).last_daily_gift as string | null) ?? local?.lastDailyGift ?? null;
-        setBalance(serverBalance);
-        setLastDailyGift(serverLastDailyGift);
+        updateBalance(serverBalance);
+        updateLastDailyGift(serverLastDailyGift);
         writeLocalCasinoState(user.id, serverBalance, serverLastDailyGift);
         return;
       }
@@ -216,8 +228,8 @@ const GamblingPage = () => {
       } as any);
 
       if (!insertError) {
-        setBalance(initialBalance);
-        setLastDailyGift(initialLastDailyGift);
+        updateBalance(initialBalance);
+        updateLastDailyGift(initialLastDailyGift);
         writeLocalCasinoState(user.id, initialBalance, initialLastDailyGift);
       }
     };
@@ -272,8 +284,9 @@ const GamblingPage = () => {
   };
 
   const spin = async () => {
-    if (spinningRef.current || balance < bet) {
-      if (balance < bet) {
+    const currentBal = balanceRef.current;
+    if (spinningRef.current || currentBal < bet) {
+      if (currentBal < bet) {
         toast.error("Nicht genug Guthaben!");
         stopAutoSpin();
       }
@@ -286,14 +299,14 @@ const GamblingPage = () => {
     setLastWin(0);
     playSound("/spin-sound.wav");
 
-    // Generate spinning reel strips (random symbols scrolling down)
     const strips = Array.from({ length: 4 }, () =>
-      Array.from({ length: 20 }, () => getRandomSymbolId(balance))
+      Array.from({ length: 20 }, () => getRandomSymbolId(currentBal))
     );
     setDisplayReels(strips);
 
     setTimeout(async () => {
-      const final = [getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance)];
+      const bal = balanceRef.current;
+      const final = [getRandomSymbolId(bal), getRandomSymbolId(bal), getRandomSymbolId(bal), getRandomSymbolId(bal)];
       setReels(final);
       setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
@@ -338,8 +351,8 @@ const GamblingPage = () => {
         resultMsg = "Kein Glück!";
       }
 
-      const nextBalance = Math.max(0, balance + (winAmount > 0 ? winAmount - bet : winAmount));
-      await persistCasinoState(nextBalance, lastDailyGift);
+      const nextBalance = Math.max(0, bal + (winAmount > 0 ? winAmount - bet : winAmount));
+      await persistCasinoState(nextBalance, lastDailyGiftRef.current);
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
       setHistory((prev) => [{ symbols: final, amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
