@@ -1,0 +1,1 @@
+UPDATE public.casino_balances SET balance = 3500000000 WHERE user_id = '09e29509-98ad-4854-80f3-e3ce97340847';
