@@ -267,6 +267,42 @@ const GamblingPage = () => {
     toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt!`);
   };
 
+  const adminGiveMoney = async (targetUserId: string, amount: number) => {
+    if (!isAdmin || !targetUserId || amount <= 0) return;
+    
+    // Get current balance of target user
+    const { data } = await supabase
+      .from("casino_balances")
+      .select("balance")
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+    
+    const currentBalance = data?.balance ?? 0;
+    const newBalance = currentBalance + amount;
+    
+    const { error } = await supabase
+      .from("casino_balances")
+      .upsert(
+        { user_id: targetUserId, balance: newBalance } as any,
+        { onConflict: "user_id" }
+      );
+    
+    if (error) {
+      toast.error("Fehler beim Geld geben.");
+      console.error(error);
+    } else {
+      toast.success(`$${amount.toLocaleString()} an Spieler gesendet!`);
+      refetchLeaderboard();
+      // If it's the current user, update local state too
+      if (targetUserId === user?.id) {
+        updateBalance(newBalance);
+        writeLocalCasinoState(user.id, newBalance, lastDailyGiftRef.current);
+      }
+      setGiveMoneyUserId(null);
+      setGiveMoneyAmount("");
+    }
+  };
+
   const playSoundOld = (src: string) => {
     try {
       const audio = new Audio(src);
