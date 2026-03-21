@@ -403,14 +403,14 @@ const GamblingPage = () => {
             )}
           </div>
 
-          <div className="flex justify-center gap-2 mb-6 mt-4">
+          <div className="flex justify-center items-center gap-2 mb-6 mt-4 flex-wrap">
             {[50, 100, 250, 500, 1000].map((b) => (
               <button
                 key={b}
-                onClick={() => setBet(b)}
+                onClick={() => { setBet(b); setShowCustomBet(false); }}
                 disabled={b > balance}
                 className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-150 active:scale-95 ${
-                  bet === b
+                  bet === b && !showCustomBet
                     ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
                     : b > balance
                     ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
@@ -420,7 +420,49 @@ const GamblingPage = () => {
                 ${b}
               </button>
             ))}
+            <button
+              onClick={() => { setShowCustomBet(!showCustomBet); setCustomBetInput(String(bet)); }}
+              className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-150 active:scale-95 ${
+                showCustomBet
+                  ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
+                  : "bg-background border border-border hover:border-primary/40 text-foreground"
+              }`}
+            >
+              ✏️ Wunsch
+            </button>
           </div>
+
+          {showCustomBet && (
+            <div className="flex justify-center items-center gap-2 mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+              <span className="text-sm text-muted-foreground font-medium">$</span>
+              <input
+                type="number"
+                min={1}
+                max={balance}
+                value={customBetInput}
+                onChange={(e) => setCustomBetInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = Math.max(1, Math.min(balance, parseInt(customBetInput) || 0));
+                    setBet(val);
+                    setCustomBetInput(String(val));
+                  }
+                }}
+                className="w-28 px-3 py-2 text-sm rounded-lg bg-background border border-border text-foreground text-center tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Betrag"
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  const val = Math.max(1, Math.min(balance, parseInt(customBetInput) || 0));
+                  setBet(val);
+                  setCustomBetInput(String(val));
+                }}
+              >
+                OK
+              </Button>
+            </div>
+          )}
 
           <div className="flex justify-center gap-3">
             <Button onClick={spin} disabled={spinning || balance < bet || autoSpin} size="lg" className="px-12 text-lg font-bold active:scale-95 transition-transform">
