@@ -341,6 +341,7 @@ const GamblingPage = () => {
         const mult = multipliers[sym] || 2;
         winAmount = bet * mult;
         resultMsg = `🔥 Dreifach! x${mult}`;
+        playWinSound(volume);
       } else if (pairGroups >= 2) {
         winAmount = Math.floor(bet * twoPairMult);
         resultMsg = `✨ Zwei Paare! x${twoPairMult}`;
