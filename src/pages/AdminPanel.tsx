@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -34,7 +35,11 @@ const AdminPanel = () => {
       const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("id", userId);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Status aktualisiert"); },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Status aktualisiert");
+      logActivity(vars.approve ? "Benutzer freigeschaltet" : "Benutzer gesperrt", "admin", { target_user_id: vars.userId });
+    },
   });
 
   const roleMutation = useMutation({
@@ -42,7 +47,11 @@ const AdminPanel = () => {
       const { error } = await supabase.from("user_roles").update({ role: newRole as any }).eq("user_id", userId);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Rolle aktualisiert"); },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Rolle aktualisiert");
+      logActivity("Rolle geändert", "admin", { target_user_id: vars.userId, new_role: vars.newRole });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -51,7 +60,11 @@ const AdminPanel = () => {
       const { error } = await supabase.from("profiles").delete().eq("id", userId);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Anfrage gelöscht"); },
+    onSuccess: (_, userId) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Anfrage gelöscht");
+      logActivity("Benutzer gelöscht", "admin", { target_user_id: userId });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
