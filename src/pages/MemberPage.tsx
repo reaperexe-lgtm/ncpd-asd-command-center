@@ -20,6 +20,7 @@ const ROLE_TEXT: Record<string, string> = {
   ausbilder: "text-amber-300", trial_ausbilder: "text-lime-400", member: "text-primary", trial_member: "text-purple-400",
 };
 const ROLE_ORDER = ["director","co_director","supervisor","ausbilder","trial_ausbilder","member","trial_member"];
+const HIDDEN_ROLES = ["admin"];
 
 const MemberPage = () => {
   const { data: members, isLoading } = useQuery({
@@ -30,7 +31,8 @@ const MemberPage = () => {
       return (profiles || []).map((p) => ({
         ...p,
         role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
-      })).sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
+      })).filter((m) => !HIDDEN_ROLES.includes(m.role))
+        .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
     },
   });
 
