@@ -22,10 +22,29 @@ const REEL_SYMBOLS = [
 const DAILY_GIFT_AMOUNT = 500;
 const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-const getRandomSymbolId = () => {
-  const totalWeight = REEL_SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
+const getRandomSymbolId = (currentBalance: number) => {
+  // Higher balance = more likely to lose (get mixed symbols)
+  // Above 1 billion, heavily penalize by reducing weight of matching
+  let lossBoost = 0;
+  if (currentBalance >= 1_000_000_000) {
+    lossBoost = 60; // massive loss bias above 1B
+  } else if (currentBalance >= 500_000_000) {
+    lossBoost = 40;
+  } else if (currentBalance >= 100_000_000) {
+    lossBoost = 25;
+  } else if (currentBalance >= 10_000_000) {
+    lossBoost = 12;
+  }
+
+  // Spread weights more evenly with lossBoost to reduce matching
+  const adjustedSymbols = REEL_SYMBOLS.map((sym, i) => ({
+    ...sym,
+    weight: sym.weight + lossBoost + (i * lossBoost * 0.3),
+  }));
+
+  const totalWeight = adjustedSymbols.reduce((s, sym) => s + sym.weight, 0);
   let r = Math.random() * totalWeight;
-  for (const sym of REEL_SYMBOLS) {
+  for (const sym of adjustedSymbols) {
     r -= sym.weight;
     if (r <= 0) return sym.id;
   }
