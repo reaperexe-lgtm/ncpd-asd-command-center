@@ -23,7 +23,7 @@ const SlideshowBackground = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden -z-10">
+    <div className="fixed inset-0 overflow-hidden z-0">
       {BG_IMAGES.map((src, i) => (
         <div
           key={src}
