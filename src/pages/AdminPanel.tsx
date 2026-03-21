@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { Shield, UserCheck, UserX } from "lucide-react";
 
 const ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -24,7 +24,6 @@ const AdminPanel = () => {
       return (profiles || []).map((p) => ({
         ...p,
         role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
-        role_id: roles?.find((r) => r.user_id === p.id)?.id,
       }));
     },
     enabled: isAdmin,
@@ -46,69 +45,89 @@ const AdminPanel = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Rolle aktualisiert"); },
   });
 
-  if (!isAdmin) return <p className="text-destructive">Kein Zugriff.</p>;
+  if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
+
+  const pending = users?.filter((u) => !u.is_approved) || [];
+  const approved = users?.filter((u) => u.is_approved) || [];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Admin – Benutzerverwaltung</h1>
-      {isLoading ? (
-        <p className="text-muted-foreground">Lade...</p>
-      ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left">
-                <th className="px-4 py-3 text-primary font-semibold">Name</th>
-                <th className="px-4 py-3 text-primary font-semibold">Status</th>
-                <th className="px-4 py-3 text-primary font-semibold">Rolle</th>
-                <th className="px-4 py-3 text-primary font-semibold">Aktionen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users?.map((u) => (
-                <tr key={u.id} className="border-b border-border/50 hover:bg-secondary/30">
-                  <td className="px-4 py-3">{u.name || "–"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded ${u.is_approved ? "bg-green-900/40 text-green-400" : "bg-red-900/40 text-red-400"}`}>
-                      {u.is_approved ? "Aktiv" : "Ausstehend"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <RoleSelect current={u.role} onChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r })} />
-                  </td>
-                  <td className="px-4 py-3 flex gap-2">
-                    {!u.is_approved && (
-                      <Button size="sm" variant="outline" onClick={() => approveMutation.mutate({ userId: u.id, approve: true })}>
-                        Freischalten
-                      </Button>
-                    )}
-                    {u.is_approved && (
-                      <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ userId: u.id, approve: false })}>
-                        Sperren
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="flex items-center gap-3">
+        <Shield className="w-7 h-7 text-primary" />
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Admin – Benutzerverwaltung</h1>
+          <p className="text-xs text-muted-foreground">{users?.length || 0} Benutzer · {pending.length} ausstehend</p>
         </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade...</div></div>
+      ) : (
+        <>
+          {/* Pending approvals */}
+          {pending.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Ausstehende Freischaltungen ({pending.length})</h2>
+              {pending.map((u) => (
+                <div key={u.id} className="bg-card border border-yellow-500/20 rounded-lg px-5 py-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{u.name || "Unbekannt"}</p>
+                    <p className="text-xs text-muted-foreground">{u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role]}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r })}>
+                      <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Button size="sm" onClick={() => approveMutation.mutate({ userId: u.id, approve: true })} className="gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5" /> Freischalten
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Active users table */}
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-background/50">
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {approved.map((u) => (
+                  <tr key={u.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
+                    <td className="px-4 py-3 font-medium">{u.name || "–"}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.dienstnummer || "–"}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r })}>
+                        <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                        <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ userId: u.id, approve: false })} className="gap-1.5 h-7 text-xs">
+                        <UserX className="w-3 h-3" /> Sperren
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
 };
-
-const RoleSelect = ({ current, onChange }: { current: string; onChange: (r: string) => void }) => (
-  <Select value={current} onValueChange={onChange}>
-    <SelectTrigger className="w-40 h-8 text-xs bg-card border-border">
-      <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-      {ROLES.map((r) => (
-        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-);
 
 export default AdminPanel;
