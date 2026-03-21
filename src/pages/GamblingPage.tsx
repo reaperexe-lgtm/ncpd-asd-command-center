@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Trophy, Crown, Gift, Volume2, VolumeX } from "lucide-react";
+import { Trophy, Crown, Gift, Volume2, VolumeX, RotateCw } from "lucide-react";
 import hpLogo from "@/assets/hp-logo.png";
 import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
@@ -60,6 +60,9 @@ const GamblingPage = () => {
   const [bet, setBet] = useState(100);
   const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
   const [spinning, setSpinning] = useState(false);
+  const [autoSpin, setAutoSpin] = useState(false);
+  const autoSpinRef = useRef(false);
+  const spinningRef = useRef(false);
   const [message, setMessage] = useState("");
   const [lastWin, setLastWin] = useState(0);
   const [history, setHistory] = useState<{ symbols: string[]; amount: number }[]>([]);
@@ -229,11 +232,15 @@ const GamblingPage = () => {
   };
 
   const spin = async () => {
-    if (spinning || balance < bet) {
-      if (balance < bet) toast.error("Nicht genug Guthaben!");
+    if (spinningRef.current || balance < bet) {
+      if (balance < bet) {
+        toast.error("Nicht genug Guthaben!");
+        stopAutoSpin();
+      }
       return;
     }
 
+    spinningRef.current = true;
     setSpinning(true);
     setMessage("");
     setLastWin(0);
@@ -247,6 +254,7 @@ const GamblingPage = () => {
       clearInterval(interval);
       const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
+      spinningRef.current = false;
       setSpinning(false);
 
       let winAmount = 0;
@@ -286,7 +294,32 @@ const GamblingPage = () => {
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
       setHistory((prev) => [{ symbols: final, amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
+
+      // Auto-spin: trigger next spin after a short delay
+      if (autoSpinRef.current && nextBalance >= bet) {
+        setTimeout(() => {
+          if (autoSpinRef.current) spin();
+        }, 800);
+      } else if (autoSpinRef.current) {
+        stopAutoSpin();
+        toast.error("Auto-Spin gestoppt – nicht genug Guthaben!");
+      }
     }, 1800);
+  };
+
+  const toggleAutoSpin = () => {
+    if (autoSpin) {
+      stopAutoSpin();
+    } else {
+      autoSpinRef.current = true;
+      setAutoSpin(true);
+      if (!spinningRef.current) spin();
+    }
+  };
+
+  const stopAutoSpin = () => {
+    autoSpinRef.current = false;
+    setAutoSpin(false);
   };
 
   const myRank = leaderboard?.findIndex((l) => l.user_id === user?.id) ?? -1;
@@ -387,9 +420,19 @@ const GamblingPage = () => {
             ))}
           </div>
 
-          <div className="flex justify-center">
-            <Button onClick={spin} disabled={spinning || balance < bet} size="lg" className="px-12 text-lg font-bold active:scale-95 transition-transform">
+          <div className="flex justify-center gap-3">
+            <Button onClick={spin} disabled={spinning || balance < bet || autoSpin} size="lg" className="px-12 text-lg font-bold active:scale-95 transition-transform">
               {spinning ? "Dreht..." : `SPIN – $${bet}`}
+            </Button>
+            <Button
+              onClick={toggleAutoSpin}
+              disabled={balance < bet && !autoSpin}
+              size="lg"
+              variant={autoSpin ? "destructive" : "outline"}
+              className="gap-2 active:scale-95 transition-transform"
+            >
+              <RotateCw className={`w-5 h-5 ${autoSpin ? "animate-spin" : ""}`} />
+              {autoSpin ? "STOP" : "Auto"}
             </Button>
           </div>
         </div>
