@@ -90,6 +90,7 @@ const writeLocalCasinoState = (userId: string, balance: number, lastDailyGift: s
 const GamblingPage = () => {
   const { user, isAdmin } = useAuth();
   const [balance, setBalance] = useState(1000);
+  const balanceRef = useRef(1000);
   const [multipliers, setMultipliers] = useState(loadMultipliers);
   const [pairMult, setPairMult] = useState(loadPairMult);
   const [twoPairMult, setTwoPairMult] = useState(loadTwoPairMult);
@@ -101,6 +102,7 @@ const GamblingPage = () => {
   const [autoSpin, setAutoSpin] = useState(false);
   const autoSpinRef = useRef(false);
   const spinningRef = useRef(false);
+  const lastDailyGiftRef = useRef<string | null>(null);
   const [message, setMessage] = useState("");
   const [showCustomBet, setShowCustomBet] = useState(false);
   const [customBetInput, setCustomBetInput] = useState("");
