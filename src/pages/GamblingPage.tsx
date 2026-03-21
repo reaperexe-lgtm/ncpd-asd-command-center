@@ -247,6 +247,7 @@ const GamblingPage = () => {
         const mult = getSymbol(final[0]).multiplier * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
+        playSound("/jackpot-sound.wav");
       } else if (maxCount >= 3) {
         const sym = Object.entries(counts).find(([, c]) => c >= 3)?.[0] || final[0];
         const mult = getSymbol(sym).multiplier;
