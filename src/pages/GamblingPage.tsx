@@ -10,37 +10,30 @@ import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
 import ncpdLogo from "@/assets/ncpd-logo.png";
 
-const LOGOS = [ncpdLogo, asdLogo, swatLogo, hpLogo];
-
-const SYMBOLS = [
-  { emoji: "7️⃣", name: "Seven", weight: 5 },
-  { emoji: "💎", name: "Diamond", weight: 8 },
-  { emoji: "🔔", name: "Bell", weight: 12 },
-  { emoji: "🍒", name: "Cherry", weight: 15 },
-  { emoji: "⭐", name: "Star", weight: 20 },
-  { emoji: "🎲", name: "Dice", weight: 20 },
-  { emoji: "🍋", name: "Lemon", weight: 20 },
+const REEL_SYMBOLS = [
+  { id: "ncpd", src: ncpdLogo, name: "NCPD", weight: 20, multiplier: 5 },
+  { id: "asd", src: asdLogo, name: "ASD", weight: 25, multiplier: 4 },
+  { id: "swat", src: swatLogo, name: "SWAT", weight: 25, multiplier: 3 },
+  { id: "hp", src: hpLogo, name: "HP", weight: 30, multiplier: 2 },
 ];
 
-const getRandomSymbol = () => {
-  const totalWeight = SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
+const getRandomSymbolId = () => {
+  const totalWeight = REEL_SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
   let r = Math.random() * totalWeight;
-  for (const sym of SYMBOLS) {
+  for (const sym of REEL_SYMBOLS) {
     r -= sym.weight;
-    if (r <= 0) return sym.emoji;
+    if (r <= 0) return sym.id;
   }
-  return SYMBOLS[0].emoji;
+  return REEL_SYMBOLS[0].id;
 };
 
-const MULTIPLIERS: Record<string, number> = {
-  "7️⃣": 10, "💎": 7, "🔔": 5, "🍒": 4, "⭐": 3, "🎲": 2, "🍋": 2,
-};
+const getSymbol = (id: string) => REEL_SYMBOLS.find((s) => s.id === id) || REEL_SYMBOLS[0];
 
 const GamblingPage = () => {
   const { user } = useAuth();
   const [balance, setBalance] = useState(1000);
   const [bet, setBet] = useState(100);
-  const [reels, setReels] = useState(["🎰", "🎰", "🎰"]);
+  const [reels, setReels] = useState(["ncpd", "asd", "swat", "hp"]);
   const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState("");
   const [lastWin, setLastWin] = useState(0);
@@ -94,25 +87,48 @@ const GamblingPage = () => {
     setLastWin(0);
 
     const interval = setInterval(() => {
-      setReels([getRandomSymbol(), getRandomSymbol(), getRandomSymbol()]);
+      setReels([getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()]);
     }, 70);
 
     setTimeout(() => {
       clearInterval(interval);
-      const final = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+      const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
       setReels(final);
       setSpinning(false);
 
       let winAmount = 0;
       let resultMsg = "";
 
-      if (final[0] === final[1] && final[1] === final[2]) {
-        const mult = MULTIPLIERS[final[0]] || 3;
+      const allSame = final.every((s) => s === final[0]);
+      const pairs = new Set(final).size;
+
+      if (allSame) {
+        const mult = getSymbol(final[0]).multiplier * 3;
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
-      } else if (final[0] === final[1] || final[1] === final[2] || final[0] === final[2]) {
-        winAmount = bet * 2;
-        resultMsg = "✨ Doppel! x2";
+      } else if (pairs === 1) {
+        // 3 of a kind (impossible with 4 reels and size=1, but kept for safety)
+        winAmount = bet * 4;
+        resultMsg = "🔥 Dreifach! x4";
+      } else if (pairs <= 2) {
+        // At least 3 of same or two pairs
+        const counts: Record<string, number> = {};
+        final.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
+        const maxCount = Math.max(...Object.values(counts));
+        if (maxCount >= 3) {
+          const sym = Object.entries(counts).find(([, c]) => c >= 3)![0];
+          const mult = getSymbol(sym).multiplier;
+          winAmount = bet * mult;
+          resultMsg = `🔥 Dreifach! x${mult}`;
+        } else {
+          // Two pairs
+          winAmount = bet * 2;
+          resultMsg = "✨ Zwei Paare! x2";
+        }
+      } else if (pairs === 3) {
+        // One pair
+        winAmount = Math.floor(bet * 1.5);
+        resultMsg = "✨ Ein Paar! x1.5";
       } else {
         winAmount = -bet;
         resultMsg = "Kein Glück!";
@@ -122,7 +138,8 @@ const GamblingPage = () => {
       updateBalance(Math.max(0, newBalance));
       setLastWin(winAmount > 0 ? winAmount : 0);
       setMessage(resultMsg);
-      setHistory((prev) => [{ result: final.join(" "), amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
+      const names = final.map((s) => getSymbol(s).name);
+      setHistory((prev) => [{ result: names.join(" | "), amount: winAmount > 0 ? winAmount : -bet }, ...prev.slice(0, 9)]);
     }, 1800);
   };
 
@@ -133,8 +150,8 @@ const GamblingPage = () => {
       {/* Main Slot */}
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
         <div className="flex items-center gap-4">
-          {LOGOS.map((logo, i) => (
-            <img key={i} src={logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-border shadow-md" />
+          {REEL_SYMBOLS.map((s) => (
+            <img key={s.id} src={s.src} alt={s.name} className="w-12 h-12 rounded-full object-cover border-2 border-border shadow-md" />
           ))}
         </div>
 
@@ -155,12 +172,15 @@ const GamblingPage = () => {
 
         <div className="w-full bg-card border-2 border-border rounded-2xl p-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-          <div className="flex justify-center gap-4 mb-8 relative">
-            {reels.map((symbol, i) => (
-              <div key={i} className={`w-28 h-28 rounded-xl flex items-center justify-center text-6xl border-2 transition-all duration-200 ${spinning ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]" : "border-border bg-background shadow-inner"}`}>
-                <span className={spinning ? "animate-pulse" : ""}>{symbol}</span>
-              </div>
-            ))}
+          <div className="flex justify-center gap-3 mb-8 relative">
+            {reels.map((symbolId, i) => {
+              const sym = getSymbol(symbolId);
+              return (
+                <div key={i} className={`w-24 h-24 rounded-xl flex items-center justify-center border-2 transition-all duration-200 ${spinning ? "border-primary/50 bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]" : "border-border bg-background shadow-inner"}`}>
+                  <img src={sym.src} alt={sym.name} className={`w-16 h-16 rounded-full object-cover ${spinning ? "animate-pulse" : ""}`} />
+                </div>
+              );
+            })}
           </div>
 
           <div className="h-8 flex items-center justify-center">
@@ -185,15 +205,24 @@ const GamblingPage = () => {
         <div className="w-full bg-card border border-border rounded-lg p-4">
           <h3 className="text-sm font-semibold text-primary mb-3">Auszahlungstabelle</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            {SYMBOLS.map((s) => (
-              <div key={s.name} className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-                <span className="text-xl">{s.emoji}{s.emoji}{s.emoji}</span>
-                <span className="text-primary font-bold">x{MULTIPLIERS[s.emoji]}</span>
+            {REEL_SYMBOLS.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
+                <img src={s.src} alt={s.name} className="w-6 h-6 rounded-full object-cover" />
+                <span className="font-medium">{s.name} x4</span>
+                <span className="text-primary font-bold ml-auto">x{s.multiplier * 3}</span>
               </div>
             ))}
             <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
-              <span className="text-lg">2x gleich</span>
-              <span className="text-primary font-bold">x2</span>
+              <span className="text-sm">3x gleich</span>
+              <span className="text-primary font-bold ml-auto">x Mult</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
+              <span className="text-sm">2 Paare</span>
+              <span className="text-primary font-bold ml-auto">x2</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background rounded-md px-3 py-2 border border-border/50">
+              <span className="text-sm">1 Paar</span>
+              <span className="text-primary font-bold ml-auto">x1.5</span>
             </div>
           </div>
         </div>
