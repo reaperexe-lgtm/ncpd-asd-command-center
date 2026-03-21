@@ -271,12 +271,12 @@ const GamblingPage = () => {
 
     // Generate spinning reel strips (random symbols scrolling down)
     const strips = Array.from({ length: 4 }, () =>
-      Array.from({ length: 20 }, () => getRandomSymbolId())
+      Array.from({ length: 20 }, () => getRandomSymbolId(balance))
     );
     setDisplayReels(strips);
 
     setTimeout(async () => {
-      const final = [getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId(), getRandomSymbolId()];
+      const final = [getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance), getRandomSymbolId(balance)];
       setReels(final);
       setDisplayReels(final.map((f) => [f]));
       spinningRef.current = false;
