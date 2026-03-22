@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Plane, AlertTriangle, Clock } from "lucide-react";
+import { Plus, Trash2, Plane, AlertTriangle, Clock, Pencil, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
 const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division", "Keine"];
@@ -30,6 +30,22 @@ function getExpiryStatus(licenseDate: string): "expired" | "expiring_soon" | "ac
   return "active";
 }
 
+type SortKey = "name" | "date" | "team" | "unit" | "status";
+type SortDir = "asc" | "desc";
+
+const TEAM_ORDER: Record<string, number> = {
+  "Team Red": 0,
+  "Team Blue": 1,
+  "Team Gold": 2,
+  "Team Silver": 3,
+};
+
+const STATUS_ORDER: Record<string, number> = {
+  expired: 0,
+  expiring_soon: 1,
+  active: 2,
+};
+
 const FluglizenzenPage = () => {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
@@ -41,6 +57,17 @@ const FluglizenzenPage = () => {
   const [filterUnit, setFilterUnit] = useState<string>("all");
   const [editingLimit, setEditingLimit] = useState<string | null>(null);
   const [editLimitValue, setEditLimitValue] = useState("");
+
+  // Editing state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTeam, setEditTeam] = useState("");
+  const [editUnit, setEditUnit] = useState("");
+
+  // Sorting state
+  const [sortKey, setSortKey] = useState<SortKey>("status");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const { data: licenses, isLoading } = useQuery({
     queryKey: ["flight-licenses"],
@@ -92,6 +119,20 @@ const FluglizenzenPage = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateLicense = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: { name: string; license_date: string; team: string; unit: string | null } }) => {
+      const { error } = await supabase.from("flight_licenses").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["flight-licenses"] });
+      toast.success("Lizenz aktualisiert");
+      logActivity("Fluglizenz bearbeitet", "fluglizenz", { license_id: vars.id, name: vars.updates.name });
+      setEditingId(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const deleteLicense = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("flight_licenses").delete().eq("id", id);
@@ -99,6 +140,27 @@ const FluglizenzenPage = () => {
     },
     onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["flight-licenses"] }); toast.success("Gelöscht"); logActivity("Fluglizenz gelöscht", "fluglizenz", { license_id: id }); },
   });
+
+  const startEditing = (l: any) => {
+    setEditingId(l.id);
+    setEditName(l.name);
+    setEditDate(l.license_date);
+    setEditTeam(l.team);
+    setEditUnit(l.unit || "Keine");
+  };
+
+  const saveEdit = () => {
+    if (!editingId || !editName || !editTeam) return;
+    updateLicense.mutate({
+      id: editingId,
+      updates: {
+        name: editName,
+        license_date: editDate,
+        team: editTeam,
+        unit: editUnit === "Keine" ? null : editUnit,
+      },
+    });
+  };
 
   // Count per unit
   const unitCounts: Record<string, { total: number; active: number }> = {};
@@ -112,16 +174,43 @@ const FluglizenzenPage = () => {
 
   const filtered = licenses?.filter((l) => filterUnit === "all" || l.unit === filterUnit) || [];
 
-  // Sort: expired first, then expiring soon, then active
+  // Sorting logic
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
   const sorted = [...filtered].sort((a, b) => {
-    const order = { expired: 0, expiring_soon: 1, active: 2 };
-    const sa = order[getExpiryStatus(a.license_date)];
-    const sb = order[getExpiryStatus(b.license_date)];
-    if (sa !== sb) return sa - sb;
-    return new Date(a.license_date).getTime() - new Date(b.license_date).getTime();
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortKey) {
+      case "name":
+        return dir * a.name.localeCompare(b.name);
+      case "date":
+        return dir * (new Date(a.license_date).getTime() - new Date(b.license_date).getTime());
+      case "team":
+        return dir * ((TEAM_ORDER[a.team] ?? 99) - (TEAM_ORDER[b.team] ?? 99));
+      case "unit":
+        return dir * (a.unit || "").localeCompare(b.unit || "");
+      case "status":
+      default: {
+        const sa = STATUS_ORDER[getExpiryStatus(a.license_date)];
+        const sb = STATUS_ORDER[getExpiryStatus(b.license_date)];
+        if (sa !== sb) return dir * (sa - sb);
+        return dir * (new Date(a.license_date).getTime() - new Date(b.license_date).getTime());
+      }
+    }
   });
 
   const totalActive = licenses?.filter((l) => getExpiryStatus(l.license_date) !== "expired").length || 0;
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-primary" /> : <ArrowDown className="w-3 h-3 text-primary" />;
+  };
 
   return (
     <div className="space-y-6">
@@ -220,13 +309,33 @@ const FluglizenzenPage = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-background/50">
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Ausgestellt</th>
+                <th className="px-4 py-3 text-left">
+                  <button onClick={() => handleSort("name")} className="flex items-center gap-1.5 text-primary font-semibold text-xs uppercase tracking-wider hover:text-primary/80 transition-colors">
+                    Name <SortIcon column="name" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <button onClick={() => handleSort("date")} className="flex items-center gap-1.5 text-primary font-semibold text-xs uppercase tracking-wider hover:text-primary/80 transition-colors">
+                    Ausgestellt <SortIcon column="date" />
+                  </button>
+                </th>
                 <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Ablauf</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Team</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Unit</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
-                {isAdmin && <th className="px-4 py-3 w-20" />}
+                <th className="px-4 py-3 text-left">
+                  <button onClick={() => handleSort("team")} className="flex items-center gap-1.5 text-primary font-semibold text-xs uppercase tracking-wider hover:text-primary/80 transition-colors">
+                    Team <SortIcon column="team" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <button onClick={() => handleSort("unit")} className="flex items-center gap-1.5 text-primary font-semibold text-xs uppercase tracking-wider hover:text-primary/80 transition-colors">
+                    Unit <SortIcon column="unit" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <button onClick={() => handleSort("status")} className="flex items-center gap-1.5 text-primary font-semibold text-xs uppercase tracking-wider hover:text-primary/80 transition-colors">
+                    Status <SortIcon column="status" />
+                  </button>
+                </th>
+                {isAdmin && <th className="px-4 py-3 w-24" />}
               </tr>
             </thead>
             <tbody>
@@ -235,6 +344,54 @@ const FluglizenzenPage = () => {
                 const expiry = getExpiryDate(l.license_date);
                 const teamBg = l.team === "Team Red" ? "bg-red-500/8" : l.team === "Team Blue" ? "bg-blue-500/8" : l.team === "Team Gold" ? "bg-yellow-500/8" : l.team === "Team Silver" ? "bg-gray-400/8" : "";
                 const teamBadge = l.team === "Team Red" ? "bg-red-500/15 text-red-400" : l.team === "Team Blue" ? "bg-blue-500/15 text-blue-400" : l.team === "Team Gold" ? "bg-yellow-500/15 text-yellow-400" : l.team === "Team Silver" ? "bg-gray-400/15 text-gray-300" : "bg-primary/10 text-primary";
+                const isEditing = editingId === l.id;
+
+                if (isEditing) {
+                  return (
+                    <tr key={l.id} className="border-b border-border/30 bg-primary/[0.04]">
+                      <td className="px-4 py-2">
+                        <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 text-sm bg-background border-border" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-8 text-sm bg-background border-border" />
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground text-xs tabular-nums">
+                        {getExpiryDate(editDate).toLocaleDateString("de-DE")}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={editTeam} onValueChange={setEditTeam}>
+                          <SelectTrigger className="h-8 text-sm bg-background border-border"><SelectValue /></SelectTrigger>
+                          <SelectContent>{TEAMS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={editUnit} onValueChange={setEditUnit}>
+                          <SelectTrigger className="h-8 text-sm bg-background border-border"><SelectValue /></SelectTrigger>
+                          <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        {(() => {
+                          const s = getExpiryStatus(editDate);
+                          if (s === "expired") return <span className="text-xs text-red-400">Abgelaufen</span>;
+                          if (s === "expiring_soon") return <span className="text-xs text-yellow-400">Läuft bald ab</span>;
+                          return <span className="text-xs text-green-400">Aktiv</span>;
+                        })()}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-1">
+                          <button onClick={saveEdit} disabled={updateLicense.isPending} className="p-1.5 rounded-md text-green-400 hover:bg-green-500/10 transition-colors active:scale-95">
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setEditingId(null)} className="p-1.5 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors active:scale-95">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
                 return (
                   <tr key={l.id} className={`border-b border-border/30 hover:bg-primary/[0.02] transition-colors ${teamBg} ${status === "expired" ? "opacity-60" : ""}`}>
                     <td className="px-4 py-3 font-medium">{l.name}</td>
@@ -261,9 +418,14 @@ const FluglizenzenPage = () => {
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-3">
-                        <button onClick={() => deleteLicense.mutate(l.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEditing(l)} className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors active:scale-95">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => deleteLicense.mutate(l.id)} className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors active:scale-95">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
