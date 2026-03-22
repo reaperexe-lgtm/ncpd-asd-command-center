@@ -135,7 +135,7 @@ const MemberPage = () => {
 
       {/* Member Profile Dialog */}
       <Dialog open={!!selectedMember} onOpenChange={(open) => { if (!open) setSelectedMember(null); }}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
+        <DialogContent className="sm:max-w-md bg-card border-border [&>button]:w-8 [&>button]:h-8 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-md [&>button]:hover:bg-destructive/20 [&>button]:transition-colors [&>button>svg]:w-5 [&>button>svg]:h-5">
           <DialogHeader>
             <DialogTitle className="text-primary flex items-center gap-3">
               {selectedMember?.image_url ? (
