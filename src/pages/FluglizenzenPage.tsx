@@ -393,7 +393,7 @@ const FluglizenzenPage = () => {
                 }
 
                 return (
-                  <tr key={l.id} className={`border-b border-border/30 hover:bg-primary/[0.02] transition-colors ${teamBg} ${status === "expired" ? "opacity-60" : ""}`}>
+                  <tr key={l.id} className={`border-b border-border/30 hover:bg-primary/[0.02] transition-colors ${teamBg} ${status === "expired" ? "bg-red-500/[0.04]" : ""}`}>
                     <td className="px-4 py-3 font-medium">{l.name}</td>
                     <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(l.license_date).toLocaleDateString("de-DE")}</td>
                     <td className="px-4 py-3 tabular-nums">
@@ -405,8 +405,8 @@ const FluglizenzenPage = () => {
                     <td className="px-4 py-3 text-muted-foreground">{l.unit === "Keine" ? "–" : l.unit || "–"}</td>
                     <td className="px-4 py-3">
                       {status === "expired" ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/10 text-red-400 inline-flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Abgelaufen
+                        <span className="text-xs px-3 py-1 rounded-full font-bold bg-red-500/20 text-red-400 border-2 border-red-500/40 inline-flex items-center gap-1.5 shadow-[0_0_12px_rgba(239,68,68,0.2)] animate-pulse">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Abgelaufen
                         </span>
                       ) : status === "expiring_soon" ? (
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-500/10 text-yellow-400 inline-flex items-center gap-1">
