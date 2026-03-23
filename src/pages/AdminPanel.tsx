@@ -72,19 +72,24 @@ const AdminPanel = () => {
       const { data } = await query;
       if (!data?.length) return [];
 
-      // Fetch profile names for user_ids
+      // Fetch profile names for user_ids AND target_user_ids from details
       const userIds = [...new Set((data as any[]).map((l: any) => l.user_id))];
+      const targetIds = [...new Set((data as any[]).filter((l: any) => l.details?.target_user_id).map((l: any) => l.details.target_user_id))];
+      const allIds = [...new Set([...userIds, ...targetIds])];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, name, dienstnummer")
-        .in("id", userIds);
+        .in("id", allIds);
 
       return (data as any[]).map((log: any) => {
         const profile = profiles?.find((p) => p.id === log.user_id);
+        const targetProfile = log.details?.target_user_id ? profiles?.find((p) => p.id === log.details.target_user_id) : null;
         return {
           ...log,
           user_name: profile?.name || "Unbekannt",
           user_dn: profile?.dienstnummer,
+          target_name: targetProfile?.name || null,
+          target_dn: targetProfile?.dienstnummer || null,
         };
       });
     },
@@ -237,6 +242,12 @@ const AdminPanel = () => {
                         <span className="text-muted-foreground ml-1.5">—</span>
                         <span className="ml-1.5">{log.action}</span>
                       </p>
+                      {log.target_name && (
+                        <p className="text-[10px] text-primary mt-0.5">
+                          → an <span className="font-medium">{log.target_name}</span>
+                          {log.target_dn && <span className="text-muted-foreground font-mono ml-1">({log.target_dn})</span>}
+                        </p>
+                      )}
                       {log.details && Object.keys(log.details).length > 0 && (
                         <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                           {formatDetails(log.details)}

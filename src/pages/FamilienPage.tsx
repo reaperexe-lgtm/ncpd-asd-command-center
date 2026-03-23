@@ -309,9 +309,9 @@ const FamilienPage = () => {
                             <Input value={editData.erkennungsmerkmale || ""} onChange={(e) => setEditData({ ...editData, erkennungsmerkmale: e.target.value })} placeholder="Erkennungsmerkmale" className="h-7 text-xs bg-background border-border" />
                             <Input value={editData.location || ""} onChange={(e) => setEditData({ ...editData, location: e.target.value })} placeholder="Standort" className="h-7 text-xs bg-background border-border" />
                             <Textarea value={editData.description || ""} onChange={(e) => setEditData({ ...editData, description: e.target.value })} placeholder="Beschreibung" className="text-xs bg-background border-border min-h-[50px]" />
-                            <div className="flex gap-1.5 justify-end">
-                              <button onClick={() => { setEditingId(null); setEditData({}); }} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"><X className="w-3.5 h-3.5" /></button>
-                              <button onClick={saveEdit} className="p-1 rounded text-primary hover:text-primary/80 transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                            <div className="flex gap-2 justify-end pt-1">
+                              <button onClick={() => { setEditingId(null); setEditData({}); }} className="p-2.5 rounded-md bg-destructive/10 text-muted-foreground hover:text-destructive hover:bg-destructive/20 transition-colors"><X className="w-5 h-5" /></button>
+                              <button onClick={saveEdit} className="p-2.5 rounded-md bg-primary/10 text-primary hover:text-primary/80 hover:bg-primary/20 transition-colors"><Check className="w-5 h-5" /></button>
                             </div>
                           </div>
                         ) : (
