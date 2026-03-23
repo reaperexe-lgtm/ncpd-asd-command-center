@@ -25,7 +25,7 @@ const PIE_COLORS = [
   "hsl(45, 80%, 55%)", "hsl(310, 50%, 50%)", "hsl(120, 50%, 45%)", "hsl(50, 60%, 45%)",
 ];
 
-/** Get current ASD week: Sunday 18:30 → next Sunday 18:29 */
+/** Get current ASD week: Sunday 18:30 → next Sunday 17:55 */
 function getASDWeekRange(): { start: Date; end: Date } {
   const now = new Date();
   const day = now.getDay(); // 0=Sun
@@ -36,20 +36,25 @@ function getASDWeekRange(): { start: Date; end: Date } {
   const start = new Date(now);
   start.setHours(18, 30, 0, 0);
 
-  // If today is Sunday and we're past 18:30, start is today
-  // Otherwise, go back to the previous Sunday
   if (day === 0 && (h > 18 || (h === 18 && m >= 30))) {
     // start is today
   } else {
-    // Go back to previous Sunday
     const daysBack = day === 0 ? 7 : day;
     start.setDate(start.getDate() - daysBack);
   }
 
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
-  end.setMinutes(29);
+  end.setHours(17, 55, 0, 0);
 
+  return { start, end };
+}
+
+/** Get current month range: 1st of current month → 1st of next month */
+function getMonthRange(): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
   return { start, end };
 }
 
@@ -92,9 +97,14 @@ const StatistikPage = () => {
   });
   const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
 
-  // --- All-time leaderboard ---
+  // --- Monthly leaderboard (Gesamt = current month) ---
+  const { start: monthStart, end: monthEnd } = getMonthRange();
+  const monthlyMissions = missions?.filter((m) => {
+    const d = new Date(m.created_at);
+    return d >= monthStart && d < monthEnd;
+  }) || [];
   const allTimeCounts: Record<string, number> = {};
-  missions?.forEach((m) => {
+  monthlyMissions.forEach((m) => {
     if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
   });
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
@@ -160,10 +170,11 @@ const StatistikPage = () => {
 
       {/* All-time Protokollschreiber Leaderboard */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <h2 className="font-semibold text-primary flex items-center gap-2 mb-4">
+        <h2 className="font-semibold text-primary flex items-center gap-2 mb-1">
           <FileText className="w-5 h-5" />
-          Top-Protokollschreiber – Gesamt
+          Top-Protokollschreiber – Gesamt (Monat)
         </h2>
+        <p className="text-[10px] text-muted-foreground mb-4">Reset am 1. des Monats</p>
         {allTimeRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
         ) : (

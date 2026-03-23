@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Trash2, FileText, Car, Users, Clock, Siren, Image } from "lucide-react";
 import { useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
@@ -26,6 +27,7 @@ const ProtokollePage = () => {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">("all");
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const { data: missions, isLoading: missionsLoading } = useQuery({
     queryKey: ["missions"],
@@ -158,8 +160,8 @@ const ProtokollePage = () => {
                       {((m.gangs as any)?.name || m.gang_info) && (
                         <div className="inline-flex items-stretch rounded-lg overflow-hidden border-2 border-purple-500/40">
                           {(m.gangs as any)?.image_url && (
-                            <div className="w-16 h-16 flex-shrink-0">
-                              <img src={(m.gangs as any).image_url} alt={(m.gangs as any).name} className="w-full h-full object-cover" />
+                            <div className="w-16 h-16 flex-shrink-0 cursor-pointer" onClick={(e) => { e.stopPropagation(); setZoomedImage((m.gangs as any).image_url); }}>
+                              <img src={(m.gangs as any).image_url} alt={(m.gangs as any).name} className="w-full h-full object-cover hover:opacity-80 transition-opacity" />
                             </div>
                           )}
                           {!(m.gangs as any)?.image_url && <div className="w-2 bg-purple-500" />}
@@ -254,7 +256,7 @@ const ProtokollePage = () => {
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Image className="w-3 h-3" /> Fotos ({pPhotos.length})</p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {pPhotos.map((ph: any) => (<img key={ph.id} src={ph.image_url} alt="Foto" className="rounded-md border border-border object-cover w-full h-32" />))}
+                            {pPhotos.map((ph: any) => (<img key={ph.id} src={ph.image_url} alt="Foto" className="rounded-md border border-border object-cover w-full h-32 cursor-pointer hover:opacity-80 transition-opacity" onClick={(e) => { e.stopPropagation(); setZoomedImage(ph.image_url); }} />))}
                           </div>
                         </div>
                       )}
@@ -282,6 +284,13 @@ const ProtokollePage = () => {
           })}
         </div>
       )}
+
+      {/* Image Lightbox */}
+      <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
+        <DialogContent className="max-w-4xl p-2 bg-background/95 border-border">
+          {zoomedImage && <img src={zoomedImage} alt="Vergrößert" className="w-full h-auto max-h-[80vh] object-contain rounded-md" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
