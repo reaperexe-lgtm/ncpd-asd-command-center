@@ -320,12 +320,12 @@ const FamilienPage = () => {
                             <div className="flex justify-between items-start">
                               <h3 className="font-bold text-primary text-sm">{g.name}</h3>
                               {isAdmin && (
-                                <div className="flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                  <button onClick={() => startEdit(g)} className="text-muted-foreground hover:text-primary transition-colors">
-                                    <Pencil className="w-3.5 h-3.5" />
+                                <div className="flex gap-2 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                  <button onClick={() => startEdit(g)} className="p-2 rounded-md bg-primary/10 text-muted-foreground hover:text-primary hover:bg-primary/20 transition-colors">
+                                    <Pencil className="w-5 h-5" />
                                   </button>
-                                  <button onClick={() => deleteGang.mutate(g.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                  <button onClick={() => deleteGang.mutate(g.id)} className="p-2 rounded-md bg-destructive/10 text-muted-foreground hover:text-destructive hover:bg-destructive/20 transition-colors">
+                                    <Trash2 className="w-5 h-5" />
                                   </button>
                                 </div>
                               )}

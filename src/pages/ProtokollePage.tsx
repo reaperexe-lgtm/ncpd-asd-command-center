@@ -30,7 +30,7 @@ const ProtokollePage = () => {
   const { data: missions, isLoading: missionsLoading } = useQuery({
     queryKey: ["missions"],
     queryFn: async () => {
-      const { data } = await supabase.from("missions").select("*, mission_vehicles(*), gangs(name, category)").order("created_at", { ascending: false });
+      const { data } = await supabase.from("missions").select("*, mission_vehicles(*), gangs(name, category, image_url)").order("created_at", { ascending: false });
       return data || [];
     },
   });
@@ -157,7 +157,12 @@ const ProtokollePage = () => {
                       <p className="text-sm text-muted-foreground">{m.location_type}</p>
                       {((m.gangs as any)?.name || m.gang_info) && (
                         <div className="inline-flex items-stretch rounded-lg overflow-hidden border-2 border-purple-500/40">
-                          <div className="w-2 bg-purple-500" />
+                          {(m.gangs as any)?.image_url && (
+                            <div className="w-16 h-16 flex-shrink-0">
+                              <img src={(m.gangs as any).image_url} alt={(m.gangs as any).name} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          {!(m.gangs as any)?.image_url && <div className="w-2 bg-purple-500" />}
                           <div className="px-4 py-2 bg-purple-500/10">
                             <p className="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Familie / Bande</p>
                             <p className="text-base font-bold text-purple-300 flex items-center gap-2">
