@@ -70,7 +70,7 @@ const BAR_COLORS = [
 ];
 
 const StatistikPage = () => {
-  const { isAdmin, role } = useAuth();
+  const { isAdmin, role, user } = useAuth();
   const canReset = isAdmin || ["director", "co_director", "ausbilder"].includes(role || "");
   const queryClient = useQueryClient();
 
