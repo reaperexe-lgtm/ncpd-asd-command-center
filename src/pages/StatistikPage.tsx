@@ -70,7 +70,7 @@ const BAR_COLORS = [
 ];
 
 const StatistikPage = () => {
-  const { isAdmin, role } = useAuth();
+  const { isAdmin, role, user } = useAuth();
   const canReset = isAdmin || ["director", "co_director", "ausbilder"].includes(role || "");
   const queryClient = useQueryClient();
 
@@ -97,9 +97,10 @@ const StatistikPage = () => {
     },
   });
 
+
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
-      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType } as any);
+      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
       if (error) throw error;
     },
     onSuccess: (_, type) => {
@@ -111,9 +112,18 @@ const StatistikPage = () => {
 
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
 
-  // Get latest reset timestamps
-  const lastWeeklyReset = resets?.find((r: any) => r.reset_type === "weekly")?.reset_at;
-  const lastMonthlyReset = resets?.find((r: any) => r.reset_type === "monthly")?.reset_at;
+  // Get latest reset entries
+  const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
+  const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
+  const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
+  const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
+
+  const formatResetInfo = (entry: any) => {
+    if (!entry) return null;
+    const date = new Date(entry.reset_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const name = entry.reset_by ? profileName(entry.reset_by) : "Unbekannt";
+    return `Letzter Reset: ${date} von ${name}`;
+  };
 
   // --- Weekly leaderboard ---
   const { start: weekStart, end: weekEnd } = getASDWeekRange();
@@ -192,6 +202,9 @@ const StatistikPage = () => {
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
           </div>
         </div>
+        {formatResetInfo(lastWeeklyResetEntry) && (
+          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastWeeklyResetEntry)}</p>
+        )}
         {weeklyRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle diese Woche</p>
         ) : (
@@ -222,7 +235,10 @@ const StatistikPage = () => {
               <RotateCw className="w-3 h-3" /> Reset
             </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground mb-4">Reset am 1. des Monats</p>
+        <p className="text-[10px] text-muted-foreground mb-1">Reset am 1. des Monats</p>
+        {formatResetInfo(lastMonthlyResetEntry) && (
+          <p className="text-[10px] text-muted-foreground mb-4">{formatResetInfo(lastMonthlyResetEntry)}</p>
+        )}
         {allTimeRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
         ) : (

@@ -1,0 +1,1 @@
+ALTER TABLE public.stats_resets ADD COLUMN reset_by uuid REFERENCES auth.users(id) ON DELETE SET NULL;

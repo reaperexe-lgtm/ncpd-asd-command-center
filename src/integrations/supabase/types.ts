@@ -390,16 +390,19 @@ export type Database = {
         Row: {
           id: string
           reset_at: string
+          reset_by: string | null
           reset_type: string
         }
         Insert: {
           id?: string
           reset_at?: string
+          reset_by?: string | null
           reset_type: string
         }
         Update: {
           id?: string
           reset_at?: string
+          reset_by?: string | null
           reset_type?: string
         }
         Relationships: []
