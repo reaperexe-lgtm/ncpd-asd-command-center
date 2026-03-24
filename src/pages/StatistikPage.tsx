@@ -183,11 +183,12 @@ const StatistikPage = () => {
             Top-Protokollschreiber (aktuelle ASD-Woche)
           </h2>
           <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => resetMutation.mutate("weekly")}>
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => {
+                if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
+                resetMutation.mutate("weekly");
+              }}>
                 <RotateCw className="w-3 h-3" /> Reset
               </Button>
-            )}
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
           </div>
         </div>
@@ -214,11 +215,12 @@ const StatistikPage = () => {
             <FileText className="w-5 h-5" />
             Top-Protokollschreiber – Gesamt (Monat)
           </h2>
-          {isAdmin && (
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => resetMutation.mutate("monthly")}>
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => {
+              if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
+              resetMutation.mutate("monthly");
+            }}>
               <RotateCw className="w-3 h-3" /> Reset
             </Button>
-          )}
         </div>
         <p className="text-[10px] text-muted-foreground mb-4">Reset am 1. des Monats</p>
         {allTimeRanking.length === 0 ? (
