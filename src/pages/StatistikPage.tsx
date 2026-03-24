@@ -70,6 +70,9 @@ const BAR_COLORS = [
 ];
 
 const StatistikPage = () => {
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+
   const { data: missions } = useQuery({
     queryKey: ["missions-stats"],
     queryFn: async () => { const { data } = await supabase.from("missions").select("*"); return data || []; },
@@ -85,13 +88,38 @@ const StatistikPage = () => {
     queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },
   });
 
+  const { data: resets } = useQuery({
+    queryKey: ["stats-resets"],
+    queryFn: async () => {
+      const { data } = await supabase.from("stats_resets").select("*").order("reset_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: async (resetType: string) => {
+      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType } as any);
+      if (error) throw error;
+    },
+    onSuccess: (_, type) => {
+      queryClient.invalidateQueries({ queryKey: ["stats-resets"] });
+      toast.success(type === "weekly" ? "Wochenstatistik zurückgesetzt" : "Monatsstatistik zurückgesetzt");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
+
+  // Get latest reset timestamps
+  const lastWeeklyReset = resets?.find((r: any) => r.reset_type === "weekly")?.reset_at;
+  const lastMonthlyReset = resets?.find((r: any) => r.reset_type === "monthly")?.reset_at;
 
   // --- Weekly leaderboard ---
   const { start: weekStart, end: weekEnd } = getASDWeekRange();
+  const effectiveWeekStart = lastWeeklyReset && new Date(lastWeeklyReset) > weekStart ? new Date(lastWeeklyReset) : weekStart;
   const weeklyMissions = missions?.filter((m) => {
     const d = new Date(m.created_at);
-    return d >= weekStart && d < weekEnd;
+    return d >= effectiveWeekStart && d < weekEnd;
   }) || [];
 
   const weeklyCounts: Record<string, number> = {};
@@ -102,9 +130,10 @@ const StatistikPage = () => {
 
   // --- Monthly leaderboard (Gesamt = current month) ---
   const { start: monthStart, end: monthEnd } = getMonthRange();
+  const effectiveMonthStart = lastMonthlyReset && new Date(lastMonthlyReset) > monthStart ? new Date(lastMonthlyReset) : monthStart;
   const monthlyMissions = missions?.filter((m) => {
     const d = new Date(m.created_at);
-    return d >= monthStart && d < monthEnd;
+    return d >= effectiveMonthStart && d < monthEnd;
   }) || [];
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
