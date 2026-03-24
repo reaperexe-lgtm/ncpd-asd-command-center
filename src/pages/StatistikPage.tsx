@@ -202,6 +202,9 @@ const StatistikPage = () => {
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
           </div>
         </div>
+        {formatResetInfo(lastWeeklyResetEntry) && (
+          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastWeeklyResetEntry)}</p>
+        )}
         {weeklyRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle diese Woche</p>
         ) : (
