@@ -97,9 +97,11 @@ const StatistikPage = () => {
     },
   });
 
+  const { user } = useAuth();
+
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
-      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType } as any);
+      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
       if (error) throw error;
     },
     onSuccess: (_, type) => {
