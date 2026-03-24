@@ -235,7 +235,10 @@ const StatistikPage = () => {
               <RotateCw className="w-3 h-3" /> Reset
             </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground mb-4">Reset am 1. des Monats</p>
+        <p className="text-[10px] text-muted-foreground mb-1">Reset am 1. des Monats</p>
+        {formatResetInfo(lastMonthlyResetEntry) && (
+          <p className="text-[10px] text-muted-foreground mb-4">{formatResetInfo(lastMonthlyResetEntry)}</p>
+        )}
         {allTimeRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
         ) : (
