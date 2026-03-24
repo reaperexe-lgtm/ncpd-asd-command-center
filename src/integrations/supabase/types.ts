@@ -446,6 +446,8 @@ export type Database = {
     }
     Functions: {
       can_delete_protocols: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_licenses: { Args: { _user_id: string }; Returns: boolean }
+      can_reset_stats: { Args: { _user_id: string }; Returns: boolean }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
