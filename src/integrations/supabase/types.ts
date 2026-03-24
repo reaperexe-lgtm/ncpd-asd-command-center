@@ -386,6 +386,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stats_resets: {
+        Row: {
+          id: string
+          reset_at: string
+          reset_type: string
+        }
+        Insert: {
+          id?: string
+          reset_at?: string
+          reset_type: string
+        }
+        Update: {
+          id?: string
+          reset_at?: string
+          reset_type?: string
+        }
+        Relationships: []
+      }
       team_license_limits: {
         Row: {
           id: string
