@@ -112,9 +112,18 @@ const StatistikPage = () => {
 
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
 
-  // Get latest reset timestamps
-  const lastWeeklyReset = resets?.find((r: any) => r.reset_type === "weekly")?.reset_at;
-  const lastMonthlyReset = resets?.find((r: any) => r.reset_type === "monthly")?.reset_at;
+  // Get latest reset entries
+  const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
+  const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
+  const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
+  const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
+
+  const formatResetInfo = (entry: any) => {
+    if (!entry) return null;
+    const date = new Date(entry.reset_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const name = entry.reset_by ? profileName(entry.reset_by) : "Unbekannt";
+    return `Letzter Reset: ${date} von ${name}`;
+  };
 
   // --- Weekly leaderboard ---
   const { start: weekStart, end: weekEnd } = getASDWeekRange();
