@@ -97,7 +97,6 @@ const StatistikPage = () => {
     },
   });
 
-  const { user } = useAuth();
 
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
