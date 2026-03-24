@@ -13,7 +13,7 @@ import { Plus, Trash2, Plane, AlertTriangle, Clock, Pencil, Check, X, ArrowUpDow
 const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
 const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division", "Keine"];
 
-const EXPIRY_MONTHS = 3;
+const EXPIRY_MONTHS = 4;
 
 function getExpiryDate(licenseDate: string): Date {
   const d = new Date(licenseDate);
@@ -47,7 +47,8 @@ const STATUS_ORDER: Record<string, number> = {
 };
 
 const FluglizenzenPage = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
+  const canManageLicenses = isAdmin || ["director", "co_director", "ausbilder", "trial_ausbilder"].includes(role || "");
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");

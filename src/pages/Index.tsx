@@ -26,11 +26,12 @@ const Index = () => {
 
   const { data: missions } = useQuery({
     queryKey: ["home-missions"],
-    queryFn: async () => { const { data } = await supabase.from("missions").select("id"); return data || []; },
+    queryFn: async () => { const { data } = await supabase.from("missions").select("id, created_at"); return data || []; },
   });
 
-  const today = new Date().toDateString();
-  const todayCount = missions?.filter((m) => new Date(m.id).toDateString() === today).length || 0;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayCount = missions?.filter((m) => new Date(m.created_at) >= todayStart).length || 0;
 
   const leitung = members?.filter((m) => ["director","co_director","supervisor"].includes(m.role)) || [];
   const ausbilder = members?.filter((m) => ["ausbilder","trial_ausbilder"].includes(m.role)) || [];
