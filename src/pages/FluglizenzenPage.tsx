@@ -223,7 +223,7 @@ const FluglizenzenPage = () => {
             <p className="text-xs text-muted-foreground">{totalActive} aktive Lizenzen · {licenses?.length || 0} gesamt</p>
           </div>
         </div>
-        {isAdmin && (
+        {canManageLicenses && (
           <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
             <Plus className="w-3.5 h-3.5" /> {showForm ? "Abbrechen" : "Lizenz hinzufügen"}
           </Button>
@@ -244,7 +244,7 @@ const FluglizenzenPage = () => {
           >
             <p className="text-[9px] text-muted-foreground truncate leading-tight font-medium">{u}</p>
             <p className="text-primary font-bold text-lg tabular-nums mt-0.5">{unitCounts[u]?.active || 0}</p>
-            {isAdmin && editingLimit === u ? (
+            {canManageLicenses && editingLimit === u ? (
               <div className="flex items-center justify-center gap-1 mt-0.5">
                 <span className="text-[9px] text-muted-foreground">von</span>
                 <input
@@ -260,10 +260,10 @@ const FluglizenzenPage = () => {
               </div>
             ) : (
               <p
-                className={`text-[9px] text-muted-foreground mt-0.5 ${isAdmin ? "cursor-pointer hover:text-primary" : ""}`}
+                className={`text-[9px] text-muted-foreground mt-0.5 ${canManageLicenses ? "cursor-pointer hover:text-primary" : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (isAdmin) {
+                  if (canManageLicenses) {
                     setEditingLimit(u);
                     setEditLimitValue(String(getLimit(u)));
                   }
@@ -336,7 +336,7 @@ const FluglizenzenPage = () => {
                     Status <SortIcon column="status" />
                   </button>
                 </th>
-                {isAdmin && <th className="px-4 py-3 w-24" />}
+                {canManageLicenses && <th className="px-4 py-3 w-24" />}
               </tr>
             </thead>
             <tbody>
@@ -417,7 +417,7 @@ const FluglizenzenPage = () => {
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-500/10 text-green-400">Aktiv</span>
                       )}
                     </td>
-                    {isAdmin && (
+                    {canManageLicenses && (
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <button onClick={() => startEditing(l)} className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors active:scale-95">
