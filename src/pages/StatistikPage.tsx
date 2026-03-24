@@ -181,7 +181,14 @@ const StatistikPage = () => {
             <Trophy className="w-5 h-5" />
             Top-Protokollschreiber (aktuelle ASD-Woche)
           </h2>
-          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => resetMutation.mutate("weekly")}>
+                <RotateCw className="w-3 h-3" /> Reset
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
+          </div>
         </div>
         {weeklyRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle diese Woche</p>
@@ -200,12 +207,18 @@ const StatistikPage = () => {
         )}
       </div>
 
-      {/* All-time Protokollschreiber Leaderboard */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <h2 className="font-semibold text-primary flex items-center gap-2 mb-1">
-          <FileText className="w-5 h-5" />
-          Top-Protokollschreiber – Gesamt (Monat)
-        </h2>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-semibold text-primary flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Top-Protokollschreiber – Gesamt (Monat)
+          </h2>
+          {isAdmin && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => resetMutation.mutate("monthly")}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
+          )}
+        </div>
         <p className="text-[10px] text-muted-foreground mb-4">Reset am 1. des Monats</p>
         {allTimeRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
