@@ -1,7 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, TrendingUp, Calendar, Trophy, FileText } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "hsl(160, 60%, 45%)",
