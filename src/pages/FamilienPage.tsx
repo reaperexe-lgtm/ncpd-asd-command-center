@@ -331,21 +331,21 @@ const FamilienPage = () => {
                               )}
                             </div>
                             {g.hood && (
-                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <MapPin className="w-3 h-3 shrink-0" /> <span className="font-medium text-foreground/70">Hood:</span> {g.hood}
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5 shrink-0" /> <span className="font-medium text-foreground/70">Hood:</span> {g.hood}
                               </p>
                             )}
                             {g.location && !g.hood && (
-                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <MapPin className="w-3 h-3 shrink-0" /> {g.location}
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5 shrink-0" /> {g.location}
                               </p>
                             )}
                             {g.erkennungsmerkmale && (
-                              <p className="text-[10px] text-muted-foreground">
-                                <span className="font-medium text-foreground/70">Merkmale:</span> {g.erkennungsmerkmale}
+                              <p className="text-sm font-semibold text-primary/90 mt-1">
+                                <span className="text-foreground/80">Merkmale:</span> {g.erkennungsmerkmale}
                               </p>
                             )}
-                            {g.description && <p className="text-xs text-secondary-foreground leading-relaxed">{g.description}</p>}
+                            {g.description && <p className="text-xs text-secondary-foreground leading-relaxed mt-1">{g.description}</p>}
                           </>
                         )}
                       </div>
