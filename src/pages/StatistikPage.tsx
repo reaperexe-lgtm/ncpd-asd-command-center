@@ -336,19 +336,30 @@ const StatistikPage = () => {
         {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
         ) : (
-          <div className="flex flex-col md:flex-row items-center gap-16">
-            <div className="w-64 h-64 shrink-0">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="w-80 h-80 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={donutData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={65}
-                    outerRadius={110}
+                    innerRadius={55}
+                    outerRadius={95}
                     paddingAngle={2}
                     dataKey="value"
-                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                    label={({ cx, cy, midAngle, outerRadius: or, percent }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = or + 22;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      return (
+                        <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor="middle" dominantBaseline="central" fontSize={13} fontWeight={700}>
+                          {`${(percent * 100).toFixed(0)}%`}
+                        </text>
+                      );
+                    }}
+                    labelLine={false}
                   >
                     {donutData.map((_, i) => (
                       <Cell key={i} fill={LOCATION_COLORS[donutData[i].name] || PIE_COLORS[i % PIE_COLORS.length]} />
