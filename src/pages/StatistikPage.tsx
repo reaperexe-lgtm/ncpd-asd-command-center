@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, X, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const LOCATION_COLORS: Record<string, string> = {
@@ -28,32 +30,25 @@ const PIE_COLORS = [
   "hsl(45, 80%, 55%)", "hsl(310, 50%, 50%)", "hsl(120, 50%, 45%)", "hsl(50, 60%, 45%)",
 ];
 
-/** Get current ASD week: Sunday 18:30 → next Sunday 17:55 */
 function getASDWeekRange(): { start: Date; end: Date } {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun
+  const day = now.getDay();
   const h = now.getHours();
   const m = now.getMinutes();
-
-  // Find the most recent Sunday 18:30
   const start = new Date(now);
   start.setHours(18, 30, 0, 0);
-
   if (day === 0 && (h > 18 || (h === 18 && m >= 30))) {
     // start is today
   } else {
     const daysBack = day === 0 ? 7 : day;
     start.setDate(start.getDate() - daysBack);
   }
-
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
   end.setHours(17, 55, 0, 0);
-
   return { start, end };
 }
 
-/** Get current month range: 1st of current month → 1st of next month */
 function getMonthRange(): { start: Date; end: Date } {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
@@ -73,6 +68,7 @@ const StatistikPage = () => {
   const { isAdmin, role, user } = useAuth();
   const canReset = isAdmin || ["director", "co_director", "ausbilder"].includes(role || "");
   const queryClient = useQueryClient();
+  const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string } | null>(null);
 
   const { data: missions } = useQuery({
     queryKey: ["missions-stats"],
@@ -97,7 +93,6 @@ const StatistikPage = () => {
     },
   });
 
-
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
       const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
@@ -112,7 +107,6 @@ const StatistikPage = () => {
 
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
 
-  // Get latest reset entries
   const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
   const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
   const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
@@ -139,7 +133,7 @@ const StatistikPage = () => {
   });
   const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
 
-  // --- Monthly leaderboard (Gesamt = current month) ---
+  // --- Monthly leaderboard ---
   const { start: monthStart, end: monthEnd } = getMonthRange();
   const effectiveMonthStart = lastMonthlyReset && new Date(lastMonthlyReset) > monthStart ? new Date(lastMonthlyReset) : monthStart;
   const monthlyMissions = missions?.filter((m) => {
@@ -153,14 +147,13 @@ const StatistikPage = () => {
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
-  // --- Location stats (include 10-80 as a type) ---
+  // --- Location stats ---
   const locationCounts: Record<string, number> = {};
   missions?.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
   const pursuitCount = pursuits?.length || 0;
   if (pursuitCount > 0) locationCounts["10-80 Verfolgung"] = pursuitCount;
   const total = (missions?.length || 0) + pursuitCount;
   const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
-
   const donutData = sortedLocations.map(([name, value]) => ({ name, value }));
 
   const totalSuspects = missions?.reduce((s, m) => s + m.suspects_count, 0) || 0;
@@ -175,6 +168,19 @@ const StatistikPage = () => {
   const monthlyEntries = Object.entries(monthly).slice(-6);
   const maxMonthly = Math.max(...monthlyEntries.map(([, v]) => v), 1);
 
+  // --- 10-80 Pursuit Stats ---
+  const pursuitCreatorCounts: Record<string, number> = {};
+  pursuits?.forEach((p) => {
+    pursuitCreatorCounts[p.created_by] = (pursuitCreatorCounts[p.created_by] || 0) + 1;
+  });
+  const pursuitRanking = Object.entries(pursuitCreatorCounts).sort((a, b) => b[1] - a[1]);
+  const maxPursuit = pursuitRanking[0]?.[1] || 1;
+
+  // Protocols for selected writer
+  const writerProtocols = selectedWriter
+    ? missions?.filter((m) => m.protokollschreiber === selectedWriter.id) || []
+    : [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -185,7 +191,7 @@ const StatistikPage = () => {
         </div>
       </div>
 
-      {/* Weekly Protokollschreiber Leaderboard */}
+      {/* Weekly Protokollschreiber */}
       <div className="bg-card border border-border rounded-lg p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-primary flex items-center gap-2">
@@ -194,11 +200,11 @@ const StatistikPage = () => {
           </h2>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => {
-                if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
-                resetMutation.mutate("weekly");
-              }}>
-                <RotateCw className="w-3 h-3" /> Reset
-              </Button>
+              if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
+              resetMutation.mutate("weekly");
+            }}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
           </div>
         </div>
@@ -210,11 +216,15 @@ const StatistikPage = () => {
         ) : (
           <div className="space-y-2">
             {weeklyRanking.map(([id, count], i) => (
-              <div key={id} className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2">
+              <div key={id} className="flex items-center justify-between py-1.5 group">
+                <button
+                  className="flex items-center gap-2 hover:underline text-left"
+                  onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                >
                   <span className="text-base">{MEDAL[i] || ""}</span>
-                  <span className="text-sm font-medium text-primary">{profileName(id)}</span>
-                </div>
+                  <span className="text-sm font-medium text-primary group-hover:text-accent-foreground transition-colors">{profileName(id)}</span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
                 <span className="text-sm font-bold text-primary tabular-nums">{count}</span>
               </div>
             ))}
@@ -222,6 +232,7 @@ const StatistikPage = () => {
         )}
       </div>
 
+      {/* Monthly Protokollschreiber */}
       <div className="bg-card border border-border rounded-lg p-5">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-semibold text-primary flex items-center gap-2">
@@ -229,11 +240,11 @@ const StatistikPage = () => {
             Top-Protokollschreiber – Gesamt (Monat)
           </h2>
           <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => {
-              if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
-              resetMutation.mutate("monthly");
-            }}>
-              <RotateCw className="w-3 h-3" /> Reset
-            </Button>
+            if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
+            resetMutation.mutate("monthly");
+          }}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
         </div>
         <p className="text-[10px] text-muted-foreground mb-1">Reset am 1. des Monats</p>
         {formatResetInfo(lastMonthlyResetEntry) && (
@@ -242,23 +253,59 @@ const StatistikPage = () => {
         {allTimeRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {allTimeRanking.map(([id, count], i) => (
+              <div key={id} className="flex items-center justify-between group">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                  <button
+                    className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
+                    style={{
+                      width: `${Math.max((count / maxAllTime) * 100, 20)}%`,
+                      backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
+                    }}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                  >
+                    <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
+                  </button>
+                </div>
+                <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 10-80 Verfolgungen Statistik */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-primary flex items-center gap-2">
+            <Car className="w-5 h-5" />
+            10-80 Verfolgungen
+          </h2>
+          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+            Gesamt: {pursuitCount}
+          </span>
+        </div>
+        {pursuitRanking.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen</p>
+        ) : (
+          <div className="space-y-3">
+            {pursuitRanking.map(([id, count], i) => (
               <div key={id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-base w-6 text-center">{MEDAL[i] || ""}</span>
+                  <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
                   <div
-                    className="h-8 rounded-md flex items-center px-3 transition-all duration-500"
+                    className="h-9 rounded-md flex items-center px-3 transition-all duration-500"
                     style={{
-                      width: `${Math.max((count / maxAllTime) * 100, 15)}%`,
-                      backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
-                      opacity: 0.85,
+                      width: `${Math.max((count / maxPursuit) * 100, 20)}%`,
+                      backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
                     }}
                   >
-                    <span className="text-xs font-medium text-white truncate drop-shadow-sm">{profileName(id)}</span>
+                    <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-primary tabular-nums ml-3">{count}</span>
+                <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
               </div>
             ))}
           </div>
@@ -341,6 +388,48 @@ const StatistikPage = () => {
           </div>
         </div>
       )}
+
+      {/* Dialog: Protokolle eines Schreibers */}
+      <Dialog open={!!selectedWriter} onOpenChange={(open) => !open && setSelectedWriter(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-primary">
+              Protokolle von {selectedWriter?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {writerProtocols.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Keine Protokolle gefunden</p>
+          ) : (
+            <div className="space-y-2 mt-2">
+              {writerProtocols
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((m) => (
+                  <div key={m.id} className="bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xs font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-md shrink-0">
+                        {m.location_type}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {new Date(m.tatzeit).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          {" · "}
+                          {new Date(m.tatzeit).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {m.suspects_count} TV · {m.hostages_count} Geiseln
+                          {m.gang_info ? ` · ${m.gang_info}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                {writerProtocols.length} Protokoll{writerProtocols.length !== 1 ? "e" : ""} gesamt
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
