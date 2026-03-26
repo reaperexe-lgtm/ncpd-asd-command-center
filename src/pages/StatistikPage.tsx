@@ -336,8 +336,8 @@ const StatistikPage = () => {
         {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
         ) : (
-          <div className="flex flex-col md:flex-row items-center gap-10">
-            <div className="w-72 h-72 shrink-0">
+          <div className="flex flex-col md:flex-row items-center gap-16">
+            <div className="w-64 h-64 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
