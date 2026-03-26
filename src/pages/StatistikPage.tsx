@@ -336,16 +336,16 @@ const StatistikPage = () => {
         {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
         ) : (
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="w-64 h-64">
+          <div className="flex flex-col md:flex-row items-center gap-10">
+            <div className="w-72 h-72 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={donutData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={65}
+                    outerRadius={110}
                     paddingAngle={2}
                     dataKey="value"
                     label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
@@ -354,7 +354,7 @@ const StatistikPage = () => {
                       <Cell key={i} fill={LOCATION_COLORS[donutData[i].name] || PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`${value} (${((value / total) * 100).toFixed(1)}%)`, "Einsätze"]} />
+                  <Tooltip formatter={(value: number, _name, props) => [`${value} (${((value / total) * 100).toFixed(1)}%)`, props.payload.name]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
