@@ -19,13 +19,13 @@ const VEHICLE_MODELS = ["Drafter","VSTR","Sultan Classic","Sultan Revolter","Sch
 interface VehicleForm {
   vehicle_type: string; model: string; custom_model: string; license_plate: string;
   owner_info: string; primary_color: string; secondary_color: string;
-  pearl_color: string; neon_color: string; xenon: boolean;
+  pearl_color: string; neon_color: string; xenon: boolean; xenon_color: string;
 }
 
 const emptyVehicle: VehicleForm = {
   vehicle_type: "Fahrzeug", model: "Drafter", custom_model: "", license_plate: "",
   owner_info: "", primary_color: "#000000", secondary_color: "#000000",
-  pearl_color: "#000000", neon_color: "#000000", xenon: false,
+  pearl_color: "#000000", neon_color: "#000000", xenon: false, xenon_color: "#ffffff",
 };
 
 const EinsatzPage = () => {
@@ -115,6 +115,7 @@ const EinsatzPage = () => {
     setSuspects("1"); setHostages("0"); setGangId(""); setGangInfo("");
     setPilot(""); setCoPilot(""); setLeftGunner(""); setRightGunner("");
     setVehicles([]); setShowVehicleForm(false); setProtokollschreiber("");
+    setCurrentVehicle({ ...emptyVehicle });
   };
 
   const addVehicle = () => {
@@ -310,9 +311,20 @@ const EinsatzPage = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={currentVehicle.xenon} onCheckedChange={(v) => setCurrentVehicle({ ...currentVehicle, xenon: !!v })} id="xenon" />
-              <Label htmlFor="xenon" className="text-sm cursor-pointer">Xenon-Scheinwerfer</Label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={currentVehicle.xenon} onCheckedChange={(v) => setCurrentVehicle({ ...currentVehicle, xenon: !!v })} id="xenon" />
+                <Label htmlFor="xenon" className="text-sm cursor-pointer">Xenon-Scheinwerfer</Label>
+              </div>
+              {currentVehicle.xenon && (
+                <div>
+                  <Label className="text-xs">Xenon-Farbe</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.xenon_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, xenon_color: e.target.value })} />
+                    <span className="text-[10px] text-muted-foreground font-mono">{currentVehicle.xenon_color}</span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <Button size="sm" onClick={addVehicle}>Fahrzeug übernehmen</Button>
