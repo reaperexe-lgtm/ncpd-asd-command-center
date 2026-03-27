@@ -119,7 +119,14 @@ const EinsatzPage = () => {
 
   const addVehicle = () => {
     setVehicles([...vehicles, { ...currentVehicle }]);
-    setCurrentVehicle({ ...emptyVehicle });
+    // Keep colors for next vehicle, reset everything else
+    setCurrentVehicle({
+      ...emptyVehicle,
+      primary_color: currentVehicle.primary_color,
+      secondary_color: currentVehicle.secondary_color,
+      pearl_color: currentVehicle.pearl_color,
+      neon_color: currentVehicle.neon_color,
+    });
     setShowVehicleForm(false);
   };
 
@@ -330,19 +337,22 @@ const EinsatzPage = () => {
           ].map(({ label, value, set }) => (
             <div key={label}>
               <Label>{label}</Label>
-              <Select value={value} onValueChange={set}>
-                <SelectTrigger className="mt-1 bg-background border-border">
-                  <SelectValue placeholder={`${label} wählen...`} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">–</SelectItem>
+              <div className="relative mt-1">
+                <Input
+                  className="bg-background border-border"
+                  placeholder={`${label} eingeben oder wählen...`}
+                  value={value === "none" ? "" : value}
+                  onChange={(e) => set(e.target.value)}
+                  list={`${label}-list`}
+                />
+                <datalist id={`${label}-list`}>
                   {members?.map((m) => (
-                    <SelectItem key={m.id} value={m.name}>
+                    <option key={m.id} value={m.name}>
                       {m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </datalist>
+              </div>
             </div>
           ))}
         </div>
