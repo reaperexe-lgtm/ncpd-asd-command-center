@@ -263,9 +263,13 @@ const GamblingPage = () => {
       return;
     }
 
+    const currentBalance = balanceRef.current;
+    const newBalance = currentBalance + DAILY_GIFT_AMOUNT;
     const nowIso = new Date().toISOString();
-    await persistCasinoState(balance + DAILY_GIFT_AMOUNT, nowIso);
-    toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt!`);
+    await persistCasinoState(newBalance, nowIso);
+    setNowTs(Date.now());
+    toast.success(`$${DAILY_GIFT_AMOUNT} Tagesgeschenk abgeholt! Neuer Kontostand: $${newBalance.toLocaleString()}`);
+    logActivity("daily_gift_claimed", "casino", { amount: DAILY_GIFT_AMOUNT, newBalance });
   };
 
   const adminGiveMoney = async (targetUserId: string, amount: number) => {
