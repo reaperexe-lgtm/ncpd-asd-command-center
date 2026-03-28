@@ -34,7 +34,7 @@ const REEL_SYMBOLS = [
   { id: "hp", src: hpLogo, name: "HP", weight: 30 },
 ] as const;
 
-const DAILY_GIFT_AMOUNT = 500;
+const DAILY_GIFT_AMOUNT = 1000;
 const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 const getRandomSymbolId = (currentBalance: number) => {
