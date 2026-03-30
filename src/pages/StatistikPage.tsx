@@ -101,6 +101,7 @@ const StatistikPage = () => {
           { reset_type: "weekly", reset_by: user?.id, reset_at: now },
           { reset_type: "monthly", reset_by: user?.id, reset_at: now },
           { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
+          { reset_type: "overview", reset_by: user?.id, reset_at: now },
         ] as any);
         if (error) throw error;
       } else {
@@ -113,6 +114,8 @@ const StatistikPage = () => {
       const msgs: Record<string, string> = {
         weekly: "Wochenstatistik zurückgesetzt",
         monthly: "Monatsstatistik zurückgesetzt",
+        pursuits: "10-80 Verfolgungen zurückgesetzt",
+        overview: "Übersicht zurückgesetzt",
         all: "Alle Statistiken zurückgesetzt",
       };
       toast.success(msgs[type] || "Statistik zurückgesetzt");
@@ -120,14 +123,21 @@ const StatistikPage = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const handleReset = (type: string) => {
+    if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
+    resetMutation.mutate(type);
+  };
+
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
 
   const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
   const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
   const lastPursuitResetEntry = resets?.find((r: any) => r.reset_type === "pursuits");
+  const lastOverviewResetEntry = resets?.find((r: any) => r.reset_type === "overview");
   const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
   const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
   const lastPursuitReset = lastPursuitResetEntry?.reset_at;
+  const lastOverviewReset = lastOverviewResetEntry?.reset_at;
 
   const formatResetInfo = (entry: any) => {
     if (!entry) return null;
@@ -165,9 +175,9 @@ const StatistikPage = () => {
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
   // --- Location stats (filtered by resets) ---
-  const effectiveAllStart = lastMonthlyReset ? new Date(lastMonthlyReset) : null;
-  const filteredMissions = effectiveAllStart
-    ? missions?.filter((m) => new Date(m.created_at) >= effectiveAllStart) || []
+  const overviewCutoff = lastOverviewReset ? new Date(lastOverviewReset) : null;
+  const filteredMissions = overviewCutoff
+    ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
     : missions || [];
 
   const effectivePursuitStart = lastPursuitReset ? new Date(lastPursuitReset) : null;
@@ -231,10 +241,7 @@ const StatistikPage = () => {
             Top-Protokollschreiber (aktuelle ASD-Woche)
           </h2>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => {
-              if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
-              resetMutation.mutate("weekly");
-            }}>
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("weekly")}>
               <RotateCw className="w-3 h-3" /> Reset
             </Button>
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
@@ -271,10 +278,7 @@ const StatistikPage = () => {
             <FileText className="w-5 h-5" />
             Top-Protokollschreiber – Gesamt (Monat)
           </h2>
-          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => {
-            if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
-            resetMutation.mutate("monthly");
-          }}>
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
             <RotateCw className="w-3 h-3" /> Reset
           </Button>
         </div>
@@ -315,10 +319,18 @@ const StatistikPage = () => {
             <Car className="w-5 h-5" />
             10-80 Verfolgungen
           </h2>
-          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-            Gesamt: {pursuitCount}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits")}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
+            <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+              Gesamt: {pursuitCount}
+            </span>
+          </div>
         </div>
+        {formatResetInfo(lastPursuitResetEntry) && (
+          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastPursuitResetEntry)}</p>
+        )}
         {pursuitRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen</p>
         ) : (
@@ -345,26 +357,45 @@ const StatistikPage = () => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Einsätze", value: total, icon: BarChart3 },
-          { label: "Tatverdächtige", value: totalSuspects, icon: TrendingUp },
-          { label: "Geiseln", value: totalHostages, icon: TrendingUp },
-          { label: "Raubarten", value: sortedLocations.length, icon: Calendar },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="w-4 h-4 text-muted-foreground" />
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <div className="bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-primary flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Übersicht
+          </h2>
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        </div>
+        {formatResetInfo(lastOverviewResetEntry) && (
+          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastOverviewResetEntry)}</p>
+        )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Einsätze", value: total, icon: BarChart3 },
+            { label: "Tatverdächtige", value: totalSuspects, icon: TrendingUp },
+            { label: "Geiseln", value: totalHostages, icon: TrendingUp },
+            { label: "Raubarten", value: sortedLocations.length, icon: Calendar },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className="w-4 h-4 text-muted-foreground" />
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+              </div>
+              <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
             </div>
-            <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Donut chart */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <h2 className="font-semibold text-primary mb-5">Einsätze nach Raubart</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-semibold text-primary">Einsätze nach Raubart</h2>
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        </div>
         {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
         ) : (
