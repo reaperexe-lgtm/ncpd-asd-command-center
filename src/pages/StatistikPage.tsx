@@ -95,12 +95,27 @@ const StatistikPage = () => {
 
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
-      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
-      if (error) throw error;
+      if (resetType === "all") {
+        const now = new Date().toISOString();
+        const { error } = await supabase.from("stats_resets").insert([
+          { reset_type: "weekly", reset_by: user?.id, reset_at: now },
+          { reset_type: "monthly", reset_by: user?.id, reset_at: now },
+          { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
+        ] as any);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: (_, type) => {
       queryClient.invalidateQueries({ queryKey: ["stats-resets"] });
-      toast.success(type === "weekly" ? "Wochenstatistik zurückgesetzt" : "Monatsstatistik zurückgesetzt");
+      const msgs: Record<string, string> = {
+        weekly: "Wochenstatistik zurückgesetzt",
+        monthly: "Monatsstatistik zurückgesetzt",
+        all: "Alle Statistiken zurückgesetzt",
+      };
+      toast.success(msgs[type] || "Statistik zurückgesetzt");
     },
     onError: (e: any) => toast.error(e.message),
   });
