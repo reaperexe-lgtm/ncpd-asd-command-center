@@ -390,7 +390,12 @@ const StatistikPage = () => {
 
       {/* Donut chart */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <h2 className="font-semibold text-primary mb-5">Einsätze nach Raubart</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-semibold text-primary">Einsätze nach Raubart</h2>
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        </div>
         {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
         ) : (
