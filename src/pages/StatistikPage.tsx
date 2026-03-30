@@ -212,10 +212,15 @@ const StatistikPage = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <BarChart3 className="w-7 h-7 text-primary" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-primary">Statistik</h1>
           <p className="text-xs text-muted-foreground">Übersicht aller Einsätze</p>
         </div>
+        {canReset && (
+          <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => resetMutation.mutate("all")}>
+            <RotateCw className="w-4 h-4" /> Alles zurücksetzen
+          </Button>
+        )}
       </div>
 
       {/* Weekly Protokollschreiber */}
