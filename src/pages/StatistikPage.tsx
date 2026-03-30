@@ -101,6 +101,7 @@ const StatistikPage = () => {
           { reset_type: "weekly", reset_by: user?.id, reset_at: now },
           { reset_type: "monthly", reset_by: user?.id, reset_at: now },
           { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
+          { reset_type: "overview", reset_by: user?.id, reset_at: now },
         ] as any);
         if (error) throw error;
       } else {
@@ -113,12 +114,19 @@ const StatistikPage = () => {
       const msgs: Record<string, string> = {
         weekly: "Wochenstatistik zurückgesetzt",
         monthly: "Monatsstatistik zurückgesetzt",
+        pursuits: "10-80 Verfolgungen zurückgesetzt",
+        overview: "Übersicht zurückgesetzt",
         all: "Alle Statistiken zurückgesetzt",
       };
       toast.success(msgs[type] || "Statistik zurückgesetzt");
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const handleReset = (type: string) => {
+    if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
+    resetMutation.mutate(type);
+  };
 
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
 
