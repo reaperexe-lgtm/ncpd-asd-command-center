@@ -175,9 +175,9 @@ const StatistikPage = () => {
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
   // --- Location stats (filtered by resets) ---
-  const effectiveAllStart = lastMonthlyReset ? new Date(lastMonthlyReset) : null;
-  const filteredMissions = effectiveAllStart
-    ? missions?.filter((m) => new Date(m.created_at) >= effectiveAllStart) || []
+  const overviewCutoff = lastOverviewReset ? new Date(lastOverviewReset) : null;
+  const filteredMissions = overviewCutoff
+    ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
     : missions || [];
 
   const effectivePursuitStart = lastPursuitReset ? new Date(lastPursuitReset) : null;
