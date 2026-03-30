@@ -95,12 +95,27 @@ const StatistikPage = () => {
 
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
-      const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
-      if (error) throw error;
+      if (resetType === "all") {
+        const now = new Date().toISOString();
+        const { error } = await supabase.from("stats_resets").insert([
+          { reset_type: "weekly", reset_by: user?.id, reset_at: now },
+          { reset_type: "monthly", reset_by: user?.id, reset_at: now },
+          { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
+        ] as any);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: (_, type) => {
       queryClient.invalidateQueries({ queryKey: ["stats-resets"] });
-      toast.success(type === "weekly" ? "Wochenstatistik zurückgesetzt" : "Monatsstatistik zurückgesetzt");
+      const msgs: Record<string, string> = {
+        weekly: "Wochenstatistik zurückgesetzt",
+        monthly: "Monatsstatistik zurückgesetzt",
+        all: "Alle Statistiken zurückgesetzt",
+      };
+      toast.success(msgs[type] || "Statistik zurückgesetzt");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -109,8 +124,10 @@ const StatistikPage = () => {
 
   const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
   const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
+  const lastPursuitResetEntry = resets?.find((r: any) => r.reset_type === "pursuits");
   const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
   const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
+  const lastPursuitReset = lastPursuitResetEntry?.reset_at;
 
   const formatResetInfo = (entry: any) => {
     if (!entry) return null;
@@ -147,21 +164,31 @@ const StatistikPage = () => {
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
-  // --- Location stats ---
+  // --- Location stats (filtered by resets) ---
+  const effectiveAllStart = lastMonthlyReset ? new Date(lastMonthlyReset) : null;
+  const filteredMissions = effectiveAllStart
+    ? missions?.filter((m) => new Date(m.created_at) >= effectiveAllStart) || []
+    : missions || [];
+
+  const effectivePursuitStart = lastPursuitReset ? new Date(lastPursuitReset) : null;
+  const filteredPursuits = effectivePursuitStart
+    ? pursuits?.filter((p) => new Date(p.created_at) >= effectivePursuitStart) || []
+    : pursuits || [];
+
   const locationCounts: Record<string, number> = {};
-  missions?.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
-  const pursuitCount = pursuits?.length || 0;
+  filteredMissions.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
+  const pursuitCount = filteredPursuits.length;
   if (pursuitCount > 0) locationCounts["10-80 Verfolgung"] = pursuitCount;
-  const total = (missions?.length || 0) + pursuitCount;
+  const total = filteredMissions.length + pursuitCount;
   const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
   const donutData = sortedLocations.map(([name, value]) => ({ name, value }));
 
-  const totalSuspects = missions?.reduce((s, m) => s + m.suspects_count, 0) || 0;
-  const totalHostages = missions?.reduce((s, m) => s + m.hostages_count, 0) || 0;
+  const totalSuspects = filteredMissions.reduce((s, m) => s + m.suspects_count, 0);
+  const totalHostages = filteredMissions.reduce((s, m) => s + m.hostages_count, 0);
 
   // Monthly breakdown
   const monthly: Record<string, number> = {};
-  missions?.forEach((m) => {
+  filteredMissions.forEach((m) => {
     const key = new Date(m.tatzeit).toLocaleDateString("de-DE", { month: "short", year: "2-digit" });
     monthly[key] = (monthly[key] || 0) + 1;
   });
@@ -170,7 +197,7 @@ const StatistikPage = () => {
 
   // --- 10-80 Pursuit Stats ---
   const pursuitCreatorCounts: Record<string, number> = {};
-  pursuits?.forEach((p) => {
+  filteredPursuits.forEach((p) => {
     pursuitCreatorCounts[p.created_by] = (pursuitCreatorCounts[p.created_by] || 0) + 1;
   });
   const pursuitRanking = Object.entries(pursuitCreatorCounts).sort((a, b) => b[1] - a[1]);
@@ -185,10 +212,15 @@ const StatistikPage = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <BarChart3 className="w-7 h-7 text-primary" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-primary">Statistik</h1>
           <p className="text-xs text-muted-foreground">Übersicht aller Einsätze</p>
         </div>
+        {canReset && (
+          <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => resetMutation.mutate("all")}>
+            <RotateCw className="w-4 h-4" /> Alles zurücksetzen
+          </Button>
+        )}
       </div>
 
       {/* Weekly Protokollschreiber */}
