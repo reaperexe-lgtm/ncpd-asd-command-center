@@ -33,8 +33,10 @@ const Index = () => {
   todayStart.setHours(0, 0, 0, 0);
   const todayCount = missions?.filter((m) => new Date(m.created_at) >= todayStart).length || 0;
 
-  const leitung = members?.filter((m) => ["director","co_director","supervisor"].includes(m.role)) || [];
-  const ausbilder = members?.filter((m) => ["ausbilder","trial_ausbilder"].includes(m.role)) || [];
+  const ROLE_ORDER = ["director","co_director","supervisor","ausbilder","trial_ausbilder","member","trial_member"];
+  const sortByRole = (a: any, b: any) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role);
+  const leitung = (members?.filter((m) => ["director","co_director","supervisor"].includes(m.role)) || []).sort(sortByRole);
+  const ausbilder = (members?.filter((m) => ["ausbilder","trial_ausbilder"].includes(m.role)) || []).sort(sortByRole);
   const mitglieder = members?.filter((m) => m.role === "member") || [];
   const trials = members?.filter((m) => m.role === "trial_member") || [];
 
