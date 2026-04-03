@@ -48,7 +48,7 @@ const STATUS_ORDER: Record<string, number> = {
 
 const FluglizenzenPage = () => {
   const { isAdmin, role } = useAuth();
-  const canManageLicenses = isAdmin || ["director", "co_director", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const canManageLicenses = isAdmin || ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
