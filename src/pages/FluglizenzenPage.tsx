@@ -306,8 +306,8 @@ const FluglizenzenPage = () => {
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade Lizenzen...</div></div>
       ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-card border border-border rounded-lg overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b border-border bg-background/50">
                 <th className="px-4 py-3 text-left">
