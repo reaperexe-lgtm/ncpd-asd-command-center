@@ -65,7 +65,7 @@ const Index = () => {
           <SectionLabel emoji="⭐" label="Ausbilder" className="mt-4" />
           {ausbilder.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} />)}
         </div>
-        <div className="bg-card border border-border rounded-lg p-5">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-5">
           <h2 className="font-bold text-primary mb-4">Air Support Division – Mitglieder</h2>
           <SectionLabel emoji="👥" label="Mitglied" />
           {mitglieder.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} prefix="A.S.D · Mitglied:" />)}
