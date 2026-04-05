@@ -142,8 +142,9 @@ const StatistikPage = () => {
   const formatResetInfo = (entry: any) => {
     if (!entry) return null;
     const date = new Date(entry.reset_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const name = entry.reset_by ? profileName(entry.reset_by) : "Unbekannt";
-    return `Letzter Reset: ${date} von ${name}`;
+    const isAuto = !entry.reset_by;
+    const name = isAuto ? "Automatisch" : profileName(entry.reset_by);
+    return `Letzter Reset: ${date} – ${isAuto ? "⚙️ Automatisch" : `👤 ${name}`}`;
   };
 
   // --- Weekly leaderboard ---
