@@ -41,31 +41,31 @@ const Index = () => {
   const trials = members?.filter((m) => m.role === "trial_member") || [];
 
   return (
-    <div className="flex flex-col items-center gap-8 relative">
-      <div className="relative z-10 flex flex-col items-center gap-8 w-full pb-8">
-      <div className="mt-4 w-48 h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
+    <div className="flex flex-col items-center gap-4 sm:gap-8 relative">
+      <div className="relative z-10 flex flex-col items-center gap-4 sm:gap-8 w-full pb-4 sm:pb-8">
+      <div className="mt-2 sm:mt-4 w-28 h-28 sm:w-48 sm:h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-cover rounded-full scale-125" />
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4">
         <StatBox label="Gesamt Einsätze" value={String(missions?.length || 0)} />
         <StatBox label="Heute erstellt" value={String(todayCount)} />
       </div>
 
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Aus der Luft. Für den Boden. (Späzi für die A.S.D!)</p>
+      <div className="text-center px-2">
+        <h1 className="text-xl sm:text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
+        <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Aus der Luft. Für den Boden. (Späzi für die A.S.D!)</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-        <div className="bg-card border border-border rounded-lg p-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-4xl">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-5">
           <h2 className="font-bold text-primary mb-4">Air Support Division – Leitung</h2>
           <SectionLabel emoji="👑" label="Leitung" />
           {leitung.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} />)}
           <SectionLabel emoji="⭐" label="Ausbilder" className="mt-4" />
           {ausbilder.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} />)}
         </div>
-        <div className="bg-card border border-border rounded-lg p-5">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-5">
           <h2 className="font-bold text-primary mb-4">Air Support Division – Mitglieder</h2>
           <SectionLabel emoji="👥" label="Mitglied" />
           {mitglieder.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} prefix="A.S.D · Mitglied:" />)}
@@ -80,9 +80,9 @@ const Index = () => {
 };
 
 const StatBox = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-card border border-border rounded-md px-6 py-3">
-    <p className="text-xs text-muted-foreground">{label}</p>
-    <p className="text-2xl font-bold text-primary tabular-nums">{value}</p>
+  <div className="bg-card border border-border rounded-md px-4 py-2 sm:px-6 sm:py-3">
+    <p className="text-[10px] sm:text-xs text-muted-foreground">{label}</p>
+    <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{value}</p>
   </div>
 );
 

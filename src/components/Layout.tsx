@@ -8,7 +8,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
       <SlideshowBackground />
       <div className="relative z-10">
         <TopNav />
-        <main className="px-6 py-8 max-w-7xl mx-auto">
+        <main className="px-3 py-4 sm:px-6 sm:py-8 max-w-7xl mx-auto">
           {children}
         </main>
       </div>
