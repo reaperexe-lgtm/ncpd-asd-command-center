@@ -80,9 +80,9 @@ const Index = () => {
 };
 
 const StatBox = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-card border border-border rounded-md px-6 py-3">
-    <p className="text-xs text-muted-foreground">{label}</p>
-    <p className="text-2xl font-bold text-primary tabular-nums">{value}</p>
+  <div className="bg-card border border-border rounded-md px-4 py-2 sm:px-6 sm:py-3">
+    <p className="text-[10px] sm:text-xs text-muted-foreground">{label}</p>
+    <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{value}</p>
   </div>
 );
 
