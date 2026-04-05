@@ -57,8 +57,8 @@ const Index = () => {
         <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Aus der Luft. Für den Boden. (Späzi für die A.S.D!)</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-        <div className="bg-card border border-border rounded-lg p-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-4xl">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-5">
           <h2 className="font-bold text-primary mb-4">Air Support Division – Leitung</h2>
           <SectionLabel emoji="👑" label="Leitung" />
           {leitung.map((m) => <MemberLine key={m.id} name={m.name} role={m.role} />)}
