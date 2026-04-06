@@ -191,16 +191,16 @@ const FamilienPage = () => {
             <p className="text-xs text-muted-foreground">{gangs?.length || 0} eingetragen</p>
           </div>
         </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowStats(!showStats)} className="gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5" /> {showStats ? "Statistik ausblenden" : "Statistik"}
-            </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowStats(!showStats)} className="gap-1.5">
+            <BarChart3 className="w-3.5 h-3.5" /> {showStats ? "Statistik ausblenden" : "Statistik"}
+          </Button>
+          {isAdmin && (
             <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
               <Plus className="w-3.5 h-3.5" /> {showForm ? "Abbrechen" : "Hinzufügen"}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Gang Activity Statistics */}
