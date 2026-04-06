@@ -288,6 +288,7 @@ const FamilienPage = () => {
                 const activity = getActivityLevel(g.total, g.recent);
                 const ActivityIcon = activity.icon;
                 const barWidth = g.total > 0 ? (g.total / maxTotal) * 100 : 0;
+                const percent = totalMissionsWithGang > 0 ? ((g.total / totalMissionsWithGang) * 100).toFixed(1) : "0.0";
                 return (
                   <div key={g.id} className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/30 transition-colors">
                     <span className="text-xs font-bold text-muted-foreground w-5 text-right">{i + 1}.</span>
@@ -295,6 +296,7 @@ const FamilienPage = () => {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-foreground truncate">{g.name}</span>
                         <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] font-bold text-primary">{percent}%</span>
                           <ActivityIcon className={`w-3 h-3 ${activity.color}`} />
                           <span className={`text-[10px] font-medium ${activity.color}`}>{activity.label}</span>
                         </div>
@@ -307,7 +309,7 @@ const FamilienPage = () => {
                           {g.total} gesamt
                         </span>
                         <span className="text-[10px] text-muted-foreground w-14 text-right">
-                          {g.recent} (30T)
+                          {g.recent} (7T)
                         </span>
                       </div>
                     </div>
