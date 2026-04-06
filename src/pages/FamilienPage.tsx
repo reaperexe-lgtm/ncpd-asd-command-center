@@ -207,15 +207,21 @@ const FamilienPage = () => {
       {/* Gang Activity Statistics */}
       {showStats && gangs && missionStats && (() => {
         const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        const filterDate = statsPeriod === "week" ? sevenDaysAgo : statsPeriod === "month" ? thirtyDaysAgo : null;
+        const filteredMissions = filterDate
+          ? missionStats.filter(m => new Date(m.created_at) >= filterDate)
+          : missionStats;
         
         const gangMissionCounts = gangs.map(g => {
-          const total = missionStats.filter(m => m.gang_id === g.id).length;
-          const recent = missionStats.filter(m => m.gang_id === g.id && new Date(m.created_at) >= thirtyDaysAgo).length;
-          return { id: g.id, name: g.name, category: g.category, total, recent };
+          const count = filteredMissions.filter(m => m.gang_id === g.id).length;
+          const recent = missionStats.filter(m => m.gang_id === g.id && new Date(m.created_at) >= sevenDaysAgo).length;
+          return { id: g.id, name: g.name, category: g.category, total: count, recent };
         }).sort((a, b) => b.total - a.total);
 
-        const totalMissionsWithGang = missionStats.filter(m => m.gang_id).length;
+        const totalMissionsWithGang = filteredMissions.filter(m => m.gang_id).length;
         const maxTotal = Math.max(...gangMissionCounts.map(g => g.total), 1);
 
         const getActivityLevel = (total: number, recent: number) => {
@@ -227,13 +233,31 @@ const FamilienPage = () => {
 
         const chartData = gangMissionCounts.filter(g => g.total > 0).slice(0, 10);
         const BAR_COLORS = ["hsl(var(--primary))", "hsl(210 80% 60%)", "hsl(160 60% 50%)", "hsl(45 90% 55%)", "hsl(280 60% 55%)", "hsl(0 70% 55%)", "hsl(120 50% 45%)", "hsl(30 80% 55%)", "hsl(200 70% 50%)", "hsl(330 60% 55%)"];
+        const periodLabels = { week: "Diese Woche", month: "Dieser Monat", all: "Gesamt" };
 
         return (
           <div className="bg-card border border-primary/20 rounded-lg p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <BarChart3 className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-bold text-primary">Aktivitäts-Statistik</h2>
-              <span className="text-xs text-muted-foreground ml-auto">{totalMissionsWithGang} Einsätze mit Gang-Bezug</span>
+              <span className="text-xs text-muted-foreground ml-auto">{totalMissionsWithGang} Einsätze</span>
+            </div>
+
+            {/* Period filter */}
+            <div className="flex gap-1.5">
+              {(["week", "month", "all"] as const).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setStatsPeriod(p)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+                    statsPeriod === p
+                      ? "bg-primary/10 border-primary/40 text-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/20"
+                  }`}
+                >
+                  {periodLabels[p]}
+                </button>
+              ))}
             </div>
 
             {/* Chart */}
