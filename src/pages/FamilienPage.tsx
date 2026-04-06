@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check } from "lucide-react";
+import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const CATEGORIES = [
   { value: "Street Gang", label: "Street Gang", icon: Skull },
