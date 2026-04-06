@@ -57,6 +57,14 @@ const FamilienPage = () => {
     },
   });
 
+  const { data: missionStats } = useQuery({
+    queryKey: ["gang-mission-stats"],
+    queryFn: async () => {
+      const { data } = await supabase.from("missions").select("gang_id, created_at");
+      return data || [];
+    },
+  });
+
   const addGang = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("gangs").insert({
