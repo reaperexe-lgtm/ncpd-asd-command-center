@@ -70,6 +70,7 @@ const FluglizenzenPage = () => {
   // Sorting state
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [showGame, setShowGame] = useState(false);
 
   const { data: licenses, isLoading } = useQuery({
     queryKey: ["flight-licenses"],
