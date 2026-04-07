@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useState } from "react";
 import { Plus, Trash2, Plane, AlertTriangle, Clock, Pencil, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FlappyPlaneGame } from "@/components/FlappyPlaneGame";
 
 const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
 const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division", "Keine"];
