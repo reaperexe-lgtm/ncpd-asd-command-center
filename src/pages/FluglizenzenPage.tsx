@@ -443,6 +443,7 @@ const FluglizenzenPage = () => {
           </table>
         </div>
       )}
+      <FlappyPlaneGame open={showGame} onOpenChange={setShowGame} />
     </div>
   );
 };
