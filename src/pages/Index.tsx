@@ -61,7 +61,7 @@ const Index = () => {
           Aus der Luft. Für den Boden
           <span 
             onClick={() => setEasterEgg(true)} 
-            className="cursor-default select-none"
+            className="cursor-pointer select-none hover:text-primary hover:scale-125 inline-block transition-all duration-300"
           >.</span> (Späzi für die A.S.D!)
         </p>
       </div>
