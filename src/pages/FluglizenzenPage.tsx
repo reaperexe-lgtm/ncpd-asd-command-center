@@ -219,7 +219,7 @@ const FluglizenzenPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Plane className="w-7 h-7 text-primary" />
+          <Plane className="w-7 h-7 text-primary cursor-pointer hover:scale-110 hover:rotate-12 transition-all duration-300" onClick={() => setShowGame(true)} />
           <div>
             <h1 className="text-2xl font-bold text-primary">Fluglizenzen</h1>
             <p className="text-xs text-muted-foreground">{totalActive} aktive Lizenzen · {licenses?.length || 0} gesamt</p>
