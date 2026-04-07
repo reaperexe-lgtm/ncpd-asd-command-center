@@ -68,15 +68,15 @@ const Index = () => {
       </div>
 
       <Dialog open={easterEgg} onOpenChange={setEasterEgg}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-black border-border">
-          <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
-            <iframe
-              src="https://www.youtube.com/embed/Ay8lynMZ4mE?autoplay=1"
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            />
-          </div>
+        <DialogContent className="sm:max-w-sm p-0 overflow-hidden bg-black border-border">
+          <video
+            src="https://qfstjmzklpnftoablrss.supabase.co/storage/v1/object/public/assets/easteregg.mp4"
+            autoPlay
+            controls
+            playsInline
+            className="w-full"
+            onEnded={() => setEasterEgg(false)}
+          />
         </DialogContent>
       </Dialog>
 
