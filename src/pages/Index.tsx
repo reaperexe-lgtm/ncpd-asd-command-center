@@ -14,6 +14,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const Index = () => {
+  const [easterEgg, setEasterEgg] = useState(false);
   const { data: members } = useQuery({
     queryKey: ["home-members"],
     queryFn: async () => {
