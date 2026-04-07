@@ -58,24 +58,22 @@ const Index = () => {
       <div className="text-center px-2">
         <h1 className="text-xl sm:text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
         <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-          Aus der Luft. Für den Boden. (Späzi für die A.S.D
+          Aus der Luft. Für den Boden
           <span 
             onClick={() => setEasterEgg(true)} 
-            className="cursor-default select-none hover:text-primary transition-colors duration-700"
-            title=""
-          >!</span>)
+            className="cursor-default select-none"
+          >.</span> (Späzi für die A.S.D!)
         </p>
       </div>
 
       <Dialog open={easterEgg} onOpenChange={setEasterEgg}>
-        <DialogContent className="sm:max-w-sm p-0 overflow-hidden bg-black border-border">
+        <DialogContent className="sm:max-w-sm p-1 bg-black border-border [&>button]:text-white [&>button]:bg-black/60 [&>button]:rounded-full [&>button]:z-10">
           <video
             src="https://qfstjmzklpnftoablrss.supabase.co/storage/v1/object/public/assets/easteregg.mp4"
             autoPlay
             controls
             playsInline
-            className="w-full"
-            onEnded={() => setEasterEgg(false)}
+            className="w-full rounded"
           />
         </DialogContent>
       </Dialog>
