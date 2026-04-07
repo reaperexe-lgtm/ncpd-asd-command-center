@@ -57,8 +57,28 @@ const Index = () => {
 
       <div className="text-center px-2">
         <h1 className="text-xl sm:text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
-        <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Aus der Luft. Für den Boden. (Späzi für die A.S.D!)</p>
+        <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+          Aus der Luft. Für den Boden. (Späzi für die A.S.D
+          <span 
+            onClick={() => setEasterEgg(true)} 
+            className="cursor-default select-none hover:text-primary transition-colors duration-700"
+            title=""
+          >!</span>)
+        </p>
       </div>
+
+      <Dialog open={easterEgg} onOpenChange={setEasterEgg}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-black border-border">
+          <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
+            <iframe
+              src="https://www.youtube.com/embed/Ay8lynMZ4mE?autoplay=1"
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-4xl">
         <div className="bg-card border border-border rounded-lg p-3 sm:p-5">
