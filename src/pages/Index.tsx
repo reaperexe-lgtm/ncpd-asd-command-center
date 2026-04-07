@@ -67,7 +67,7 @@ const Index = () => {
       </div>
 
       <Dialog open={easterEgg} onOpenChange={setEasterEgg}>
-        <DialogContent className="sm:max-w-sm p-1 bg-black border-border [&>button]:text-white [&>button]:bg-black/60 [&>button]:rounded-full [&>button]:z-10">
+        <DialogContent className="max-w-[70vw] sm:max-w-sm p-1 bg-black border-border [&>button]:text-white [&>button]:bg-black/60 [&>button]:rounded-full [&>button]:z-10">
           <video
             src="https://qfstjmzklpnftoablrss.supabase.co/storage/v1/object/public/assets/easteregg.mp4"
             autoPlay
