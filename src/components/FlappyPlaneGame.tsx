@@ -127,11 +127,29 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
 
   const saveScore = useCallback(async (finalScore: number) => {
     if (!user || finalScore === 0) return;
-    await supabase.from("game_scores").insert({
-      user_id: user.id,
-      player_name: profile?.name || "Unbekannt",
-      score: finalScore,
-    });
+    // Check if user already has a score
+    const { data: existing } = await supabase
+      .from("game_scores")
+      .select("id, score")
+      .eq("user_id", user.id)
+      .order("score", { ascending: false })
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      // Only update if new score is higher
+      if (finalScore > existing[0].score) {
+        await supabase
+          .from("game_scores")
+          .update({ score: finalScore, player_name: profile?.name || "Unbekannt", created_at: new Date().toISOString() })
+          .eq("id", existing[0].id);
+      }
+    } else {
+      await supabase.from("game_scores").insert({
+        user_id: user.id,
+        player_name: profile?.name || "Unbekannt",
+        score: finalScore,
+      });
+    }
     fetchLeaderboard();
   }, [user, profile, fetchLeaderboard]);
 
