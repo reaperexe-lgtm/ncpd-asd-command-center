@@ -197,9 +197,10 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
         g.pipes.push({ x: CANVAS_W, gapY, passed: false });
       }
 
-      // Move pipes
+      // Move pipes - speed increases every 20 points
+      const speedMultiplier = 1 + Math.floor(g.score / 20) * 0.15;
       g.pipes.forEach((p) => {
-        p.x -= PIPE_SPEED;
+        p.x -= PIPE_SPEED * speedMultiplier;
         if (!p.passed && p.x + PIPE_WIDTH < 50) {
           p.passed = true;
           g.score++;
