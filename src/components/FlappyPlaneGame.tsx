@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Trophy, Play, RotateCcw } from "lucide-react";
+import { Trophy, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -30,15 +31,14 @@ const JUMP_FORCE = -7;
 const PIPE_SPEED = 2.5;
 const PIPE_INTERVAL = 90;
 
-// Simple sound synthesis using Web Audio API
 const createAudioContext = () => {
   try {
     return new (window.AudioContext || (window as any).webkitAudioContext)();
   } catch { return null; }
 };
 
-const playJumpSound = (ctx: AudioContext | null) => {
-  if (!ctx) return;
+const playJumpSound = (ctx: AudioContext | null, vol: number) => {
+  if (!ctx || vol === 0) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
@@ -46,14 +46,14 @@ const playJumpSound = (ctx: AudioContext | null) => {
   osc.type = "sine";
   osc.frequency.setValueAtTime(400, ctx.currentTime);
   osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
-  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.setValueAtTime(0.15 * vol, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + 0.15);
 };
 
-const playScoreSound = (ctx: AudioContext | null) => {
-  if (!ctx) return;
+const playScoreSound = (ctx: AudioContext | null, vol: number) => {
+  if (!ctx || vol === 0) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
@@ -61,14 +61,14 @@ const playScoreSound = (ctx: AudioContext | null) => {
   osc.type = "triangle";
   osc.frequency.setValueAtTime(600, ctx.currentTime);
   osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-  gain.gain.setValueAtTime(0.12, ctx.currentTime);
+  gain.gain.setValueAtTime(0.12 * vol, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + 0.2);
 };
 
-const playGameOverSound = (ctx: AudioContext | null) => {
-  if (!ctx) return;
+const playGameOverSound = (ctx: AudioContext | null, vol: number) => {
+  if (!ctx || vol === 0) return;
   [200, 150, 100].forEach((freq, i) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -76,7 +76,7 @@ const playGameOverSound = (ctx: AudioContext | null) => {
     gain.connect(ctx.destination);
     osc.type = "square";
     osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.15);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.15);
+    gain.gain.setValueAtTime(0.1 * vol, ctx.currentTime + i * 0.15);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.2);
     osc.start(ctx.currentTime + i * 0.15);
     osc.stop(ctx.currentTime + i * 0.15 + 0.2);
@@ -87,11 +87,13 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
   const { user, profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const volumeRef = useRef(0.7);
   const [gameState, setGameState] = useState<"menu" | "playing" | "dead">("menu");
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const [leaderboard, setLeaderboard] = useState<GameScore[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [volume, setVolume] = useState(0.7);
 
   const gameRef = useRef({
     planeY: CANVAS_H / 2,
@@ -102,7 +104,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     running: false,
   });
 
-  // Init audio context on first interaction
   const ensureAudio = useCallback(() => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = createAudioContext();
@@ -127,7 +128,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
 
   const saveScore = useCallback(async (finalScore: number) => {
     if (!user || finalScore === 0) return;
-    // Check if user already has a score
     const { data: existing } = await supabase
       .from("game_scores")
       .select("id, score")
@@ -136,7 +136,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       .limit(1);
 
     if (existing && existing.length > 0) {
-      // Only update if new score is higher
       if (finalScore > existing[0].score) {
         await supabase
           .from("game_scores")
@@ -169,11 +168,16 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
   const jump = useCallback(() => {
     if (gameState === "playing") {
       gameRef.current.velocity = JUMP_FORCE;
-      playJumpSound(audioCtxRef.current);
+      playJumpSound(audioCtxRef.current, volumeRef.current);
     } else if (gameState === "menu" || gameState === "dead") {
       startGame();
     }
   }, [gameState, startGame]);
+
+  // Keep volumeRef in sync
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   useEffect(() => {
     if (!open || gameState !== "playing") return;
@@ -191,26 +195,24 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       g.velocity += GRAVITY;
       g.planeY += g.velocity;
 
-      // Add pipes
       if (g.frame % PIPE_INTERVAL === 0) {
         const gapY = 80 + Math.random() * (CANVAS_H - 200);
         g.pipes.push({ x: CANVAS_W, gapY, passed: false });
       }
 
-      // Move pipes - speed increases every 20 points
-      const speedMultiplier = 1 + Math.floor(g.score / 20) * 0.15;
+      const speedLevel = Math.floor(g.score / 20);
+      const speedMultiplier = 1 + speedLevel * 0.15;
       g.pipes.forEach((p) => {
         p.x -= PIPE_SPEED * speedMultiplier;
         if (!p.passed && p.x + PIPE_WIDTH < 50) {
           p.passed = true;
           g.score++;
           setScore(g.score);
-          playScoreSound(audioCtxRef.current);
+          playScoreSound(audioCtxRef.current, volumeRef.current);
         }
       });
       g.pipes = g.pipes.filter((p) => p.x > -PIPE_WIDTH);
 
-      // Collision
       const planeLeft = 40;
       const planeRight = planeLeft + PLANE_SIZE;
       const planeTop = g.planeY;
@@ -221,7 +223,7 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
         setGameState("dead");
         setBestScore((prev) => Math.max(prev, g.score));
         saveScore(g.score);
-        playGameOverSound(audioCtxRef.current);
+        playGameOverSound(audioCtxRef.current, volumeRef.current);
       };
 
       if (planeTop < 0 || planeBottom > CANVAS_H) { die(); return; }
@@ -292,10 +294,20 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       ctx.fill();
       ctx.restore();
 
+      // Score
       ctx.fillStyle = "#fff";
       ctx.font = "bold 28px monospace";
       ctx.textAlign = "center";
       ctx.fillText(String(g.score), CANVAS_W / 2, 45);
+
+      // Speed level indicator
+      if (speedLevel > 0) {
+        ctx.font = "bold 12px monospace";
+        ctx.textAlign = "right";
+        const levelColor = speedLevel >= 5 ? "#ff4444" : speedLevel >= 3 ? "#ffaa00" : "#44ff44";
+        ctx.fillStyle = levelColor;
+        ctx.fillText(`⚡ SPD ${speedLevel + 1}`, CANVAS_W - 10, 25);
+      }
 
       animId = requestAnimationFrame(loop);
     };
@@ -316,7 +328,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, jump]);
 
-  // Find current user's best rank
   const currentUserRank = user
     ? leaderboard.findIndex((s) => s.user_id === user.id)
     : -1;
@@ -326,15 +337,31 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       <DialogContent className="max-w-[360px] sm:max-w-[380px] p-3 bg-card border-border">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-bold text-primary flex items-center gap-1.5">✈️ Flappy Plane</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs gap-1"
-            onClick={() => setShowLeaderboard(!showLeaderboard)}
-          >
-            <Trophy className="w-3.5 h-3.5" />
-            {showLeaderboard ? "Spiel" : "Rangliste"}
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Volume control */}
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setVolume(v => v === 0 ? 0.7 : 0)} className="text-muted-foreground hover:text-foreground transition-colors">
+                {volume === 0 ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+              </button>
+              <Slider
+                value={[volume]}
+                onValueChange={([v]) => setVolume(v)}
+                min={0}
+                max={1}
+                step={0.1}
+                className="w-16"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowLeaderboard(!showLeaderboard)}
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              {showLeaderboard ? "Spiel" : "Rangliste"}
+            </Button>
+          </div>
         </div>
 
         {showLeaderboard ? (
@@ -405,7 +432,7 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
 
             {gameState === "dead" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 rounded-lg">
-                <p className="text-red-400 font-bold text-lg mb-1">Game Over</p>
+                <p className="text-destructive font-bold text-lg mb-1">Game Over</p>
                 <p className="text-2xl font-bold text-primary tabular-nums mb-1">{score}</p>
                 <p className="text-xs text-muted-foreground mb-3">Bester: {Math.max(bestScore, score)}</p>
                 <Button onClick={startGame} size="sm" className="gap-1.5">
