@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Trophy, Play, RotateCcw } from "lucide-react";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 interface Pipe {
   x: number;
@@ -15,6 +17,7 @@ interface GameScore {
   player_name: string;
   score: number;
   created_at: string;
+  user_id?: string;
 }
 
 const CANVAS_W = 320;
@@ -27,9 +30,63 @@ const JUMP_FORCE = -7;
 const PIPE_SPEED = 2.5;
 const PIPE_INTERVAL = 90;
 
+// Simple sound synthesis using Web Audio API
+const createAudioContext = () => {
+  try {
+    return new (window.AudioContext || (window as any).webkitAudioContext)();
+  } catch { return null; }
+};
+
+const playJumpSound = (ctx: AudioContext | null) => {
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(400, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.15);
+};
+
+const playScoreSound = (ctx: AudioContext | null) => {
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(600, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.12, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.2);
+};
+
+const playGameOverSound = (ctx: AudioContext | null) => {
+  if (!ctx) return;
+  [200, 150, 100].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "square";
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.15);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.2);
+    osc.start(ctx.currentTime + i * 0.15);
+    osc.stop(ctx.currentTime + i * 0.15 + 0.2);
+  });
+};
+
 export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
   const { user, profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const [gameState, setGameState] = useState<"menu" | "playing" | "dead">("menu");
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
@@ -45,10 +102,20 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     running: false,
   });
 
+  // Init audio context on first interaction
+  const ensureAudio = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = createAudioContext();
+    }
+    if (audioCtxRef.current?.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+  }, []);
+
   const fetchLeaderboard = useCallback(async () => {
     const { data } = await supabase
       .from("game_scores")
-      .select("player_name, score, created_at")
+      .select("player_name, score, created_at, user_id")
       .order("score", { ascending: false })
       .limit(15);
     if (data) setLeaderboard(data);
@@ -69,6 +136,7 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
   }, [user, profile, fetchLeaderboard]);
 
   const startGame = useCallback(() => {
+    ensureAudio();
     const g = gameRef.current;
     g.planeY = CANVAS_H / 2;
     g.velocity = 0;
@@ -78,11 +146,12 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     g.running = true;
     setScore(0);
     setGameState("playing");
-  }, []);
+  }, [ensureAudio]);
 
   const jump = useCallback(() => {
     if (gameState === "playing") {
       gameRef.current.velocity = JUMP_FORCE;
+      playJumpSound(audioCtxRef.current);
     } else if (gameState === "menu" || gameState === "dead") {
       startGame();
     }
@@ -117,6 +186,7 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
           p.passed = true;
           g.score++;
           setScore(g.score);
+          playScoreSound(audioCtxRef.current);
         }
       });
       g.pipes = g.pipes.filter((p) => p.x > -PIPE_WIDTH);
@@ -127,22 +197,20 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       const planeTop = g.planeY;
       const planeBottom = g.planeY + PLANE_SIZE;
 
-      if (planeTop < 0 || planeBottom > CANVAS_H) {
+      const die = () => {
         g.running = false;
         setGameState("dead");
         setBestScore((prev) => Math.max(prev, g.score));
         saveScore(g.score);
-        return;
-      }
+        playGameOverSound(audioCtxRef.current);
+      };
+
+      if (planeTop < 0 || planeBottom > CANVAS_H) { die(); return; }
 
       for (const p of g.pipes) {
         if (planeRight > p.x && planeLeft < p.x + PIPE_WIDTH) {
           if (planeTop < p.gapY - PIPE_GAP / 2 || planeBottom > p.gapY + PIPE_GAP / 2) {
-            g.running = false;
-            setGameState("dead");
-            setBestScore((prev) => Math.max(prev, g.score));
-            saveScore(g.score);
-            return;
+            die(); return;
           }
         }
       }
@@ -150,14 +218,12 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       // Draw
       ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Sky gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
       skyGrad.addColorStop(0, "#0a1628");
       skyGrad.addColorStop(1, "#1a2e1a");
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Stars
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       for (let i = 0; i < 30; i++) {
         const sx = (i * 97 + g.frame * 0.2) % CANVAS_W;
@@ -165,21 +231,16 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
         ctx.fillRect(sx, sy, 1.5, 1.5);
       }
 
-      // Pipes
       g.pipes.forEach((p) => {
         const grad = ctx.createLinearGradient(p.x, 0, p.x + PIPE_WIDTH, 0);
         grad.addColorStop(0, "#2d5a2d");
         grad.addColorStop(0.5, "#3a7a3a");
         grad.addColorStop(1, "#2d5a2d");
         ctx.fillStyle = grad;
-
-        // Top pipe
         const topH = p.gapY - PIPE_GAP / 2;
         ctx.fillRect(p.x, 0, PIPE_WIDTH, topH);
         ctx.fillStyle = "#4a9a4a";
         ctx.fillRect(p.x - 3, topH - 20, PIPE_WIDTH + 6, 20);
-
-        // Bottom pipe
         const botY = p.gapY + PIPE_GAP / 2;
         ctx.fillStyle = grad;
         ctx.fillRect(p.x, botY, PIPE_WIDTH, CANVAS_H - botY);
@@ -187,13 +248,10 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
         ctx.fillRect(p.x - 3, botY, PIPE_WIDTH + 6, 20);
       });
 
-      // Plane (triangle/jet shape)
       ctx.save();
       ctx.translate(planeLeft + PLANE_SIZE / 2, g.planeY + PLANE_SIZE / 2);
       const angle = Math.min(Math.max(g.velocity * 3, -30), 45) * (Math.PI / 180);
       ctx.rotate(angle);
-      
-      // Body
       ctx.fillStyle = "#e0e0e0";
       ctx.beginPath();
       ctx.moveTo(PLANE_SIZE / 2, 0);
@@ -202,8 +260,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       ctx.lineTo(-PLANE_SIZE / 2, PLANE_SIZE / 3);
       ctx.closePath();
       ctx.fill();
-      
-      // Wing
       ctx.fillStyle = "#4a9a4a";
       ctx.beginPath();
       ctx.moveTo(-2, -2);
@@ -211,16 +267,12 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       ctx.lineTo(-PLANE_SIZE / 4, 0);
       ctx.closePath();
       ctx.fill();
-      
-      // Engine glow
       ctx.fillStyle = `rgba(255, ${150 + Math.random() * 105}, 50, 0.8)`;
       ctx.beginPath();
       ctx.arc(-PLANE_SIZE / 2 - 4, 0, 3 + Math.random() * 2, 0, Math.PI * 2);
       ctx.fill();
-      
       ctx.restore();
 
-      // Score
       ctx.fillStyle = "#fff";
       ctx.font = "bold 28px monospace";
       ctx.textAlign = "center";
@@ -233,7 +285,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     return () => cancelAnimationFrame(animId);
   }, [open, gameState, saveScore]);
 
-  // Input handlers
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -245,6 +296,11 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, jump]);
+
+  // Find current user's best rank
+  const currentUserRank = user
+    ? leaderboard.findIndex((s) => s.user_id === user.id)
+    : -1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,6 +323,11 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
             <h3 className="text-xs font-bold text-primary mb-2 flex items-center gap-1.5">
               <Trophy className="w-3.5 h-3.5" /> Top 15 Rangliste
             </h3>
+            {currentUserRank >= 0 && (
+              <p className="text-xs text-muted-foreground mb-2 bg-primary/10 rounded px-2 py-1">
+                📍 Deine beste Position: <span className="font-bold text-primary">#{currentUserRank + 1}</span>
+              </p>
+            )}
             {leaderboard.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">Noch keine Scores</p>
             ) : (
@@ -275,6 +336,8 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
                   <div
                     key={i}
                     className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                      user && s.user_id === user.id ? "ring-1 ring-primary/50 " : ""
+                    }${
                       i === 0 ? "bg-yellow-500/10 text-yellow-400" :
                       i === 1 ? "bg-gray-400/10 text-gray-300" :
                       i === 2 ? "bg-orange-500/10 text-orange-400" :
@@ -285,7 +348,12 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
                       <span className="w-5 text-right font-bold tabular-nums">
                         {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
                       </span>
-                      <span className="font-medium">{s.player_name}</span>
+                      <span className="flex flex-col">
+                        <span className="font-medium">{s.player_name}</span>
+                        <span className="text-[10px] text-muted-foreground/70">
+                          {format(new Date(s.created_at), "dd.MM.yy HH:mm", { locale: de })}
+                        </span>
+                      </span>
                     </span>
                     <span className="font-bold tabular-nums">{s.score}</span>
                   </div>
