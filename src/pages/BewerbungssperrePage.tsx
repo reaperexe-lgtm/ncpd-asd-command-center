@@ -84,50 +84,89 @@ const BewerbungssperrePage = () => {
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade...</div></div>
       ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-background/50">
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Von</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Bis</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Grund</th>
-                {isAdmin && <th className="px-4 py-3 w-16" />}
-              </tr>
-            </thead>
-            <tbody>
-              {bans?.map((b) => {
-                const active = isActive(b.to_date);
-                return (
-                  <tr key={b.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
-                    <td className="px-4 py-3 font-medium">{b.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(b.from_date).toLocaleDateString("de-DE")}</td>
-                    <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(b.to_date).toLocaleDateString("de-DE")}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        active ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"
-                      }`}>
-                        {active ? "Aktiv" : "Abgelaufen"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 max-w-[200px] truncate text-muted-foreground">{b.reason || "–"}</td>
-                    {isAdmin && (
+        <>
+          {/* Mobile cards view */}
+          <div className="md:hidden space-y-3">
+            {bans?.map((b) => {
+              const active = isActive(b.to_date);
+              return (
+                <div key={b.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{b.name}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      active ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {active ? "Aktiv" : "Abgelaufen"}
+                    </span>
+                  </div>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span>Von: {new Date(b.from_date).toLocaleDateString("de-DE")}</span>
+                    <span>Bis: {new Date(b.to_date).toLocaleDateString("de-DE")}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Grund:</span> {b.reason || "–"}
+                  </p>
+                  {isAdmin && (
+                    <div className="flex justify-end pt-1">
+                      <button onClick={() => deleteBan.mutate(b.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {bans?.length === 0 && (
+              <p className="text-center text-muted-foreground py-12">Keine Sperren vorhanden</p>
+            )}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="hidden md:block bg-card border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-background/50">
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Von</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Bis</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Grund</th>
+                  {isAdmin && <th className="px-4 py-3 w-16" />}
+                </tr>
+              </thead>
+              <tbody>
+                {bans?.map((b) => {
+                  const active = isActive(b.to_date);
+                  return (
+                    <tr key={b.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
+                      <td className="px-4 py-3 font-medium">{b.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(b.from_date).toLocaleDateString("de-DE")}</td>
+                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(b.to_date).toLocaleDateString("de-DE")}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => deleteBan.mutate(b.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          active ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {active ? "Aktiv" : "Abgelaufen"}
+                        </span>
                       </td>
-                    )}
-                  </tr>
-                );
-              })}
-              {bans?.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Keine Sperren vorhanden</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <td className="px-4 py-3 max-w-[200px] truncate text-muted-foreground">{b.reason || "–"}</td>
+                      {isAdmin && (
+                        <td className="px-4 py-3">
+                          <button onClick={() => deleteBan.mutate(b.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+                {bans?.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Keine Sperren vorhanden</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
