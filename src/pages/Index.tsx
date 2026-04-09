@@ -74,6 +74,8 @@ const Index = () => {
             controls
             playsInline
             className="w-full rounded"
+            style={{ volume: 0.1 } as any}
+            ref={(el) => { if (el) el.volume = 0.1; }}
           />
         </DialogContent>
       </Dialog>

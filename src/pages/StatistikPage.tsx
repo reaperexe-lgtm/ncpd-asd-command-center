@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, X, ChevronRight } from "lucide-react";
+import { logActivity } from "@/lib/activityLog";
+import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, X, ChevronRight, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -64,11 +66,42 @@ const BAR_COLORS = [
   "hsl(175, 40%, 45%)", "hsl(310, 40%, 45%)", "hsl(50, 50%, 45%)",
 ];
 
+const RESET_TYPE_LABELS: Record<string, string> = {
+  weekly: "Wochenstatistik",
+  monthly: "Monatsstatistik",
+  pursuits: "10-80 Verfolgungen",
+  overview: "Übersicht",
+  all: "Alle Statistiken",
+};
+
+function useCountdown(targetDate: Date | null) {
+  const [timeLeft, setTimeLeft] = useState("");
+  useEffect(() => {
+    if (!targetDate) { setTimeLeft(""); return; }
+    const tick = () => {
+      const diff = targetDate.getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft("Jetzt"); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(d > 0 ? `${d}T ${h}h ${m}m` : `${h}h ${m}m ${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return timeLeft;
+}
+
 const StatistikPage = () => {
   const { isAdmin, role, user } = useAuth();
-  const canReset = isAdmin || ["director", "co_director", "ausbilder"].includes(role || "");
+  const canReset = ["director", "co_director", "supervisor"].includes(role || "");
+  const canResetDirect = isAdmin;
   const queryClient = useQueryClient();
   const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string } | null>(null);
+  const [resetDialog, setResetDialog] = useState<string | null>(null);
+  const [resetReason, setResetReason] = useState("");
 
   const { data: missions } = useQuery({
     queryKey: ["missions-stats"],
@@ -93,6 +126,7 @@ const StatistikPage = () => {
     },
   });
 
+  // Direct reset (admin only)
   const resetMutation = useMutation({
     mutationFn: async (resetType: string) => {
       if (resetType === "all") {
@@ -108,24 +142,42 @@ const StatistikPage = () => {
         const { error } = await supabase.from("stats_resets").insert({ reset_type: resetType, reset_by: user?.id } as any);
         if (error) throw error;
       }
+      logActivity(`Statistik resettet: ${RESET_TYPE_LABELS[resetType] || resetType}`, "admin", { reset_type: resetType });
     },
     onSuccess: (_, type) => {
       queryClient.invalidateQueries({ queryKey: ["stats-resets"] });
-      const msgs: Record<string, string> = {
-        weekly: "Wochenstatistik zurückgesetzt",
-        monthly: "Monatsstatistik zurückgesetzt",
-        pursuits: "10-80 Verfolgungen zurückgesetzt",
-        overview: "Übersicht zurückgesetzt",
-        all: "Alle Statistiken zurückgesetzt",
-      };
-      toast.success(msgs[type] || "Statistik zurückgesetzt");
+      toast.success(RESET_TYPE_LABELS[type] ? `${RESET_TYPE_LABELS[type]} zurückgesetzt` : "Statistik zurückgesetzt");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Request reset (non-admin)
+  const requestResetMutation = useMutation({
+    mutationFn: async ({ resetType, reason }: { resetType: string; reason: string }) => {
+      const { error } = await supabase.from("reset_requests").insert({
+        reset_type: resetType,
+        reason,
+        requested_by: user?.id,
+      } as any);
+      if (error) throw error;
+      logActivity(`Reset-Anfrage gestellt: ${RESET_TYPE_LABELS[resetType] || resetType}`, "admin", { reset_type: resetType, reason });
+    },
+    onSuccess: () => {
+      toast.success("Reset-Anfrage wurde an den Admin gesendet");
+      setResetDialog(null);
+      setResetReason("");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const handleReset = (type: string) => {
-    if (!canReset) { toast.error("Du bist nicht befugt, die Statistik zurückzusetzen."); return; }
-    resetMutation.mutate(type);
+    if (canResetDirect) {
+      resetMutation.mutate(type);
+    } else if (canReset) {
+      setResetDialog(type);
+    } else {
+      toast.error("Du bist nicht befugt, die Statistik zurückzusetzen.");
+    }
   };
 
   const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
@@ -139,16 +191,29 @@ const StatistikPage = () => {
   const lastPursuitReset = lastPursuitResetEntry?.reset_at;
   const lastOverviewReset = lastOverviewResetEntry?.reset_at;
 
-  const formatResetInfo = (entry: any) => {
-    if (!entry) return null;
-    const date = new Date(entry.reset_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const isAuto = !entry.reset_by;
-    const name = isAuto ? "Automatisch" : profileName(entry.reset_by);
-    return `Letzter Reset: ${date} – ${isAuto ? "⚙️ Automatisch" : `👤 ${name}`}`;
+  // Compute next auto-reset dates
+  const { end: weekEnd } = getASDWeekRange();
+  const { end: monthEnd } = getMonthRange();
+  const weeklyCountdown = useCountdown(weekEnd);
+  const monthlyCountdown = useCountdown(monthEnd);
+
+  const formatResetInfo = (entry: any, nextDate?: Date, nextCountdown?: string) => {
+    const parts: string[] = [];
+    if (entry) {
+      const date = new Date(entry.reset_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const isAuto = !entry.reset_by;
+      const name = isAuto ? "Automatisch" : profileName(entry.reset_by);
+      parts.push(`Letzter Reset: ${date} – ${isAuto ? "⚙️ Automatisch" : `👤 ${name}`}`);
+    }
+    if (nextDate && nextCountdown) {
+      const nextDateStr = nextDate.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      parts.push(`Nächster Reset: ${nextDateStr} (⏱️ ${nextCountdown})`);
+    }
+    return parts;
   };
 
   // --- Weekly leaderboard ---
-  const { start: weekStart, end: weekEnd } = getASDWeekRange();
+  const { start: weekStart } = getASDWeekRange();
   const effectiveWeekStart = lastWeeklyReset && new Date(lastWeeklyReset) > weekStart ? new Date(lastWeeklyReset) : weekStart;
   const weeklyMissions = missions?.filter((m) => {
     const d = new Date(m.created_at);
@@ -162,7 +227,7 @@ const StatistikPage = () => {
   const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
 
   // --- Monthly leaderboard ---
-  const { start: monthStart, end: monthEnd } = getMonthRange();
+  const { start: monthStart } = getMonthRange();
   const effectiveMonthStart = lastMonthlyReset && new Date(lastMonthlyReset) > monthStart ? new Date(lastMonthlyReset) : monthStart;
   const monthlyMissions = missions?.filter((m) => {
     const d = new Date(m.created_at);
@@ -175,7 +240,7 @@ const StatistikPage = () => {
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
-  // --- Location stats (filtered by resets) ---
+  // --- Location stats ---
   const overviewCutoff = lastOverviewReset ? new Date(lastOverviewReset) : null;
   const filteredMissions = overviewCutoff
     ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
@@ -197,7 +262,6 @@ const StatistikPage = () => {
   const totalSuspects = filteredMissions.reduce((s, m) => s + m.suspects_count, 0);
   const totalHostages = filteredMissions.reduce((s, m) => s + m.hostages_count, 0);
 
-  // Monthly breakdown
   const monthly: Record<string, number> = {};
   filteredMissions.forEach((m) => {
     const key = new Date(m.tatzeit).toLocaleDateString("de-DE", { month: "short", year: "2-digit" });
@@ -214,10 +278,23 @@ const StatistikPage = () => {
   const pursuitRanking = Object.entries(pursuitCreatorCounts).sort((a, b) => b[1] - a[1]);
   const maxPursuit = pursuitRanking[0]?.[1] || 1;
 
-  // Protocols for selected writer
+  // Protocols for selected writer - only current week
   const writerProtocols = selectedWriter
-    ? missions?.filter((m) => m.protokollschreiber === selectedWriter.id) || []
+    ? weeklyMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
     : [];
+
+  const ResetInfoBlock = ({ entries, className = "" }: { entries: string[], className?: string }) => (
+    entries.length > 0 ? (
+      <div className={`space-y-0.5 ${className}`}>
+        {entries.map((e, i) => (
+          <p key={i} className="text-[10px] text-muted-foreground flex items-center gap-1">
+            {i === 1 && <Clock className="w-3 h-3 text-primary shrink-0" />}
+            {e}
+          </p>
+        ))}
+      </div>
+    ) : null
+  );
 
   return (
     <div className="space-y-6">
@@ -227,8 +304,8 @@ const StatistikPage = () => {
           <h1 className="text-2xl font-bold text-primary">Statistik</h1>
           <p className="text-xs text-muted-foreground">Übersicht aller Einsätze</p>
         </div>
-        {canReset && (
-          <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => resetMutation.mutate("all")}>
+        {(canReset || canResetDirect) && (
+          <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => handleReset("all")}>
             <RotateCw className="w-4 h-4" /> Alles zurücksetzen
           </Button>
         )}
@@ -236,21 +313,21 @@ const StatistikPage = () => {
 
       {/* Weekly Protokollschreiber */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-primary flex items-center gap-2">
             <Trophy className="w-5 h-5" />
             Top-Protokollschreiber (aktuelle ASD-Woche)
           </h2>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("weekly")}>
-              <RotateCw className="w-3 h-3" /> Reset
-            </Button>
+            {(canReset || canResetDirect) && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("weekly")}>
+                <RotateCw className="w-3 h-3" /> Reset
+              </Button>
+            )}
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
           </div>
         </div>
-        {formatResetInfo(lastWeeklyResetEntry) && (
-          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastWeeklyResetEntry)}</p>
-        )}
+        <ResetInfoBlock entries={formatResetInfo(lastWeeklyResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
         {weeklyRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle diese Woche</p>
         ) : (
@@ -279,14 +356,13 @@ const StatistikPage = () => {
             <FileText className="w-5 h-5" />
             Top-Protokollschreiber – Gesamt (Monat)
           </h2>
-          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
-            <RotateCw className="w-3 h-3" /> Reset
-          </Button>
+          {(canReset || canResetDirect) && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
+          )}
         </div>
-        <p className="text-[10px] text-muted-foreground mb-1">Reset am 1. des Monats</p>
-        {formatResetInfo(lastMonthlyResetEntry) && (
-          <p className="text-[10px] text-muted-foreground mb-4">{formatResetInfo(lastMonthlyResetEntry)}</p>
-        )}
+        <ResetInfoBlock entries={formatResetInfo(lastMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-4" />
         {allTimeRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
         ) : (
@@ -313,25 +389,25 @@ const StatistikPage = () => {
         )}
       </div>
 
-      {/* 10-80 Verfolgungen Statistik */}
+      {/* 10-80 Verfolgungen */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-primary flex items-center gap-2">
             <Car className="w-5 h-5" />
             10-80 Verfolgungen
           </h2>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits")}>
-              <RotateCw className="w-3 h-3" /> Reset
-            </Button>
+            {(canReset || canResetDirect) && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits")}>
+                <RotateCw className="w-3 h-3" /> Reset
+              </Button>
+            )}
             <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
               Gesamt: {pursuitCount}
             </span>
           </div>
         </div>
-        {formatResetInfo(lastPursuitResetEntry) && (
-          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastPursuitResetEntry)}</p>
-        )}
+        <ResetInfoBlock entries={formatResetInfo(lastPursuitResetEntry)} className="mb-3" />
         {pursuitRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen</p>
         ) : (
@@ -359,18 +435,18 @@ const StatistikPage = () => {
 
       {/* Summary cards */}
       <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-primary flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
             Übersicht
           </h2>
-          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
-            <RotateCw className="w-3 h-3" /> Reset
-          </Button>
+          {(canReset || canResetDirect) && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
+          )}
         </div>
-        {formatResetInfo(lastOverviewResetEntry) && (
-          <p className="text-[10px] text-muted-foreground mb-3">{formatResetInfo(lastOverviewResetEntry)}</p>
-        )}
+        <ResetInfoBlock entries={formatResetInfo(lastOverviewResetEntry)} className="mb-3" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "Einsätze", value: total, icon: BarChart3 },
@@ -393,9 +469,11 @@ const StatistikPage = () => {
       <div className="bg-card border border-border rounded-lg p-5">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-semibold text-primary">Einsätze nach Raubart</h2>
-          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
-            <RotateCw className="w-3 h-3" /> Reset
-          </Button>
+          {(canReset || canResetDirect) && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
+          )}
         </div>
         {donutData.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
@@ -464,16 +542,16 @@ const StatistikPage = () => {
         </div>
       )}
 
-      {/* Dialog: Protokolle eines Schreibers */}
+      {/* Dialog: Protokolle eines Schreibers (nur aktuelle Woche) */}
       <Dialog open={!!selectedWriter} onOpenChange={(open) => !open && setSelectedWriter(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-primary">
-              Protokolle von {selectedWriter?.name}
+              Protokolle von {selectedWriter?.name} (aktuelle Woche)
             </DialogTitle>
           </DialogHeader>
           {writerProtocols.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Keine Protokolle gefunden</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Keine Protokolle diese Woche</p>
           ) : (
             <div className="space-y-2 mt-2">
               {writerProtocols
@@ -499,10 +577,41 @@ const StatistikPage = () => {
                   </div>
                 ))}
               <p className="text-xs text-muted-foreground text-center pt-2">
-                {writerProtocols.length} Protokoll{writerProtocols.length !== 1 ? "e" : ""} gesamt
+                {writerProtocols.length} Protokoll{writerProtocols.length !== 1 ? "e" : ""} diese Woche
               </p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Request Dialog (for non-admin) */}
+      <Dialog open={!!resetDialog} onOpenChange={(open) => !open && setResetDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-primary">
+              Reset-Anfrage: {RESET_TYPE_LABELS[resetDialog || ""] || resetDialog}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Bitte gib einen Grund für den Reset an. Ein Admin muss die Anfrage genehmigen.
+            </p>
+            <Textarea 
+              placeholder="Grund für den Reset..."
+              value={resetReason}
+              onChange={(e) => setResetReason(e.target.value)}
+              className="bg-background border-border"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setResetDialog(null)}>Abbrechen</Button>
+              <Button 
+                onClick={() => resetDialog && requestResetMutation.mutate({ resetType: resetDialog, reason: resetReason })}
+                disabled={!resetReason.trim() || requestResetMutation.isPending}
+              >
+                Anfrage senden
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

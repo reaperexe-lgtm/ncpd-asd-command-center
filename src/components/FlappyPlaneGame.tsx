@@ -26,8 +26,8 @@ const CANVAS_H = 480;
 const PLANE_SIZE = 24;
 const PIPE_WIDTH = 44;
 const PIPE_GAP = 130;
-const GRAVITY = 0.45;
-const JUMP_FORCE = -7;
+const GRAVITY = 0.35;
+const JUMP_FORCE = -6;
 const PIPE_SPEED = 2.5;
 const PIPE_INTERVAL = 90;
 
@@ -83,17 +83,33 @@ const playGameOverSound = (ctx: AudioContext | null, vol: number) => {
   });
 };
 
+const playSpeedUpSound = (ctx: AudioContext | null, vol: number) => {
+  if (!ctx || vol === 0) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(300, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.1 * vol, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.4);
+};
+
 export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
   const { user, profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const volumeRef = useRef(0.7);
-  const [gameState, setGameState] = useState<"menu" | "playing" | "dead">("menu");
+  const [gameState, setGameState] = useState<"menu" | "countdown" | "playing" | "dead">("menu");
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const [leaderboard, setLeaderboard] = useState<GameScore[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [volume, setVolume] = useState(0.7);
+  const [countdown, setCountdown] = useState(3);
 
   const gameRef = useRef({
     planeY: CANVAS_H / 2,
@@ -102,6 +118,8 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     frame: 0,
     score: 0,
     running: false,
+    lastSpeedLevel: 0,
+    speedFlashTimer: 0,
   });
 
   const ensureAudio = useCallback(() => {
@@ -160,10 +178,25 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     g.pipes = [];
     g.frame = 0;
     g.score = 0;
-    g.running = true;
+    g.running = false;
+    g.lastSpeedLevel = 0;
+    g.speedFlashTimer = 0;
     setScore(0);
-    setGameState("playing");
+    setCountdown(3);
+    setGameState("countdown");
   }, [ensureAudio]);
+
+  // Countdown effect
+  useEffect(() => {
+    if (gameState !== "countdown") return;
+    if (countdown <= 0) {
+      gameRef.current.running = true;
+      setGameState("playing");
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [gameState, countdown]);
 
   const jump = useCallback(() => {
     if (gameState === "playing") {
@@ -174,10 +207,30 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
     }
   }, [gameState, startGame]);
 
-  // Keep volumeRef in sync
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
+
+  // Draw countdown on canvas
+  useEffect(() => {
+    if (!open || gameState !== "countdown") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+    skyGrad.addColorStop(0, "#0a1628");
+    skyGrad.addColorStop(1, "#1a2e1a");
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 72px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(countdown > 0 ? String(countdown) : "GO!", CANVAS_W / 2, CANVAS_H / 2);
+  }, [open, gameState, countdown]);
 
   useEffect(() => {
     if (!open || gameState !== "playing") return;
@@ -202,6 +255,15 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
 
       const speedLevel = Math.floor(g.score / 20);
       const speedMultiplier = 1 + speedLevel * 0.15;
+
+      // Speed level change flash
+      if (speedLevel > g.lastSpeedLevel) {
+        g.lastSpeedLevel = speedLevel;
+        g.speedFlashTimer = 60; // ~1 second at 60fps
+        playSpeedUpSound(audioCtxRef.current, volumeRef.current);
+      }
+      if (g.speedFlashTimer > 0) g.speedFlashTimer--;
+
       g.pipes.forEach((p) => {
         p.x -= PIPE_SPEED * speedMultiplier;
         if (!p.passed && p.x + PIPE_WIDTH < 50) {
@@ -244,6 +306,13 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
       skyGrad.addColorStop(1, "#1a2e1a");
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      // Speed flash overlay
+      if (g.speedFlashTimer > 0) {
+        const alpha = (g.speedFlashTimer / 60) * 0.3;
+        ctx.fillStyle = `rgba(255, 100, 0, ${alpha})`;
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      }
 
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       for (let i = 0; i < 30; i++) {
@@ -309,6 +378,19 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
         ctx.fillText(`⚡ SPD ${speedLevel + 1}`, CANVAS_W - 10, 25);
       }
 
+      // Speed level change warning banner
+      if (g.speedFlashTimer > 30) {
+        ctx.save();
+        ctx.fillStyle = "rgba(255, 60, 0, 0.85)";
+        ctx.fillRect(0, CANVAS_H / 2 - 20, CANVAS_W, 40);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 16px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`⚠️ SPEED ${speedLevel + 1} ⚠️`, CANVAS_W / 2, CANVAS_H / 2);
+        ctx.restore();
+      }
+
       animId = requestAnimationFrame(loop);
     };
 
@@ -338,7 +420,6 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-bold text-primary flex items-center gap-1.5">✈️ Flappy Plane</h2>
           <div className="flex items-center gap-2">
-            {/* Volume control */}
             <div className="flex items-center gap-1.5">
               <button onClick={() => setVolume(v => v === 0 ? 0.7 : 0)} className="text-muted-foreground hover:text-foreground transition-colors">
                 {volume === 0 ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
@@ -427,6 +508,14 @@ export const FlappyPlaneGame = ({ open, onOpenChange }: { open: boolean; onOpenC
                 <Button onClick={startGame} size="sm" className="gap-1.5">
                   <Play className="w-4 h-4" /> Start
                 </Button>
+              </div>
+            )}
+
+            {gameState === "countdown" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-lg">
+                <p className="text-6xl font-bold text-primary animate-pulse tabular-nums">
+                  {countdown > 0 ? countdown : "GO!"}
+                </p>
               </div>
             )}
 

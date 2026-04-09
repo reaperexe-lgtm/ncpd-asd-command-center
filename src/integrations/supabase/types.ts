@@ -410,6 +410,39 @@ export type Database = {
         }
         Relationships: []
       }
+      reset_requests: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          requested_by: string
+          reset_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          requested_by: string
+          reset_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          requested_by?: string
+          reset_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       stats_resets: {
         Row: {
           id: string
