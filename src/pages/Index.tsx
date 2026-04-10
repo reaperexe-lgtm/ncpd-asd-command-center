@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -13,8 +14,15 @@ const ROLE_COLORS: Record<string, string> = {
   ausbilder: "text-amber-300", trial_ausbilder: "text-lime-400", member: "text-primary", trial_member: "text-purple-400",
 };
 
+const LOCATION_TYPE_LABELS: Record<string, string> = {
+  Staatsbank: "Staatsbank", Juwelier: "Juwelier", "Human Labs": "Human Labs",
+  Geiselnahme: "Geiselnahme", Razzia: "Razzia", Panikbutton: "Panikbutton",
+};
+
 const Index = () => {
   const [easterEgg, setEasterEgg] = useState(false);
+  const [missionDialog, setMissionDialog] = useState<"all" | "today" | null>(null);
+
   const { data: members } = useQuery({
     queryKey: ["home-members"],
     queryFn: async () => {
@@ -28,13 +36,29 @@ const Index = () => {
   });
 
   const { data: missions } = useQuery({
-    queryKey: ["home-missions"],
-    queryFn: async () => { const { data } = await supabase.from("missions").select("id, created_at"); return data || []; },
+    queryKey: ["home-missions-full"],
+    queryFn: async () => {
+      const { data } = await supabase.from("missions").select("id, created_at, location_type, description, tatzeit, protokollschreiber").order("created_at", { ascending: false });
+      return data || [];
+    },
   });
+
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-map-home"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, name");
+      return data || [];
+    },
+  });
+
+  const profileName = (id: string) => profiles?.find((p) => p.id === id)?.name || "Unbekannt";
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const todayCount = missions?.filter((m) => new Date(m.created_at) >= todayStart).length || 0;
+  const todayMissions = missions?.filter((m) => new Date(m.created_at) >= todayStart) || [];
+  const todayCount = todayMissions.length;
+
+  const dialogMissions = missionDialog === "today" ? todayMissions : missions || [];
 
   const ROLE_ORDER = ["director","co_director","supervisor","ausbilder","trial_ausbilder","member","trial_member"];
   const sortByRole = (a: any, b: any) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role);
@@ -42,6 +66,12 @@ const Index = () => {
   const ausbilder = (members?.filter((m) => ["ausbilder","trial_ausbilder"].includes(m.role)) || []).sort(sortByRole);
   const mitglieder = members?.filter((m) => m.role === "member") || [];
   const trials = members?.filter((m) => m.role === "trial_member") || [];
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " +
+      d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  };
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-8 relative">
@@ -51,9 +81,46 @@ const Index = () => {
       </div>
 
       <div className="flex gap-3 sm:gap-4">
-        <StatBox label="Gesamt Einsätze" value={String(missions?.length || 0)} />
-        <StatBox label="Heute erstellt" value={String(todayCount)} />
+        <button onClick={() => setMissionDialog("all")} className="bg-card border border-border rounded-md px-4 py-2 sm:px-6 sm:py-3 hover:bg-accent transition-colors cursor-pointer text-left">
+          <p className="text-[10px] sm:text-xs text-muted-foreground">Gesamt Einsätze</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{missions?.length || 0}</p>
+        </button>
+        <button onClick={() => setMissionDialog("today")} className="bg-card border border-border rounded-md px-4 py-2 sm:px-6 sm:py-3 hover:bg-accent transition-colors cursor-pointer text-left">
+          <p className="text-[10px] sm:text-xs text-muted-foreground">Heute erstellt</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{todayCount}</p>
+        </button>
       </div>
+
+      {/* Mission List Dialog */}
+      <Dialog open={!!missionDialog} onOpenChange={(open) => !open && setMissionDialog(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-primary">
+              {missionDialog === "today" ? "Heutige Einsätze" : "Alle Einsätze"} ({dialogMissions.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 space-y-2 pr-1">
+            {dialogMissions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Keine Einsätze vorhanden</p>
+            ) : (
+              dialogMissions.map((m: any) => (
+                <div key={m.id} className="bg-background border border-border rounded-lg px-3 py-2 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-primary">{m.location_type}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDate(m.created_at)}</span>
+                  </div>
+                  {m.description && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-2">{m.description}</p>
+                  )}
+                  {m.protokollschreiber && (
+                    <p className="text-[10px] text-muted-foreground">📝 {profileName(m.protokollschreiber)}</p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="text-center px-2">
         <h1 className="text-xl sm:text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
@@ -74,7 +141,6 @@ const Index = () => {
             controls
             playsInline
             className="w-full rounded"
-            style={{ volume: 0.1 } as any}
             ref={(el) => { if (el) el.volume = 0.1; }}
           />
         </DialogContent>
@@ -101,13 +167,6 @@ const Index = () => {
     </div>
   );
 };
-
-const StatBox = ({ label, value }: { label: string; value: string }) => (
-  <div className="bg-card border border-border rounded-md px-4 py-2 sm:px-6 sm:py-3">
-    <p className="text-[10px] sm:text-xs text-muted-foreground">{label}</p>
-    <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{value}</p>
-  </div>
-);
 
 const SectionLabel = ({ emoji, label, className = "" }: { emoji: string; label: string; className?: string }) => (
   <p className={`text-sm font-semibold text-secondary-foreground flex items-center gap-1.5 ${className}`}>
