@@ -125,7 +125,7 @@ const AdminPanel = () => {
         reviewer_name: r.reviewed_by ? profiles?.find((p) => p.id === r.reviewed_by)?.name || "Unbekannt" : null,
       }));
     },
-    enabled: isAdmin && activeTab === "requests",
+    enabled: isAdmin,
   });
 
   const pendingRequestCount = resetRequests?.filter((r: any) => r.status === "pending").length || 0;
