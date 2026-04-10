@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle } from "lucide-react";
 
 const ProfilePage = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [dienstnummer, setDienstnummer] = useState("");
   const [name, setName] = useState("");
+  const [discordId, setDiscordId] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -23,7 +24,13 @@ const ProfilePage = () => {
       setDienstnummer(profile.dienstnummer || "");
       setImageUrl(profile.image_url || null);
     }
-  }, [profile]);
+    // Load discord_id from DB
+    if (user) {
+      supabase.from("profiles").select("discord_id").eq("id", user.id).single().then(({ data }) => {
+        if (data?.discord_id) setDiscordId(data.discord_id);
+      });
+    }
+  }, [profile, user]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +60,8 @@ const ProfilePage = () => {
         name: name.trim() || "Unbenannt",
         dienstnummer: dienstnummer.trim() || null,
         image_url: imageUrl,
-      }, { onConflict: "id" });
+        discord_id: discordId.trim() || null,
+      } as any, { onConflict: "id" });
       if (error) throw error;
 
       await Promise.all([
@@ -120,6 +128,25 @@ const ProfilePage = () => {
             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input value={dienstnummer} onChange={(e) => setDienstnummer(e.target.value)} className="bg-background border-border pl-9" />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5 text-[#5865F2]" />
+            Discord ID
+          </Label>
+          <div className="relative">
+            <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              value={discordId} 
+              onChange={(e) => setDiscordId(e.target.value)} 
+              placeholder="z.B. 123456789012345678" 
+              className="bg-background border-border pl-9" 
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Deine Discord User-ID für Bot-Benachrichtigungen. Rechtsklick auf deinen Namen in Discord → "ID kopieren"
+          </p>
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full gap-2">

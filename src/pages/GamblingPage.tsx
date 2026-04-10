@@ -486,7 +486,7 @@ const GamblingPage = () => {
 
   return (
     <div className="relative">
-      <div className="flex gap-6 max-w-6xl mx-auto">
+      <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
       <div className="flex-1 flex flex-col items-center gap-6 min-w-0">
         <h1 className="text-2xl font-bold text-primary">🎰 NCPD Casino</h1>
 
@@ -769,8 +769,8 @@ const GamblingPage = () => {
         )}
       </div>
 
-      <div className="w-72 shrink-0 hidden lg:block">
-        <div className="bg-card border border-border rounded-lg p-4 sticky top-24">
+      <div className="w-full lg:w-72 shrink-0 lg:block">
+        <div className="bg-card border border-border rounded-lg p-4 lg:sticky lg:top-24">
           <div className="flex items-center gap-2 mb-4">
             <Trophy className="w-5 h-5 text-yellow-400" />
             <h2 className="font-bold text-primary">Rangliste</h2>

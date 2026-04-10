@@ -125,11 +125,12 @@ const AdminPanel = () => {
         reviewer_name: r.reviewed_by ? profiles?.find((p) => p.id === r.reviewed_by)?.name || "Unbekannt" : null,
       }));
     },
-    enabled: isAdmin && activeTab === "requests",
+    enabled: isAdmin,
   });
 
   const pendingRequestCount = resetRequests?.filter((r: any) => r.status === "pending").length || 0;
 
+  // Realtime: activity logs
   useEffect(() => {
     if (activeTab !== "logs" || !isAdmin) return;
     const channel = supabase
@@ -140,6 +141,22 @@ const AdminPanel = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeTab, isAdmin, queryClient]);
+
+  // Realtime: notify admin on new reset requests
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel('reset-requests-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reset_requests' }, (payload) => {
+        queryClient.invalidateQueries({ queryKey: ["reset-requests"] });
+        toast.info("📩 Neue Reset-Anfrage eingegangen!", {
+          description: `Typ: ${RESET_TYPE_LABELS[(payload.new as any)?.reset_type] || "Unbekannt"}`,
+          duration: 8000,
+        });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin, queryClient]);
 
   const approveMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
