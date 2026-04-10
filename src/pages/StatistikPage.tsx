@@ -33,21 +33,30 @@ const PIE_COLORS = [
 ];
 
 function getASDWeekRange(): { start: Date; end: Date } {
+  // ASD week: Sunday 18:20 CET/CEST to next Sunday 18:20 CET/CEST
+  // We work in German time (Europe/Berlin)
   const now = new Date();
-  const day = now.getDay();
-  const h = now.getHours();
-  const m = now.getMinutes();
-  const start = new Date(now);
-  start.setHours(18, 30, 0, 0);
-  if (day === 0 && (h > 18 || (h === 18 && m >= 30))) {
-    // start is today
+  
+  // Get current time in German timezone
+  const germanNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Berlin" }));
+  const day = germanNow.getDay();
+  const h = germanNow.getHours();
+  const m = germanNow.getMinutes();
+  
+  // Find the most recent Sunday 18:20 German time
+  const start = new Date(germanNow);
+  start.setHours(18, 20, 0, 0);
+  if (day === 0 && (h > 18 || (h === 18 && m >= 20))) {
+    // start is today (Sunday after 18:20)
   } else {
     const daysBack = day === 0 ? 7 : day;
     start.setDate(start.getDate() - daysBack);
   }
+  
+  // End is next Sunday 18:20
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
-  end.setHours(17, 55, 0, 0);
+  // end already has 18:20 from start
   return { start, end };
 }
 
