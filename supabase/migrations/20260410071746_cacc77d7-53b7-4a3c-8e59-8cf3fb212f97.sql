@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN discord_id TEXT DEFAULT NULL;
