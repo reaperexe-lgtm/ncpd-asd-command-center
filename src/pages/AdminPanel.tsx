@@ -310,9 +310,12 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
+        <TabsList className="grid grid-cols-4 w-full max-w-lg">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5 text-xs">
+            <Lock className="w-3.5 h-3.5" /> Rechte
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-1.5 text-xs">
             <ScrollText className="w-3.5 h-3.5" /> Aktivität
