@@ -13,6 +13,7 @@ import {
   ChevronDown, ChevronUp, BookOpen, Eye
 } from "lucide-react";
 import LeitfadenContent from "./LeitfadenContent";
+import TheorieausbildungContent from "./TheorieausbildungContent";
 
 interface TrainingModule {
   id: string;
@@ -35,6 +36,7 @@ const TrainingModules = () => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", description: "", category: "Allgemein" });
   const [showLeitfaden, setShowLeitfaden] = useState(false);
+  const [showTheorie, setShowTheorie] = useState(false);
 
   const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
@@ -267,6 +269,17 @@ const TrainingModules = () => {
                                   {showLeitfaden ? "Ausblenden" : "Leitfaden öffnen"}
                                 </Button>
                               )}
+                              {mod.name === "ASD | Theorieausbildung" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() => setShowTheorie(!showTheorie)}
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  {showTheorie ? "Ausblenden" : "Theorie öffnen"}
+                                </Button>
+                              )}
                             </div>
                             {mod.description && (
                               <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{mod.description}</p>
@@ -274,6 +287,11 @@ const TrainingModules = () => {
                             {mod.name === "NCPD ASD | Ausbildungsleitfaden" && showLeitfaden && (
                               <div className="mt-4">
                                 <LeitfadenContent />
+                              </div>
+                            )}
+                            {mod.name === "ASD | Theorieausbildung" && showTheorie && (
+                              <div className="mt-4">
+                                <TheorieausbildungContent />
                               </div>
                             )}
                           </div>
