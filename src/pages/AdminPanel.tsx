@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
@@ -52,6 +53,7 @@ const AdminPanel = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
+  const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -198,6 +200,19 @@ const AdminPanel = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("Anfrage gelöscht");
       logActivity("Benutzer gelöscht", "admin", { target_user_id: userId });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const discordMutation = useMutation({
+    mutationFn: async ({ userId, discordId }: { userId: string; discordId: string }) => {
+      const { error } = await supabase.from("profiles").update({ discord_id: discordId.trim() || null } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Discord-ID gespeichert");
+      setEditingDiscord((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -357,6 +372,20 @@ const AdminPanel = () => {
                       </div>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="w-3.5 h-3.5 text-[#5865F2] shrink-0" />
+                      <Input
+                        value={editingDiscord[u.id] ?? u.discord_id ?? ""}
+                        onChange={(e) => setEditingDiscord({ ...editingDiscord, [u.id]: e.target.value })}
+                        placeholder="Discord ID"
+                        className="h-7 text-xs bg-background border-border flex-1"
+                      />
+                      {editingDiscord[u.id] !== undefined && editingDiscord[u.id] !== (u.discord_id ?? "") && (
+                        <Button size="sm" className="h-7 text-xs px-2" onClick={() => discordMutation.mutate({ userId: u.id, discordId: editingDiscord[u.id] })}>
+                          ✓
+                        </Button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
                         <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
@@ -371,11 +400,13 @@ const AdminPanel = () => {
               </div>
 
               <div className="hidden md:block bg-card border border-border rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-background/50">
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
+                      <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Discord ID</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Aktionen</th>
@@ -386,6 +417,21 @@ const AdminPanel = () => {
                       <tr key={u.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
                         <td className="px-4 py-3 font-medium">{u.name || "–"}</td>
                         <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.dienstnummer || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingDiscord[u.id] ?? u.discord_id ?? ""}
+                              onChange={(e) => setEditingDiscord({ ...editingDiscord, [u.id]: e.target.value })}
+                              placeholder="Discord ID eingeben"
+                              className="h-7 text-xs bg-background border-border w-44"
+                            />
+                            {editingDiscord[u.id] !== undefined && editingDiscord[u.id] !== (u.discord_id ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => discordMutation.mutate({ userId: u.id, discordId: editingDiscord[u.id] })}>
+                                ✓
+                              </Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
                         </td>
@@ -404,6 +450,7 @@ const AdminPanel = () => {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
