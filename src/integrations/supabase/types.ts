@@ -492,6 +492,7 @@ export type Database = {
           image_url: string | null
           points: number
           question: string
+          solution: string | null
           sort_order: number
           type: string
         }
@@ -501,6 +502,7 @@ export type Database = {
           image_url?: string | null
           points?: number
           question: string
+          solution?: string | null
           sort_order?: number
           type?: string
         }
@@ -510,6 +512,7 @@ export type Database = {
           image_url?: string | null
           points?: number
           question?: string
+          solution?: string | null
           sort_order?: number
           type?: string
         }

@@ -1,0 +1,1 @@
+ALTER TABLE public.theory_exam_questions ADD COLUMN solution text DEFAULT NULL;
