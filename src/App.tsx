@@ -53,6 +53,7 @@ const ProtectedRoutes = () => {
         <Route path="/bewerbungssperre" element={<BewerbungssperrePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/profil" element={<ProfilePage />} />
+        <Route path="/theoriepruefung" element={<TheoryExamResultsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
