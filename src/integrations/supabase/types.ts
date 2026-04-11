@@ -485,6 +485,36 @@ export type Database = {
         }
         Relationships: []
       }
+      theory_exam_questions: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          points: number
+          question: string
+          sort_order: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          points?: number
+          question: string
+          sort_order?: number
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          points?: number
+          question?: string
+          sort_order?: number
+          type?: string
+        }
+        Relationships: []
+      }
       theory_exam_results: {
         Row: {
           answers: Json
