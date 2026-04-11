@@ -263,7 +263,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </p>
           <div className={`grid gap-4 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label className="text-xs">Himmelsrichtung (-1 bis -2)</Label>
+              <Label className="text-xs">Himmelsrichtung (+1 bis +2)</Label>
               <Input
                 type="number"
                 min={0}
@@ -275,7 +275,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
             </div>
             {config.hasUturn && (
               <div className="space-y-2">
-                <Label className="text-xs">U-Turn Abzug (-1 je U-Turn)</Label>
+                <Label className="text-xs">U-Turn Abzug (+1 je U-Turn)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -287,7 +287,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
               </div>
             )}
             <div className="space-y-2">
-              <Label className="text-xs">10-33 Abzug (-1 je 10-33)</Label>
+              <Label className="text-xs">10-33 Abzug (+1 je 10-33)</Label>
               <Input
                 type="number"
                 min={0}
