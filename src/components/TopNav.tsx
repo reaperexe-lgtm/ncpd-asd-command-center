@@ -135,6 +135,19 @@ const TopNav = () => {
                   <span>{item.label}</span>
                 </NavLink>
               ))}
+              {canReviewExams && (
+                <NavLink
+                  to="/theoriepruefung"
+                  onClick={closeMobile}
+                  className={({ isActive }) =>
+                    `flex flex-col items-center gap-1 px-2 py-3 rounded-lg text-xs font-medium transition-all
+                    ${isActive ? "bg-secondary border border-primary/40 text-primary" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`
+                  }
+                >
+                  <span className="text-xl">📝</span>
+                  <span>Prüfung</span>
+                </NavLink>
+              )}
               {isAdmin && (
                 <NavLink
                   to="/admin"
