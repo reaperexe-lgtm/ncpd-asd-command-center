@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Plus, Pencil, Trash2, Save, X, GraduationCap,
-  ChevronDown, ChevronUp, BookOpen
+  ChevronDown, ChevronUp, BookOpen, Eye
 } from "lucide-react";
+import LeitfadenContent from "./LeitfadenContent";
 
 interface TrainingModule {
   id: string;
