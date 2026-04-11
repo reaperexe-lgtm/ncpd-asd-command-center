@@ -485,6 +485,45 @@ export type Database = {
         }
         Relationships: []
       }
+      theory_exam_results: {
+        Row: {
+          answers: Json
+          created_at: string
+          dienstnummer: string
+          id: string
+          max_score: number
+          name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          score: number | null
+          status: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          dienstnummer: string
+          id?: string
+          max_score?: number
+          name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number | null
+          status?: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          dienstnummer?: string
+          id?: string
+          max_score?: number
+          name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -511,6 +550,7 @@ export type Database = {
       can_delete_protocols: { Args: { _user_id: string }; Returns: boolean }
       can_manage_licenses: { Args: { _user_id: string }; Returns: boolean }
       can_reset_stats: { Args: { _user_id: string }; Returns: boolean }
+      can_review_exams: { Args: { _user_id: string }; Returns: boolean }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
