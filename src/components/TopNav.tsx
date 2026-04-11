@@ -19,7 +19,8 @@ const navItems = [
 const TopNav = () => {
   const [time, setTime] = useState(new Date());
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isAdmin, signOut, profile } = useAuth();
+  const { isAdmin, signOut, profile, role } = useAuth();
+  const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -51,6 +52,18 @@ const TopNav = () => {
               <span>{item.label}</span>
             </NavLink>
           ))}
+          {canReviewExams && (
+            <NavLink
+              to="/theoriepruefung"
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-0.5 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200
+                ${isActive ? "bg-secondary border border-primary/40 text-primary" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`
+              }
+            >
+              <span className="text-base">📝</span>
+              <span>Prüfung</span>
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink
               to="/admin"
