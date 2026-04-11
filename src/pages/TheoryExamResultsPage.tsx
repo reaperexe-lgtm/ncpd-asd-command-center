@@ -465,7 +465,8 @@ const TheoryExamResultsPage = () => {
                         <span className="text-xs text-muted-foreground">/ {a.maxPoints}</span>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-sm font-medium text-foreground">
