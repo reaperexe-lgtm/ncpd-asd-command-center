@@ -448,6 +448,12 @@ const TheoryExamResultsPage = () => {
                       <p className="text-sm text-foreground/80 bg-background rounded p-2 mb-2 whitespace-pre-wrap">
                         {a.answer || <span className="italic text-muted-foreground">Keine Antwort</span>}
                       </p>
+                      {matchingQuestion?.solution && (
+                        <div className="mb-2 p-2 rounded bg-primary/10 border border-primary/20">
+                          <span className="text-xs font-semibold text-primary">Musterlösung:</span>
+                          <p className="text-sm text-foreground/80 whitespace-pre-wrap mt-0.5">{matchingQuestion.solution}</p>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">Punkte:</span>
                         <Input
