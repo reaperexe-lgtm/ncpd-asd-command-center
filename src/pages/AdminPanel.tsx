@@ -53,6 +53,7 @@ const AdminPanel = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
+  const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
