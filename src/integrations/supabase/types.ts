@@ -300,6 +300,63 @@ export type Database = {
           },
         ]
       }
+      practical_exam_results: {
+        Row: {
+          candidate_dienstnummer: string
+          candidate_name: string
+          checked_locations: Json
+          created_at: string
+          exam_type: string
+          examiner_id: string
+          examiner_name: string | null
+          himmelsrichtung_deduction: number
+          id: string
+          location_score: number
+          max_score: number
+          notes: string | null
+          status: string
+          ten33_deduction: number
+          total_score: number
+          uturn_deduction: number
+        }
+        Insert: {
+          candidate_dienstnummer: string
+          candidate_name: string
+          checked_locations?: Json
+          created_at?: string
+          exam_type?: string
+          examiner_id: string
+          examiner_name?: string | null
+          himmelsrichtung_deduction?: number
+          id?: string
+          location_score?: number
+          max_score?: number
+          notes?: string | null
+          status?: string
+          ten33_deduction?: number
+          total_score?: number
+          uturn_deduction?: number
+        }
+        Update: {
+          candidate_dienstnummer?: string
+          candidate_name?: string
+          checked_locations?: Json
+          created_at?: string
+          exam_type?: string
+          examiner_id?: string
+          examiner_name?: string | null
+          himmelsrichtung_deduction?: number
+          id?: string
+          location_score?: number
+          max_score?: number
+          notes?: string | null
+          status?: string
+          ten33_deduction?: number
+          total_score?: number
+          uturn_deduction?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
