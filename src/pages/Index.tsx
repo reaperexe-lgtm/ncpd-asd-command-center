@@ -76,7 +76,7 @@ const Index = () => {
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-8 relative">
       <div className="relative z-10 flex flex-col items-center gap-4 sm:gap-8 w-full pb-4 sm:pb-8">
-      <div className="mt-2 sm:mt-4 w-28 h-28 sm:w-48 sm:h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
+      <div className="mt-2 sm:mt-4 w-28 h-28 sm:w-48 sm:h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)] cursor-pointer" onClick={() => setEasterEgg(true)}>
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-cover rounded-full scale-125" />
       </div>
 
@@ -125,11 +125,7 @@ const Index = () => {
       <div className="text-center px-2">
         <h1 className="text-xl sm:text-3xl font-bold text-primary tracking-tight">Einsatzprotokoll Dashboard</h1>
         <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-          Aus der Luft. Für den Boden
-          <span 
-            onClick={() => setEasterEgg(true)} 
-            className="cursor-pointer select-none hover:text-primary hover:scale-125 inline-block transition-all duration-300"
-          >.</span> (Späzi für die A.S.D!)
+          Aus der Luft. Für den Boden. (Späzi für die A.S.D!)
         </p>
       </div>
 
