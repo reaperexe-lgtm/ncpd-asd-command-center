@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
-  Plus, ClipboardCheck, CheckCircle2, XCircle, Eye, ArrowLeft,
+  Plus, ClipboardCheck, CheckCircle2, XCircle, ArrowLeft,
   Trash2, MapPin, AlertTriangle, Trophy
 } from "lucide-react";
 
@@ -27,8 +27,49 @@ const ASD1_LOCATIONS = [
   "Bubble Café", "Burger Shot", "V-PD (Ende)"
 ];
 
-const MAX_SCORE = 35;
-const PASS_SCORE = 28;
+const ASD2_LOCATIONS = [
+  "V-PD", "Burgershot", "Westhighway", "Mr Taxi", "Lifeinvader",
+  "Friedhof", "Yakuza Straße / Yakie Straße", "Universität", "Playboy Villa",
+  "Golfplatz", "Richman Hotel", "Eclipse Tower", "Bing Chilling",
+  "Juwelier", "DOJ", "RPD", "Arcadius Tower / 7 Daily Globe",
+  "Rotes Parkhaus", "Große Baustelle", "Autohaus",
+  "Würfelpark Bank / Fleeca Bank", "MD", "Rathaus", "Marktplatz",
+  "La Mesa Lager", "Schneiderei Straße", "Selbstuner", "Missionrow PD",
+  "Davis MD / Fahrschule", "Unicorn", "Altes Bennys", "Mülljob Tankstelle",
+  "Catcafe Tankstelle / Zugjob", "Catcafe", "Weazel News",
+  "Little Seoul Tanke", "China Denkmal", "V-PD (Ende)"
+];
+
+interface ExamConfig {
+  type: string;
+  label: string;
+  locations: string[];
+  maxScore: number;
+  passScore: number;
+  hasUturn: boolean;
+  max1033: number;
+}
+
+const EXAM_CONFIGS: Record<string, ExamConfig> = {
+  ASD1: {
+    type: "ASD1",
+    label: "Bewerbungsprüfung ASD 1",
+    locations: ASD1_LOCATIONS,
+    maxScore: 35,
+    passScore: 28,
+    hasUturn: true,
+    max1033: 1,
+  },
+  ASD2: {
+    type: "ASD2",
+    label: "Bewerbungsprüfung ASD 2",
+    locations: ASD2_LOCATIONS,
+    maxScore: 38,
+    passScore: 30,
+    hasUturn: false,
+    max1033: 2,
+  },
+};
 
 type ExamResult = {
   id: string;
@@ -49,13 +90,17 @@ type ExamResult = {
   created_at: string;
 };
 
-const PracticalExam = () => {
+interface PracticalExamProps {
+  examType?: string;
+}
+
+const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
+  const config = EXAM_CONFIGS[examType] || EXAM_CONFIGS.ASD1;
   const { role, user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "new" | "detail">("list");
   const [selectedExam, setSelectedExam] = useState<ExamResult | null>(null);
 
-  // Form state
   const [candidateName, setCandidateName] = useState("");
   const [candidateDienstnummer, setCandidateDienstnummer] = useState("");
   const [checkedLocations, setCheckedLocations] = useState<string[]>([]);
@@ -67,17 +112,17 @@ const PracticalExam = () => {
   const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
   const locationScore = checkedLocations.length;
-  const totalDeductions = himmelsrichtungDeduction + uturnDeduction + ten33Deduction;
+  const totalDeductions = himmelsrichtungDeduction + (config.hasUturn ? uturnDeduction : 0) + ten33Deduction;
   const totalScore = Math.max(0, locationScore - totalDeductions);
-  const passed = totalScore >= PASS_SCORE;
+  const passed = totalScore >= config.passScore;
 
   const { data: exams, isLoading } = useQuery({
-    queryKey: ["practical-exams"],
+    queryKey: ["practical-exams", examType],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("practical_exam_results")
         .select("*")
-        .eq("exam_type", "ASD1")
+        .eq("exam_type", config.type)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((d: any) => ({
@@ -92,14 +137,14 @@ const PracticalExam = () => {
       const { error } = await supabase.from("practical_exam_results").insert({
         candidate_name: candidateName,
         candidate_dienstnummer: candidateDienstnummer,
-        exam_type: "ASD1",
+        exam_type: config.type,
         checked_locations: checkedLocations,
         himmelsrichtung_deduction: himmelsrichtungDeduction,
-        uturn_deduction: uturnDeduction,
+        uturn_deduction: config.hasUturn ? uturnDeduction : 0,
         ten33_deduction: ten33Deduction,
         location_score: locationScore,
         total_score: totalScore,
-        max_score: MAX_SCORE,
+        max_score: config.maxScore,
         status: passed ? "passed" : "failed",
         examiner_id: user?.id,
         examiner_name: profile?.name || null,
@@ -108,7 +153,7 @@ const PracticalExam = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["practical-exams"] });
+      queryClient.invalidateQueries({ queryKey: ["practical-exams", examType] });
       toast.success("Prüfung gespeichert!");
       resetForm();
       setView("list");
@@ -122,7 +167,7 @@ const PracticalExam = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["practical-exams"] });
+      queryClient.invalidateQueries({ queryKey: ["practical-exams", examType] });
       toast.success("Prüfung gelöscht");
       setView("list");
       setSelectedExam(null);
@@ -153,7 +198,7 @@ const PracticalExam = () => {
           <Button variant="ghost" size="sm" onClick={() => { resetForm(); setView("list"); }}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Zurück
           </Button>
-          <h2 className="text-xl font-bold text-foreground">Bewerbungsprüfung ASD 1</h2>
+          <h2 className="text-xl font-bold text-foreground">{config.label}</h2>
         </div>
 
         {/* Candidate Info */}
@@ -180,14 +225,14 @@ const PracticalExam = () => {
               <MapPin className="w-5 h-5 text-primary" /> Prüfungsorte
             </h3>
             <Badge variant="secondary" className="text-sm">
-              {checkedLocations.length} / {ASD1_LOCATIONS.length} Orte
+              {checkedLocations.length} / {config.locations.length} Orte
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
             Haken Sie jeden Ort ab, den der Bewerber korrekt durchgegeben hat. Jeder Ort = 1 Punkt.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {ASD1_LOCATIONS.map((loc) => (
+            {config.locations.map((loc) => (
               <label
                 key={loc}
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
@@ -216,7 +261,7 @@ const PracticalExam = () => {
           <p className="text-xs text-muted-foreground">
             Tragen Sie die Strafpunkte manuell ein. Positive Zahlen = Abzug.
           </p>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className={`grid gap-4 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
             <div className="space-y-2">
               <Label className="text-xs">Himmelsrichtung (-1 bis -2)</Label>
               <Input
@@ -228,27 +273,29 @@ const PracticalExam = () => {
               />
               <p className="text-xs text-muted-foreground">Keine Himmelsrichtung angesagt</p>
             </div>
+            {config.hasUturn && (
+              <div className="space-y-2">
+                <Label className="text-xs">U-Turn Abzug (-1 je U-Turn)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={uturnDeduction}
+                  onChange={e => setUturnDeduction(Math.max(0, parseInt(e.target.value) || 0))}
+                />
+                <p className="text-xs text-muted-foreground">Keine U-Turns angesagt</p>
+              </div>
+            )}
             <div className="space-y-2">
-              <Label className="text-xs">U-Turn Abzug (-1 je U-Turn)</Label>
+              <Label className="text-xs">10-33 Abzug (-1 je 10-33)</Label>
               <Input
                 type="number"
                 min={0}
-                max={10}
-                value={uturnDeduction}
-                onChange={e => setUturnDeduction(Math.max(0, parseInt(e.target.value) || 0))}
-              />
-              <p className="text-xs text-muted-foreground">Keine U-Turns angesagt</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">10-33 Abzug (-1)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={1}
+                max={config.max1033}
                 value={ten33Deduction}
-                onChange={e => setTen33Deduction(Math.max(0, Math.min(1, parseInt(e.target.value) || 0)))}
+                onChange={e => setTen33Deduction(Math.max(0, Math.min(config.max1033, parseInt(e.target.value) || 0)))}
               />
-              <p className="text-xs text-muted-foreground">Keine 10-33 angesagt</p>
+              <p className="text-xs text-muted-foreground">Keine 10-33 angesagt (max. {config.max1033})</p>
             </div>
           </div>
         </div>
@@ -276,7 +323,7 @@ const PracticalExam = () => {
             <div>
               <p className="text-xs text-muted-foreground">Gesamt</p>
               <p className={`text-2xl font-bold ${passed ? "text-green-400" : "text-red-400"}`}>
-                {totalScore} / {MAX_SCORE}
+                {totalScore} / {config.maxScore}
               </p>
             </div>
             <div>
@@ -287,7 +334,7 @@ const PracticalExam = () => {
             </div>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            Mindestpunktzahl: {PASS_SCORE} / {MAX_SCORE} — Unterschreitung führt zur Ablehnung + 2 Wochen Bewerbungssperre
+            Mindestpunktzahl: {config.passScore} / {config.maxScore} — Unterschreitung führt zur Ablehnung + 2 Wochen Bewerbungssperre
           </p>
         </div>
 
@@ -315,6 +362,7 @@ const PracticalExam = () => {
   if (view === "detail" && selectedExam) {
     const exam = selectedExam;
     const isPassed = exam.status === "passed";
+    const detailLocations = EXAM_CONFIGS[exam.exam_type]?.locations || config.locations;
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -374,15 +422,17 @@ const PracticalExam = () => {
               </Badge>
             </div>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
+          <div className={`mt-4 grid gap-2 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"} text-sm`}>
             <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
               <span className="text-muted-foreground">Himmelsrichtung</span>
               <span className="text-red-400">-{exam.himmelsrichtung_deduction}</span>
             </div>
-            <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
-              <span className="text-muted-foreground">U-Turn</span>
-              <span className="text-red-400">-{exam.uturn_deduction}</span>
-            </div>
+            {config.hasUturn && (
+              <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
+                <span className="text-muted-foreground">U-Turn</span>
+                <span className="text-red-400">-{exam.uturn_deduction}</span>
+              </div>
+            )}
             <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
               <span className="text-muted-foreground">10-33</span>
               <span className="text-red-400">-{exam.ten33_deduction}</span>
@@ -393,10 +443,10 @@ const PracticalExam = () => {
         {/* Checked Locations */}
         <div className="border border-border rounded-xl bg-card p-5 space-y-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" /> Abgehakte Orte ({exam.checked_locations.length}/{ASD1_LOCATIONS.length})
+            <MapPin className="w-5 h-5 text-primary" /> Abgehakte Orte ({exam.checked_locations.length}/{detailLocations.length})
           </h3>
           <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
-            {ASD1_LOCATIONS.map(loc => {
+            {detailLocations.map(loc => {
               const checked = exam.checked_locations.includes(loc);
               return (
                 <div key={loc} className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${checked ? "text-green-400" : "text-red-400/60"}`}>
@@ -434,9 +484,9 @@ const PracticalExam = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Bewerbungsprüfung ASD 1</h2>
+          <h2 className="text-xl font-bold text-foreground">{config.label}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            35 Punkte · Mindestpunktzahl 28 · {exams?.length || 0} Prüfungen
+            {config.maxScore} Punkte · Mindestpunktzahl {config.passScore} · {exams?.length || 0} Prüfungen
           </p>
         </div>
         {canEdit && (
