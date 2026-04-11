@@ -112,8 +112,8 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
   const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
   const locationScore = checkedLocations.length;
-  const totalDeductions = himmelsrichtungDeduction + (config.hasUturn ? uturnDeduction : 0) + ten33Deduction;
-  const totalScore = Math.max(0, locationScore - totalDeductions);
+  const totalBonus = himmelsrichtungDeduction + (config.hasUturn ? uturnDeduction : 0) + ten33Deduction;
+  const totalScore = Math.min(config.maxScore, locationScore + totalBonus);
   const passed = totalScore >= config.passScore;
 
   const { data: exams, isLoading } = useQuery({
