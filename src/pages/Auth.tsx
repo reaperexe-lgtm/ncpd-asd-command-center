@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 import { Shield, User, Lock, Hash, Plane, ArrowLeft } from "lucide-react";
+import TheoryExam from "@/components/TheoryExam";
 
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
 
