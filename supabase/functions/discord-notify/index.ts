@@ -4,13 +4,9 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 const DISCORD_API = "https://discord.com/api/v10";
 
 async function sendDM(botToken: string, discordId: string, message: string) {
-  // Create DM channel
   const channelRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
     method: "POST",
-    headers: {
-      Authorization: `Bot ${botToken}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ recipient_id: discordId }),
   });
   if (!channelRes.ok) {
@@ -19,18 +15,27 @@ async function sendDM(botToken: string, discordId: string, message: string) {
   }
   const channel = await channelRes.json();
 
-  // Send message
   const msgRes = await fetch(`${DISCORD_API}/channels/${channel.id}/messages`, {
     method: "POST",
-    headers: {
-      Authorization: `Bot ${botToken}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ content: message }),
   });
   if (!msgRes.ok) {
     const err = await msgRes.text();
     throw new Error(`Failed to send DM: ${err}`);
+  }
+  return await msgRes.json();
+}
+
+async function sendChannelMessage(botToken: string, channelId: string, message: string) {
+  const msgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ content: message }),
+  });
+  if (!msgRes.ok) {
+    const err = await msgRes.text();
+    throw new Error(`Failed to send channel message: ${err}`);
   }
   return await msgRes.json();
 }
@@ -52,7 +57,7 @@ Deno.serve(async (req) => {
     const { type, data } = await req.json();
 
     if (type === "reset_request") {
-      // Notify all admins with discord_id about new reset request
+      // Notify all admins with discord_id about new reset request via DM
       const { data: adminRoles } = await supabaseAdmin
         .from("user_roles")
         .select("user_id")
@@ -90,16 +95,17 @@ Deno.serve(async (req) => {
     }
 
     if (type === "stats_report") {
-      // Send stats report to all users with discord_id
+      // Send stats report to a Discord CHANNEL (not DMs)
+      const channelId = Deno.env.get("DISCORD_CHANNEL_ID");
+      if (!channelId) throw new Error("DISCORD_CHANNEL_ID not set");
+
       const reportType = data.report_type; // "weekly" or "monthly"
 
-      // Get date range
       const now = new Date();
       let startDate: Date;
       let label: string;
 
       if (reportType === "weekly") {
-        // ASD week: Sunday 18:20 to Sunday 18:20
         const dayOfWeek = now.getDay();
         startDate = new Date(now);
         startDate.setDate(now.getDate() - ((dayOfWeek === 0 ? 0 : dayOfWeek)));
@@ -109,19 +115,16 @@ Deno.serve(async (req) => {
         }
         label = "📊 **Wöchentliche ASD-Statistik**";
       } else {
-        // Monthly: 1st of current month
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         label = "📊 **Monatliche Statistik**";
       }
 
-      // Get missions in period
       const { data: missions } = await supabaseAdmin
         .from("missions")
         .select("protokollschreiber, created_at")
         .gte("created_at", startDate.toISOString())
         .lte("created_at", now.toISOString());
 
-      // Count per user
       const counts: Record<string, number> = {};
       for (const m of missions || []) {
         if (m.protokollschreiber) {
@@ -129,7 +132,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Get profiles for names
       const userIds = Object.keys(counts);
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
@@ -142,9 +144,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Sort by count descending
-      const sorted = Object.entries(counts)
-        .sort(([, a], [, b]) => b - a);
+      const sorted = Object.entries(counts).sort(([, a], [, b]) => b - a);
 
       let leaderboard = "";
       const medals = ["🥇", "🥈", "🥉"];
@@ -158,27 +158,18 @@ Deno.serve(async (req) => {
 
       const message = `${label}\n━━━━━━━━━━━━━━━\n${leaderboard}\n📅 Zeitraum: ${startDate.toLocaleDateString("de-DE")} – ${now.toLocaleDateString("de-DE")}\n📝 Gesamt: ${missions?.length || 0} Protokolle`;
 
-      // Send to all users with discord_id
-      const { data: allProfiles } = await supabaseAdmin
-        .from("profiles")
-        .select("discord_id")
-        .not("discord_id", "is", null);
-
-      const results = [];
-      for (const profile of allProfiles || []) {
-        if (profile.discord_id) {
-          try {
-            await sendDM(botToken, profile.discord_id, message);
-            results.push({ discord_id: profile.discord_id, status: "sent" });
-          } catch (e) {
-            results.push({ discord_id: profile.discord_id, status: "failed", error: e.message });
-          }
-        }
+      // Send to channel instead of DMs
+      try {
+        await sendChannelMessage(botToken, channelId, message);
+        return new Response(JSON.stringify({ success: true, target: "channel", channel_id: channelId, report: message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-
-      return new Response(JSON.stringify({ success: true, results, report: message }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     return new Response(JSON.stringify({ error: "Unknown type" }), {
