@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Plus, Pencil, Trash2, Save, X, GraduationCap,
-  ChevronDown, ChevronUp, BookOpen
+  ChevronDown, ChevronUp, BookOpen, Eye
 } from "lucide-react";
+import LeitfadenContent from "./LeitfadenContent";
 
 interface TrainingModule {
   id: string;
@@ -33,6 +34,7 @@ const TrainingModules = () => {
   const [editingModule, setEditingModule] = useState<TrainingModule | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", description: "", category: "Allgemein" });
+  const [showLeitfaden, setShowLeitfaden] = useState(false);
 
   const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
@@ -254,9 +256,25 @@ const TrainingModules = () => {
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium text-foreground">{mod.name}</h4>
                               {!mod.is_active && <Badge variant="secondary" className="text-xs">Inaktiv</Badge>}
+                              {mod.name === "NCPD ASD | Ausbildungsleitfaden" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() => setShowLeitfaden(!showLeitfaden)}
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  {showLeitfaden ? "Ausblenden" : "Leitfaden öffnen"}
+                                </Button>
+                              )}
                             </div>
                             {mod.description && (
                               <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{mod.description}</p>
+                            )}
+                            {mod.name === "NCPD ASD | Ausbildungsleitfaden" && showLeitfaden && (
+                              <div className="mt-4">
+                                <LeitfadenContent />
+                              </div>
                             )}
                           </div>
                           {canEdit && (
