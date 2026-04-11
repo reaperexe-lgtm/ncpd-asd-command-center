@@ -426,7 +426,9 @@ const TheoryExamResultsPage = () => {
 
               {isExpanded && (
                 <div className="border-t border-border p-4 space-y-4">
-                  {examAnswers.map((a, i) => (
+                  {examAnswers.map((a, i) => {
+                    const matchingQuestion = questions?.find(qq => qq.id === a.questionId);
+                    return (
                     <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border">
                       <div className="flex items-start justify-between mb-2">
                         <span className="text-sm font-medium text-foreground flex-1">
@@ -436,6 +438,11 @@ const TheoryExamResultsPage = () => {
                           max. {a.maxPoints} {a.maxPoints === 1 ? "Punkt" : "Punkte"}
                         </span>
                       </div>
+                      {matchingQuestion?.image_url && (
+                        <div className="mb-2 rounded-lg overflow-hidden border border-border">
+                          <img src={matchingQuestion.image_url} alt="Fragenbild" className="max-h-48 object-contain bg-black/10" />
+                        </div>
+                      )}
                       <p className="text-sm text-foreground/80 bg-background rounded p-2 mb-2 whitespace-pre-wrap">
                         {a.answer || <span className="italic text-muted-foreground">Keine Antwort</span>}
                       </p>
@@ -458,7 +465,8 @@ const TheoryExamResultsPage = () => {
                         <span className="text-xs text-muted-foreground">/ {a.maxPoints}</span>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-sm font-medium text-foreground">
