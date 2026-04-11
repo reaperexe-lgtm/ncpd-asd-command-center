@@ -30,12 +30,12 @@ interface ExamResult {
 }
 
 const TheoryExamResultsPage = () => {
-  const { userRole } = useAuth();
+  const { role } = useAuth();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [grading, setGrading] = useState<Record<string, Record<number, number>>>({});
 
-  const canManage = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(userRole || "");
+  const canManage = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
   const { data: results, isLoading } = useQuery({
     queryKey: ["theory-exam-results"],
@@ -92,7 +92,7 @@ const TheoryExamResultsPage = () => {
     });
   };
 
-  const isAdmin = ["admin", "director", "co_director"].includes(userRole || "");
+  const isAdmin = ["admin", "director", "co_director"].includes(role || "");
 
   if (!canManage) {
     return <div className="text-center py-12 text-muted-foreground">Keine Berechtigung.</div>;
