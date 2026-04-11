@@ -406,7 +406,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
             <div>
               <p className="text-xs text-muted-foreground">Zusatzpunkte</p>
               <p className="text-2xl font-bold text-red-400">
-                -{exam.himmelsrichtung_deduction + exam.uturn_deduction + exam.ten33_deduction}
+                +{exam.himmelsrichtung_deduction + exam.uturn_deduction + exam.ten33_deduction}
               </p>
             </div>
             <div>
@@ -425,17 +425,17 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           <div className={`mt-4 grid gap-2 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"} text-sm`}>
             <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
               <span className="text-muted-foreground">Himmelsrichtung</span>
-              <span className="text-red-400">-{exam.himmelsrichtung_deduction}</span>
+              <span className="text-green-400">+{exam.himmelsrichtung_deduction}</span>
             </div>
             {config.hasUturn && (
               <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
                 <span className="text-muted-foreground">U-Turn</span>
-                <span className="text-red-400">-{exam.uturn_deduction}</span>
+                <span className="text-green-400">+{exam.uturn_deduction}</span>
               </div>
             )}
             <div className="flex justify-between px-3 py-2 rounded bg-background border border-border">
               <span className="text-muted-foreground">10-33</span>
-              <span className="text-red-400">-{exam.ten33_deduction}</span>
+              <span className="text-green-400">+{exam.ten33_deduction}</span>
             </div>
           </div>
         </div>
