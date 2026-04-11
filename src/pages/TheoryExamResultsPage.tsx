@@ -41,6 +41,7 @@ interface ExamQuestion {
   type: string;
   image_url: string | null;
   sort_order: number;
+  solution: string | null;
 }
 
 const TheoryExamResultsPage = () => {
@@ -50,7 +51,7 @@ const TheoryExamResultsPage = () => {
   const [grading, setGrading] = useState<Record<string, Record<string, number>>>({});
   const [showQuestionManager, setShowQuestionManager] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<ExamQuestion | null>(null);
-  const [newQuestion, setNewQuestion] = useState({ question: "", points: 1, type: "short" as string });
+  const [newQuestion, setNewQuestion] = useState({ question: "", points: 1, type: "short" as string, solution: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,20 +120,21 @@ const TheoryExamResultsPage = () => {
 
   // Question management mutations
   const addQuestionMutation = useMutation({
-    mutationFn: async (q: { question: string; points: number; type: string; image_url?: string }) => {
+    mutationFn: async (q: { question: string; points: number; type: string; image_url?: string; solution?: string }) => {
       const maxOrder = questions?.reduce((max, qq) => Math.max(max, qq.sort_order), 0) || 0;
       const { error } = await supabase.from("theory_exam_questions").insert({
         question: q.question,
         points: q.points,
         type: q.type,
         image_url: q.image_url || null,
+        solution: q.solution || null,
         sort_order: maxOrder + 1,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["theory-exam-questions"] });
-      setNewQuestion({ question: "", points: 1, type: "short" });
+      setNewQuestion({ question: "", points: 1, type: "short", solution: "" });
       toast.success("Frage hinzugefügt!");
     },
   });
@@ -140,7 +142,7 @@ const TheoryExamResultsPage = () => {
   const updateQuestionMutation = useMutation({
     mutationFn: async (q: ExamQuestion) => {
       const { error } = await supabase.from("theory_exam_questions")
-        .update({ question: q.question, points: q.points, type: q.type, image_url: q.image_url })
+        .update({ question: q.question, points: q.points, type: q.type, image_url: q.image_url, solution: q.solution })
         .eq("id", q.id);
       if (error) throw error;
     },
