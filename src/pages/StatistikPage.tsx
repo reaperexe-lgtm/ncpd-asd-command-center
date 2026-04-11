@@ -170,6 +170,11 @@ const StatistikPage = () => {
       } as any);
       if (error) throw error;
       logActivity(`Reset-Anfrage gestellt: ${RESET_TYPE_LABELS[resetType] || resetType}`, "admin", { reset_type: resetType, reason });
+      // Notify admins via Discord DM
+      const userName = profiles?.find((p) => p.id === user?.id)?.name || "Unbekannt";
+      supabase.functions.invoke("discord-notify", {
+        body: { type: "reset_request", data: { reset_type: RESET_TYPE_LABELS[resetType] || resetType, reason, requested_by_name: userName } },
+      }).catch(() => {});
     },
     onSuccess: () => {
       toast.success("Reset-Anfrage wurde an den Admin gesendet");
