@@ -126,13 +126,13 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
         maxPoints: q.points,
       }));
 
-      const { data, error } = await supabase.from("theory_exam_results").insert({
+      const { error } = await supabase.from("theory_exam_results").insert({
         name: name.trim(),
         dienstnummer: dienstnummer.trim(),
         answers: formattedAnswers,
         max_score: maxScore,
         status: "submitted",
-      }).select("id").single();
+      });
 
       if (error) throw error;
       setSubmittedExamId(data.id);
