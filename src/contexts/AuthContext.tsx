@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const isAdmin = role === "director" || role === "co_director" || role === "admin";
+  const isAdmin = role === "director" || role === "co_director" || role === "admin" || role === "supervisor";
 
   return (
     <AuthContext.Provider value={{ session, user, role, isApproved, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => {}), profile }}>
