@@ -405,7 +405,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Zusatzpunkte</p>
-              <p className="text-2xl font-bold text-red-400">
+              <p className="text-2xl font-bold text-green-400">
                 +{exam.himmelsrichtung_deduction + exam.uturn_deduction + exam.ten33_deduction}
               </p>
             </div>
