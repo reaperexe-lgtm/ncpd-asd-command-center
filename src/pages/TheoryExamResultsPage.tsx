@@ -252,7 +252,15 @@ const TheoryExamResultsPage = () => {
                     <Textarea
                       value={editingQuestion.question}
                       onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
+                      placeholder="Fragetext..."
                       className="bg-background border-border text-sm"
+                    />
+                    <Textarea
+                      value={editingQuestion.solution || ""}
+                      onChange={(e) => setEditingQuestion({ ...editingQuestion, solution: e.target.value })}
+                      placeholder="Musterlösung (optional)..."
+                      className="bg-background border-border text-sm text-primary/80"
+                      rows={2}
                     />
                     <div className="flex gap-3 items-end">
                       <div className="space-y-1">
@@ -341,6 +349,13 @@ const TheoryExamResultsPage = () => {
               onChange={(e) => setNewQuestion({ ...newQuestion, question: e.target.value })}
               placeholder="Fragetext eingeben..."
               className="bg-background border-border text-sm"
+            />
+            <Textarea
+              value={newQuestion.solution}
+              onChange={(e) => setNewQuestion({ ...newQuestion, solution: e.target.value })}
+              placeholder="Musterlösung (optional)..."
+              className="bg-background border-border text-sm"
+              rows={2}
             />
             <div className="flex gap-3 items-end flex-wrap">
               <div className="space-y-1">
