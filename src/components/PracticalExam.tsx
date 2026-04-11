@@ -256,10 +256,10 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
         {/* Manual Deductions */}
         <div className="border border-border rounded-xl bg-card p-5 space-y-4">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-yellow-500" /> Manuelle Punktabzüge
+            <AlertTriangle className="w-5 h-5 text-yellow-500" /> Manuelle Zusatzpunkte
           </h3>
           <p className="text-xs text-muted-foreground">
-            Tragen Sie die Strafpunkte manuell ein. Positive Zahlen = Abzug.
+            Tragen Sie die Zusatzpunkte manuell ein.
           </p>
           <div className={`grid gap-4 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
             <div className="space-y-2">
@@ -317,8 +317,8 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
               <p className="text-2xl font-bold text-foreground">{locationScore}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Abzüge</p>
-              <p className="text-2xl font-bold text-red-400">-{totalDeductions}</p>
+              <p className="text-xs text-muted-foreground">Zusatzpunkte</p>
+              <p className="text-2xl font-bold text-green-400">+{totalBonus}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Gesamt</p>
@@ -404,7 +404,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
               <p className="text-2xl font-bold">{exam.location_score}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Abzüge</p>
+              <p className="text-xs text-muted-foreground">Zusatzpunkte</p>
               <p className="text-2xl font-bold text-red-400">
                 -{exam.himmelsrichtung_deduction + exam.uturn_deduction + exam.ten33_deduction}
               </p>
