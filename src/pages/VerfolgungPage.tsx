@@ -224,22 +224,25 @@ const VerfolgungPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Pilot", value: pilot, set: setPilot },
-                { label: "Co-Pilot", value: coPilot, set: setCoPilot },
-                { label: "Left Gunner", value: leftGunner, set: setLeftGunner },
-                { label: "Right Gunner", value: rightGunner, set: setRightGunner },
-              ].map(({ label, value, set }) => (
+                { label: "Pilot", value: pilot, set: setPilot, listId: "pursuit-pilot-list" },
+                { label: "Co-Pilot", value: coPilot, set: setCoPilot, listId: "pursuit-copilot-list" },
+                { label: "Left Gunner", value: leftGunner, set: setLeftGunner, listId: "pursuit-lg-list" },
+                { label: "Right Gunner", value: rightGunner, set: setRightGunner, listId: "pursuit-rg-list" },
+              ].map(({ label, value, set, listId }) => (
                 <div key={label}>
                   <Label>{label}</Label>
-                  <Select value={value} onValueChange={set}>
-                    <SelectTrigger className="mt-1 bg-background border-border"><SelectValue placeholder={`${label} wählen...`} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">–</SelectItem>
-                      {members?.map((m) => (
-                        <SelectItem key={m.id} value={m.name}>{m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    className="mt-1 bg-background border-border"
+                    placeholder={`${label} wählen...`}
+                    value={value}
+                    onChange={(e) => set(e.target.value)}
+                    list={listId}
+                  />
+                  <datalist id={listId}>
+                    {members?.map((m) => (
+                      <option key={m.id} value={m.name}>{m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}</option>
+                    ))}
+                  </datalist>
                 </div>
               ))}
             </div>
