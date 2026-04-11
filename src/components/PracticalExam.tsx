@@ -218,7 +218,7 @@ const PracticalExam = () => {
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label className="text-xs">Himmelsrichtung (+1 bis +2)</Label>
+              <Label className="text-xs">Himmelsrichtung (-1 bis -2)</Label>
               <Input
                 type="number"
                 min={0}
@@ -229,7 +229,7 @@ const PracticalExam = () => {
               <p className="text-xs text-muted-foreground">Keine Himmelsrichtung angesagt</p>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">U-Turn Abzug (+1 je U-Turn)</Label>
+              <Label className="text-xs">U-Turn Abzug (-1 je U-Turn)</Label>
               <Input
                 type="number"
                 min={0}
@@ -240,7 +240,7 @@ const PracticalExam = () => {
               <p className="text-xs text-muted-foreground">Keine U-Turns angesagt</p>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">10-33 Abzug (+1)</Label>
+              <Label className="text-xs">10-33 Abzug (-1)</Label>
               <Input
                 type="number"
                 min={0}
