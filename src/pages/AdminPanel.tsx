@@ -459,7 +459,114 @@ const AdminPanel = () => {
           )}
         </TabsContent>
 
-        {/* Activity Log Tab */}
+        {/* Permissions Tab */}
+        <TabsContent value="permissions">
+          {(() => {
+            const PERMISSION_MATRIX: { label: string; description: string; roles: string[] }[] = [
+              { label: "Admin-Bereich", description: "Zugriff auf den Admin-Bereich", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Benutzer freischalten", description: "Neue Registrierungen genehmigen/ablehnen", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Rollen ändern", description: "Benutzerrollen zuweisen und ändern", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Benutzer löschen", description: "Benutzerkonten endgültig entfernen", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Fluglizenzen verwalten", description: "Fluglizenzen erstellen, bearbeiten, löschen", roles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"] },
+              { label: "Prüfungen bewerten", description: "Theorie- und Praxisprüfungen bewerten", roles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"] },
+              { label: "Protokolle löschen", description: "Einsatz- und Verfolgungsprotokolle löschen", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Statistik zurücksetzen", description: "Statistiken zurücksetzen (mit Antrag)", roles: ["admin", "director", "co_director", "ausbilder"] },
+              { label: "Familien/Gangs verwalten", description: "Familien und Gangs erstellen, bearbeiten, löschen", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Fragen bearbeiten", description: "Theorie-Prüfungsfragen erstellen und bearbeiten", roles: ["admin", "director", "co_director", "supervisor"] },
+              { label: "Einsätze erstellen", description: "Neue Einsatzprotokolle anlegen", roles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] },
+              { label: "Verfolgungen erstellen", description: "Neue 10-80 Verfolgungen anlegen", roles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] },
+            ];
+
+            const usersByRole = ROLES.reduce((acc, role) => {
+              acc[role] = approved.filter(u => u.role === role);
+              return acc;
+            }, {} as Record<string, typeof approved>);
+
+            return (
+              <div className="space-y-6">
+                {/* Permission Matrix */}
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background/50">
+                    <Lock className="w-4 h-4 text-primary" />
+                    <h2 className="text-sm font-bold text-primary">Berechtigungsmatrix</h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border bg-background/30">
+                          <th className="px-3 py-2.5 text-left font-semibold text-primary uppercase tracking-wider min-w-[180px]">Berechtigung</th>
+                          {ROLES.map(r => (
+                            <th key={r} className="px-2 py-2.5 text-center font-semibold text-primary uppercase tracking-wider whitespace-nowrap">
+                              {ROLE_LABELS[r]}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {PERMISSION_MATRIX.map((perm, i) => (
+                          <tr key={i} className="border-b border-border/20 hover:bg-primary/[0.02] transition-colors">
+                            <td className="px-3 py-2">
+                              <p className="font-medium text-foreground">{perm.label}</p>
+                              <p className="text-[10px] text-muted-foreground">{perm.description}</p>
+                            </td>
+                            {ROLES.map(r => (
+                              <td key={r} className="px-2 py-2 text-center">
+                                {perm.roles.includes(r) ? (
+                                  <Check className="w-4 h-4 text-green-400 mx-auto" />
+                                ) : (
+                                  <X className="w-4 h-4 text-muted-foreground/30 mx-auto" />
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Users per Role */}
+                <div className="bg-card border border-border rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background/50">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <h2 className="text-sm font-bold text-primary">Benutzer nach Rolle</h2>
+                  </div>
+                  <div className="divide-y divide-border/30">
+                    {ROLES.map(role => {
+                      const roleUsers = usersByRole[role] || [];
+                      return (
+                        <div key={role} className="px-4 py-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-primary">{ROLE_LABELS[role]}</span>
+                            <span className="text-[10px] text-muted-foreground">{roleUsers.length} Benutzer</span>
+                          </div>
+                          {roleUsers.length === 0 ? (
+                            <p className="text-[10px] text-muted-foreground italic">Keine Benutzer</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {roleUsers.map(u => (
+                                <div key={u.id} className="flex items-center gap-2 bg-background border border-border rounded-md px-2.5 py-1.5">
+                                  <span className="text-xs font-medium">{u.name}</span>
+                                  {u.dienstnummer && <span className="text-[10px] text-muted-foreground font-mono">({u.dienstnummer})</span>}
+                                  <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
+                                    <SelectTrigger className="w-28 h-6 text-[10px] bg-background border-border ml-1"><SelectValue /></SelectTrigger>
+                                    <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                                  </Select>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </TabsContent>
+
+
         <TabsContent value="logs">
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/50">
