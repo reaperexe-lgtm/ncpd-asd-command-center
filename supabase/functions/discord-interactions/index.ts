@@ -183,11 +183,13 @@ Deno.serve(async (req) => {
         .select("id")
         .eq("name", profile.name);
 
+      const totalProtokolle = (protokolle?.length || 0) + (pursuitsCreated?.length || 0);
+
       const statsMsg = [
         `📊 **Wochenstatistik: ${profile.name}** (${profile.dienstnummer || "–"})`,
         `━━━━━━━━━━━━━━━`,
         `📋 Einsätze erstellt: **${missionsCreated?.length || 0}**`,
-        `📝 Protokolle geschrieben: **${protokolle?.length || 0}**`,
+        `📝 Protokolle geschrieben: **${totalProtokolle}** (${protokolle?.length || 0} Einsätze + ${pursuitsCreated?.length || 0} 10-80)`,
         `🚁 Einsatz-Besatzung: **${crewMissions?.length || 0}**`,
         `🚔 10-80 erstellt: **${pursuitsCreated?.length || 0}**`,
         `🚔 10-80 Besatzung: **${pursuitCrew?.length || 0}**`,
