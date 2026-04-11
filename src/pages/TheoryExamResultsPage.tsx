@@ -41,6 +41,7 @@ interface ExamQuestion {
   type: string;
   image_url: string | null;
   sort_order: number;
+  solution: string | null;
 }
 
 const TheoryExamResultsPage = () => {
@@ -50,7 +51,7 @@ const TheoryExamResultsPage = () => {
   const [grading, setGrading] = useState<Record<string, Record<string, number>>>({});
   const [showQuestionManager, setShowQuestionManager] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<ExamQuestion | null>(null);
-  const [newQuestion, setNewQuestion] = useState({ question: "", points: 1, type: "short" as string });
+  const [newQuestion, setNewQuestion] = useState({ question: "", points: 1, type: "short" as string, solution: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,20 +120,21 @@ const TheoryExamResultsPage = () => {
 
   // Question management mutations
   const addQuestionMutation = useMutation({
-    mutationFn: async (q: { question: string; points: number; type: string; image_url?: string }) => {
+    mutationFn: async (q: { question: string; points: number; type: string; image_url?: string; solution?: string }) => {
       const maxOrder = questions?.reduce((max, qq) => Math.max(max, qq.sort_order), 0) || 0;
       const { error } = await supabase.from("theory_exam_questions").insert({
         question: q.question,
         points: q.points,
         type: q.type,
         image_url: q.image_url || null,
+        solution: q.solution || null,
         sort_order: maxOrder + 1,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["theory-exam-questions"] });
-      setNewQuestion({ question: "", points: 1, type: "short" });
+      setNewQuestion({ question: "", points: 1, type: "short", solution: "" });
       toast.success("Frage hinzugefügt!");
     },
   });
@@ -140,7 +142,7 @@ const TheoryExamResultsPage = () => {
   const updateQuestionMutation = useMutation({
     mutationFn: async (q: ExamQuestion) => {
       const { error } = await supabase.from("theory_exam_questions")
-        .update({ question: q.question, points: q.points, type: q.type, image_url: q.image_url })
+        .update({ question: q.question, points: q.points, type: q.type, image_url: q.image_url, solution: q.solution })
         .eq("id", q.id);
       if (error) throw error;
     },
@@ -250,7 +252,15 @@ const TheoryExamResultsPage = () => {
                     <Textarea
                       value={editingQuestion.question}
                       onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
+                      placeholder="Fragetext..."
                       className="bg-background border-border text-sm"
+                    />
+                    <Textarea
+                      value={editingQuestion.solution || ""}
+                      onChange={(e) => setEditingQuestion({ ...editingQuestion, solution: e.target.value })}
+                      placeholder="Musterlösung (optional)..."
+                      className="bg-background border-border text-sm text-primary/80"
+                      rows={2}
                     />
                     <div className="flex gap-3 items-end">
                       <div className="space-y-1">
@@ -339,6 +349,13 @@ const TheoryExamResultsPage = () => {
               onChange={(e) => setNewQuestion({ ...newQuestion, question: e.target.value })}
               placeholder="Fragetext eingeben..."
               className="bg-background border-border text-sm"
+            />
+            <Textarea
+              value={newQuestion.solution}
+              onChange={(e) => setNewQuestion({ ...newQuestion, solution: e.target.value })}
+              placeholder="Musterlösung (optional)..."
+              className="bg-background border-border text-sm"
+              rows={2}
             />
             <div className="flex gap-3 items-end flex-wrap">
               <div className="space-y-1">
@@ -446,6 +463,12 @@ const TheoryExamResultsPage = () => {
                       <p className="text-sm text-foreground/80 bg-background rounded p-2 mb-2 whitespace-pre-wrap">
                         {a.answer || <span className="italic text-muted-foreground">Keine Antwort</span>}
                       </p>
+                      {matchingQuestion?.solution && (
+                        <div className="mb-2 p-2 rounded bg-primary/10 border border-primary/20">
+                          <span className="text-xs font-semibold text-primary">Musterlösung:</span>
+                          <p className="text-sm text-foreground/80 whitespace-pre-wrap mt-0.5">{matchingQuestion.solution}</p>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">Punkte:</span>
                         <Input
