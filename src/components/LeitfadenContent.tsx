@@ -1,6 +1,8 @@
 import leitfadenCover from "@/assets/leitfaden-cover.png";
 import leitfadenBurgershot from "@/assets/leitfaden-burgershot.png";
+import leitfadenFallschirm from "@/assets/leitfaden-fallschirm.png";
 import leitfadenCombatlanding from "@/assets/leitfaden-combatlanding.png";
+import leitfadenHang from "@/assets/leitfaden-hang.png";
 import leitfadenPruefungsstrecke from "@/assets/leitfaden-pruefungsstrecke.png";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -77,6 +79,7 @@ const LeitfadenContent = () => {
             Der Helikopter befindet sich auf Höhe des 3. Strichs über Burgershot.<br />
             <strong className="text-foreground">Ziel:</strong> Landung auf dem Helipad der Yacht.
           </p>
+          <img src={leitfadenFallschirm} alt="Fallschirmsprung" className="w-full rounded-lg border border-border mt-3" />
         </SubSection>
 
         <SubSection title="Combatlanding (PLZ 10012)">
@@ -92,6 +95,7 @@ const LeitfadenContent = () => {
           <p className="text-sm text-muted-foreground">
             Nach dem Aufsetzen auf dem Boden darf der Helikopter nicht weiter als <strong className="text-foreground">2 m</strong> nach unten rutschen, sonst ist die Landung ungültig.
           </p>
+          <img src={leitfadenHang} alt="Landen am Hang" className="w-full rounded-lg border border-border mt-3" />
         </SubSection>
       </Section>
 
