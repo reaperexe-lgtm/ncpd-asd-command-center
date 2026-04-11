@@ -34,6 +34,7 @@ const TrainingModules = () => {
   const [editingModule, setEditingModule] = useState<TrainingModule | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", description: "", category: "Allgemein" });
+  const [showLeitfaden, setShowLeitfaden] = useState(false);
 
   const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
