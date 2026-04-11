@@ -1,60 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ArrowRight, CheckCircle, Plane, Hash, User, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, XCircle, Plane, Hash, User, Send, Clock, Loader2 } from "lucide-react";
 import SlideshowBackground from "@/components/SlideshowBackground";
 import asdLogo from "@/assets/asd-logo.png";
 
-const QUESTIONS = [
-  {
-    id: 1,
-    question: "Was bedeutet die Abkürzung OW?",
-    points: 1,
-    type: "short" as const,
-  },
-  {
-    id: 2,
-    question: "Nenne 3 Aufgabengebiete der A.S.D und erkläre in 1-2 Sätzen.",
-    points: 3,
-    type: "long" as const,
-  },
-  {
-    id: 3,
-    question: "Nenne 2 der 3 Funktionen unserer Kamera.",
-    points: 2,
-    type: "short" as const,
-  },
-  {
-    id: 4,
-    question: "Nenne die wichtigste Regel beim benutzen einer Seilwinde.",
-    points: 1,
-    type: "short" as const,
-  },
-  {
-    id: 5,
-    question: "Nenne 3 Aufgabenbereiche des Co.-Piloten.",
-    points: 3,
-    type: "short" as const,
-  },
-  {
-    id: 6,
-    question: "Nenne und erläutere die beiden Funkcodes, welche für eine OW wichtig sind.",
-    points: 2,
-    type: "long" as const,
-  },
-  {
-    id: 7,
-    question: "Nenne die Bedeutung jeder Farbe (Rot, Gelb, Grün) im Einsatzgebiet.",
-    points: 3,
-    type: "long" as const,
-  },
-];
-
-const MAX_SCORE = QUESTIONS.reduce((sum, q) => sum + q.points, 0);
+interface ExamQuestion {
+  id: string;
+  question: string;
+  points: number;
+  type: string;
+  image_url: string | null;
+  sort_order: number;
+}
 
 interface TheoryExamProps {
   onBack: () => void;
@@ -65,8 +27,79 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
   const [name, setName] = useState("");
   const [dienstnummer, setDienstnummer] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [questions, setQuestions] = useState<ExamQuestion[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const [submittedExamId, setSubmittedExamId] = useState<string | null>(null);
+  const [examResult, setExamResult] = useState<{
+    status: string;
+    score: number | null;
+    max_score: number;
+    reviewed_by: string | null;
+    reviewer_name: string | null;
+  } | null>(null);
+
+  // Fetch questions from DB
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const { data, error } = await supabase
+        .from("theory_exam_questions")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      if (error) {
+        toast.error("Fehler beim Laden der Fragen");
+        return;
+      }
+      setQuestions(data || []);
+      setLoadingQuestions(false);
+    };
+    fetchQuestions();
+  }, []);
+
+  // Realtime subscription for exam result
+  useEffect(() => {
+    if (!submittedExamId) return;
+
+    const channel = supabase
+      .channel(`exam-result-${submittedExamId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "theory_exam_results",
+          filter: `id=eq.${submittedExamId}`,
+        },
+        async (payload) => {
+          const updated = payload.new as any;
+          let reviewerName: string | null = null;
+          if (updated.reviewed_by) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("name")
+              .eq("id", updated.reviewed_by)
+              .single();
+            reviewerName = profile?.name || null;
+          }
+          setExamResult({
+            status: updated.status,
+            score: updated.score,
+            max_score: updated.max_score,
+            reviewed_by: updated.reviewed_by,
+            reviewer_name: reviewerName,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [submittedExamId]);
+
+  const maxScore = questions.reduce((sum, q) => sum + q.points, 0);
+  const passThreshold = Math.ceil(maxScore * 0.73);
 
   const handleStartQuiz = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +111,7 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
   };
 
   const handleSubmit = async () => {
-    const unanswered = QUESTIONS.filter((q) => !answers[q.id]?.trim());
+    const unanswered = questions.filter((q) => !answers[q.id]?.trim());
     if (unanswered.length > 0) {
       toast.error(`Bitte beantworte alle Fragen. ${unanswered.length} fehlen noch.`);
       return;
@@ -86,22 +119,24 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
 
     setSubmitting(true);
     try {
-      const formattedAnswers = QUESTIONS.map((q) => ({
+      const formattedAnswers = questions.map((q) => ({
         questionId: q.id,
         question: q.question,
         answer: answers[q.id] || "",
         maxPoints: q.points,
       }));
 
-      const { error } = await supabase.from("theory_exam_results").insert({
+      const { data, error } = await supabase.from("theory_exam_results").insert({
         name: name.trim(),
         dienstnummer: dienstnummer.trim(),
         answers: formattedAnswers,
-        max_score: MAX_SCORE,
+        max_score: maxScore,
         status: "submitted",
-      });
+      }).select("id").single();
 
       if (error) throw error;
+      setSubmittedExamId(data.id);
+      setExamResult({ status: "submitted", score: null, max_score: maxScore, reviewed_by: null, reviewer_name: null });
       setStep("done");
     } catch (error: any) {
       toast.error("Fehler beim Einreichen: " + error.message);
@@ -110,8 +145,16 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
     }
   };
 
-  const q = QUESTIONS[currentQuestion];
-  const progress = ((currentQuestion + 1) / QUESTIONS.length) * 100;
+  if (loadingQuestions) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const q = questions[currentQuestion];
+  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
@@ -131,7 +174,7 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
             <h1 className="text-2xl font-bold text-primary tracking-tight">A.S.D Theorieprüfung</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {step === "info" && "Trage deine Daten ein, um den Test zu starten"}
-              {step === "quiz" && `Frage ${currentQuestion + 1} von ${QUESTIONS.length}`}
+              {step === "quiz" && `Frage ${currentQuestion + 1} von ${questions.length}`}
               {step === "done" && "Test erfolgreich eingereicht!"}
             </p>
           </div>
@@ -142,8 +185,8 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
           <div className="bg-card border border-border rounded-xl p-6 shadow-lg shadow-primary/[0.03]">
             <div className="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/10">
               <p className="text-sm text-muted-foreground">
-                In diesem Test wird Ihr Wissen zu der Theorieausbildung abgefragt. 
-                <span className="font-semibold text-primary"> Bestanden ab {Math.ceil(MAX_SCORE * 0.73)}/{MAX_SCORE} Punkten.</span>
+                In diesem Test wird Ihr Wissen zu der Theorieausbildung abgefragt.
+                <span className="font-semibold text-primary"> Bestanden ab {passThreshold}/{maxScore} Punkten.</span>
               </p>
               <p className="text-xs text-muted-foreground mt-2">
                 Fragen bzgl. des Testes können bei ihrem Ausbilder gestellt werden.
@@ -172,14 +215,10 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
         )}
 
         {/* Step: Quiz */}
-        {step === "quiz" && (
+        {step === "quiz" && q && (
           <>
-            {/* Progress bar */}
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-primary h-full rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6 shadow-lg shadow-primary/[0.03]">
@@ -192,9 +231,13 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
                 </span>
               </div>
 
-              <h2 className="text-lg font-semibold text-foreground mb-6 leading-relaxed">
-                {q.question}
-              </h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4 leading-relaxed">{q.question}</h2>
+
+              {q.image_url && (
+                <div className="mb-4 rounded-lg overflow-hidden border border-border">
+                  <img src={q.image_url} alt="Fragenbild" className="w-full max-h-[400px] object-contain bg-black/20" />
+                </div>
+              )}
 
               {q.type === "short" ? (
                 <Input
@@ -213,44 +256,30 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
               )}
 
               <div className="flex items-center justify-between mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
-                  disabled={currentQuestion === 0}
-                  className="gap-2"
-                >
+                <Button variant="outline" onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))} disabled={currentQuestion === 0} className="gap-2">
                   <ArrowLeft className="w-4 h-4" /> Zurück
                 </Button>
-
-                {currentQuestion < QUESTIONS.length - 1 ? (
-                  <Button
-                    onClick={() => setCurrentQuestion(currentQuestion + 1)}
-                    className="gap-2"
-                  >
+                {currentQuestion < questions.length - 1 ? (
+                  <Button onClick={() => setCurrentQuestion(currentQuestion + 1)} className="gap-2">
                     Weiter <ArrowRight className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="gap-2"
-                  >
+                  <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
                     {submitting ? "Wird eingereicht..." : "Einreichen"} <Send className="w-4 h-4" />
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* Question overview dots */}
             <div className="flex justify-center gap-2 flex-wrap">
-              {QUESTIONS.map((_, i) => (
+              {questions.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentQuestion(i)}
                   className={`w-8 h-8 rounded-full text-xs font-medium transition-all border ${
                     i === currentQuestion
                       ? "bg-primary text-primary-foreground border-primary"
-                      : answers[QUESTIONS[i].id]?.trim()
+                      : answers[questions[i].id]?.trim()
                         ? "bg-primary/20 text-primary border-primary/30"
                         : "bg-muted text-muted-foreground border-border"
                   }`}
@@ -262,14 +291,51 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
           </>
         )}
 
-        {/* Step: Done */}
-        {step === "done" && (
-          <div className="bg-card border border-border rounded-xl p-8 shadow-lg shadow-primary/[0.03] text-center">
-            <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-foreground mb-2">Test eingereicht!</h2>
-            <p className="text-muted-foreground mb-2">
-              Dein Test wurde erfolgreich eingereicht und wird von einem Ausbilder bewertet.
-            </p>
+        {/* Step: Done - Live Result */}
+        {step === "done" && examResult && (
+          <div className="bg-card border border-border rounded-xl p-8 shadow-lg shadow-primary/[0.03] text-center space-y-4">
+            {examResult.status === "submitted" && (
+              <>
+                <Clock className="w-16 h-16 text-yellow-500 mx-auto" />
+                <h2 className="text-xl font-bold text-foreground">Test eingereicht!</h2>
+                <p className="text-muted-foreground">
+                  Dein Test wurde erfolgreich eingereicht und wird von einem Ausbilder bewertet.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Warte auf Bewertung...
+                </div>
+              </>
+            )}
+
+            {examResult.status === "passed" && (
+              <>
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+                <h2 className="text-xl font-bold text-green-500">Bestanden!</h2>
+                <p className="text-muted-foreground">Herzlichen Glückwunsch, du hast die Theorieprüfung bestanden!</p>
+                <div className="text-2xl font-bold text-foreground">
+                  {examResult.score}/{examResult.max_score} Punkte
+                </div>
+              </>
+            )}
+
+            {examResult.status === "failed" && (
+              <>
+                <XCircle className="w-16 h-16 text-destructive mx-auto" />
+                <h2 className="text-xl font-bold text-destructive">Nicht bestanden</h2>
+                <p className="text-muted-foreground">Leider hast du die Theorieprüfung nicht bestanden.</p>
+                <div className="text-2xl font-bold text-foreground">
+                  {examResult.score}/{examResult.max_score} Punkte
+                </div>
+              </>
+            )}
+
+            {examResult.reviewer_name && (
+              <p className="text-sm text-muted-foreground">
+                Bewertet von: <span className="font-medium text-foreground">{examResult.reviewer_name}</span>
+              </p>
+            )}
+
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{name}</span> · {dienstnummer}
             </p>
