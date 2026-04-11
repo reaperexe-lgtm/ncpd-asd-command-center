@@ -233,10 +233,17 @@ const StatistikPage = () => {
     const d = new Date(m.created_at);
     return d >= effectiveWeekStart && d < weekEnd;
   }) || [];
+  const weeklyPursuits = pursuits?.filter((p) => {
+    const d = new Date(p.created_at);
+    return d >= effectiveWeekStart && d < weekEnd;
+  }) || [];
 
   const weeklyCounts: Record<string, number> = {};
   weeklyMissions.forEach((m) => {
     if (m.protokollschreiber) weeklyCounts[m.protokollschreiber] = (weeklyCounts[m.protokollschreiber] || 0) + 1;
+  });
+  weeklyPursuits.forEach((p) => {
+    weeklyCounts[p.created_by] = (weeklyCounts[p.created_by] || 0) + 1;
   });
   const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
 
@@ -247,9 +254,16 @@ const StatistikPage = () => {
     const d = new Date(m.created_at);
     return d >= effectiveMonthStart && d < monthEnd;
   }) || [];
+  const monthlyPursuits = pursuits?.filter((p) => {
+    const d = new Date(p.created_at);
+    return d >= effectiveMonthStart && d < monthEnd;
+  }) || [];
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
     if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
+  });
+  monthlyPursuits.forEach((p) => {
+    allTimeCounts[p.created_by] = (allTimeCounts[p.created_by] || 0) + 1;
   });
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
@@ -295,6 +309,9 @@ const StatistikPage = () => {
   // Protocols for selected writer - only current week
   const writerProtocols = selectedWriter
     ? weeklyMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
+    : [];
+  const writerPursuits = selectedWriter
+    ? weeklyPursuits.filter((p) => p.created_by === selectedWriter.id)
     : [];
 
   const ResetInfoBlock = ({ entries, className = "" }: { entries: string[], className?: string }) => (
