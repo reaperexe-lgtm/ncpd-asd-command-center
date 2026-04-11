@@ -56,10 +56,10 @@ const VerfolgungPage = () => {
         license_plate: licensePlate || null,
         description: description || null,
         pursuit_date: pursuitDate || new Date().toISOString(),
-        pilot: pilot && pilot !== "none" ? pilot : null,
-        co_pilot: coPilot && coPilot !== "none" ? coPilot : null,
-        left_gunner: leftGunner && leftGunner !== "none" ? leftGunner : null,
-        right_gunner: rightGunner && rightGunner !== "none" ? rightGunner : null,
+        pilot: pilot?.trim() || null,
+        co_pilot: coPilot?.trim() || null,
+        left_gunner: leftGunner?.trim() || null,
+        right_gunner: rightGunner?.trim() || null,
       }).select().single();
       if (error) throw error;
 
