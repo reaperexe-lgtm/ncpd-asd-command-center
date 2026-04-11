@@ -135,7 +135,6 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
       });
 
       if (error) throw error;
-      setSubmittedExamId(data.id);
       setExamResult({ status: "submitted", score: null, max_score: maxScore, reviewed_by: null, reviewer_name: null });
       setStep("done");
     } catch (error: any) {
