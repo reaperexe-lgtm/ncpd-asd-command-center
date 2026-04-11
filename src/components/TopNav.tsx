@@ -54,14 +54,14 @@ const TopNav = () => {
           ))}
           {canReviewExams && (
             <NavLink
-              to="/theoriepruefung"
+              to="/ausbilder"
               className={({ isActive }) =>
                 `flex flex-col items-center gap-0.5 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200
                 ${isActive ? "bg-secondary border border-primary/40 text-primary" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`
               }
             >
-              <span className="text-base">📝</span>
-              <span>Prüfung</span>
+              <span className="text-base">🎓</span>
+              <span>Ausbilder</span>
             </NavLink>
           )}
           {isAdmin && (
@@ -137,15 +137,15 @@ const TopNav = () => {
               ))}
               {canReviewExams && (
                 <NavLink
-                  to="/theoriepruefung"
+                  to="/ausbilder"
                   onClick={closeMobile}
                   className={({ isActive }) =>
                     `flex flex-col items-center gap-1 px-2 py-3 rounded-lg text-xs font-medium transition-all
                     ${isActive ? "bg-secondary border border-primary/40 text-primary" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`
                   }
                 >
-                  <span className="text-xl">📝</span>
-                  <span>Prüfung</span>
+                  <span className="text-xl">🎓</span>
+                  <span>Ausbilder</span>
                 </NavLink>
               )}
               {isAdmin && (
