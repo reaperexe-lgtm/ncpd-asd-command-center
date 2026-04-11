@@ -204,6 +204,19 @@ const AdminPanel = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const discordMutation = useMutation({
+    mutationFn: async ({ userId, discordId }: { userId: string; discordId: string }) => {
+      const { error } = await supabase.from("profiles").update({ discord_id: discordId.trim() || null } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Discord-ID gespeichert");
+      setEditingDiscord((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleResetRequest = useMutation({
     mutationFn: async ({ requestId, approve, request }: { requestId: string; approve: boolean; request: any }) => {
       const { error } = await supabase
