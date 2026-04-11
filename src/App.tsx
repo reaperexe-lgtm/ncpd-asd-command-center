@@ -19,7 +19,7 @@ import GamblingPage from "./pages/GamblingPage";
 import VerfolgungPage from "./pages/VerfolgungPage";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
-import TheoryExamResultsPage from "./pages/TheoryExamResultsPage";
+import AusbilderPage from "./pages/AusbilderPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,7 +53,7 @@ const ProtectedRoutes = () => {
         <Route path="/bewerbungssperre" element={<BewerbungssperrePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/profil" element={<ProfilePage />} />
-        <Route path="/theoriepruefung" element={<TheoryExamResultsPage />} />
+        <Route path="/ausbilder" element={<AusbilderPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
