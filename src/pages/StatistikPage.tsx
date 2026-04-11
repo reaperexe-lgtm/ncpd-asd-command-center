@@ -581,7 +581,7 @@ const StatistikPage = () => {
               Protokolle von {selectedWriter?.name} (aktuelle Woche)
             </DialogTitle>
           </DialogHeader>
-          {writerProtocols.length === 0 ? (
+          {writerProtocols.length === 0 && writerPursuits.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Keine Protokolle diese Woche</p>
           ) : (
             <div className="space-y-2 mt-2">
@@ -607,8 +607,29 @@ const StatistikPage = () => {
                     </div>
                   </div>
                 ))}
+              {writerPursuits
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((p) => (
+                  <div key={p.id} className="bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xs font-bold bg-destructive/20 text-destructive px-2.5 py-1 rounded-md shrink-0">
+                        10-80
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {new Date(p.pursuit_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          {" · "}
+                          {new Date(p.pursuit_date).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.vehicle_model || "Unbekannt"}{p.license_plate ? ` · ${p.license_plate}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               <p className="text-xs text-muted-foreground text-center pt-2">
-                {writerProtocols.length} Protokoll{writerProtocols.length !== 1 ? "e" : ""} diese Woche
+                {writerProtocols.length + writerPursuits.length} Protokoll{writerProtocols.length + writerPursuits.length !== 1 ? "e" : ""} diese Woche
               </p>
             </div>
           )}
