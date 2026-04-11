@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { toast } from "sonner";
 import { Plus, Trash2, Car, Siren, Users, Image, Clock, X } from "lucide-react";
 
@@ -56,10 +56,10 @@ const VerfolgungPage = () => {
         license_plate: licensePlate || null,
         description: description || null,
         pursuit_date: pursuitDate || new Date().toISOString(),
-        pilot: pilot && pilot !== "none" ? pilot : null,
-        co_pilot: coPilot && coPilot !== "none" ? coPilot : null,
-        left_gunner: leftGunner && leftGunner !== "none" ? leftGunner : null,
-        right_gunner: rightGunner && rightGunner !== "none" ? rightGunner : null,
+        pilot: pilot?.trim() || null,
+        co_pilot: coPilot?.trim() || null,
+        left_gunner: leftGunner?.trim() || null,
+        right_gunner: rightGunner?.trim() || null,
       }).select().single();
       if (error) throw error;
 
@@ -224,22 +224,25 @@ const VerfolgungPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Pilot", value: pilot, set: setPilot },
-                { label: "Co-Pilot", value: coPilot, set: setCoPilot },
-                { label: "Left Gunner", value: leftGunner, set: setLeftGunner },
-                { label: "Right Gunner", value: rightGunner, set: setRightGunner },
-              ].map(({ label, value, set }) => (
+                { label: "Pilot", value: pilot, set: setPilot, listId: "pursuit-pilot-list" },
+                { label: "Co-Pilot", value: coPilot, set: setCoPilot, listId: "pursuit-copilot-list" },
+                { label: "Left Gunner", value: leftGunner, set: setLeftGunner, listId: "pursuit-lg-list" },
+                { label: "Right Gunner", value: rightGunner, set: setRightGunner, listId: "pursuit-rg-list" },
+              ].map(({ label, value, set, listId }) => (
                 <div key={label}>
                   <Label>{label}</Label>
-                  <Select value={value} onValueChange={set}>
-                    <SelectTrigger className="mt-1 bg-background border-border"><SelectValue placeholder={`${label} wählen...`} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">–</SelectItem>
-                      {members?.map((m) => (
-                        <SelectItem key={m.id} value={m.name}>{m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    className="mt-1 bg-background border-border"
+                    placeholder={`${label} wählen...`}
+                    value={value}
+                    onChange={(e) => set(e.target.value)}
+                    list={listId}
+                  />
+                  <datalist id={listId}>
+                    {members?.map((m) => (
+                      <option key={m.id} value={m.name}>{m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}</option>
+                    ))}
+                  </datalist>
                 </div>
               ))}
             </div>
