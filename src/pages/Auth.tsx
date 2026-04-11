@@ -8,18 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
-import { Shield, User, Lock, Hash } from "lucide-react";
+import { Shield, User, Lock, Hash, Plane, ArrowLeft } from "lucide-react";
 
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
+
+const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf0FUd-WLfyK9VFye_16Hyp8ge_Nl4dE372XU8gws388vz1lg/viewform";
 
 const Auth = () => {
   const { user, loading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [showFlugAnmeldung, setShowFlugAnmeldung] = useState(false);
   const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
   const [vorname, setVorname] = useState("");
   const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Fluglizenz form state
+  const [flugName, setFlugName] = useState("");
+  const [flugDienstnummer, setFlugDienstnummer] = useState("");
+  const [flugSubmitted, setFlugSubmitted] = useState(false);
 
   if (authLoading) return null;
   if (user) return <Navigate to="/" replace />;
@@ -52,6 +60,88 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  const handleFlugSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!flugName.trim() || !flugDienstnummer.trim()) {
+      toast.error("Bitte fülle alle Felder aus.");
+      return;
+    }
+    setFlugSubmitted(true);
+  };
+
+  // Fluglizenz Anmeldung view
+  if (showFlugAnmeldung) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+        <SlideshowBackground />
+        <div className="w-full max-w-md space-y-8 relative">
+          <div className="flex flex-col items-center gap-5">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full border-2 border-primary/30 p-1.5 shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
+                <img src={asdLogo} alt="ASD" className="w-full h-full object-contain rounded-full" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+                <Plane className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-primary tracking-tight">Fluglizenzen Anmeldung</h1>
+              <p className="text-sm text-muted-foreground mt-1">A.S.D Theorieprüfung</p>
+            </div>
+          </div>
+
+          {!flugSubmitted ? (
+            <div className="bg-card border border-border rounded-xl p-6 shadow-lg shadow-primary/[0.03]">
+              <form onSubmit={handleFlugSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="flugName" className="text-xs">Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="flugName" value={flugName} onChange={(e) => setFlugName(e.target.value)} placeholder="Vor- und Nachname" required className="bg-background border-border pl-9" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="flugDienstnummer" className="text-xs">Dienstnummer</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="flugDienstnummer" value={flugDienstnummer} onChange={(e) => setFlugDienstnummer(e.target.value)} placeholder="DN-00" required className="bg-background border-border pl-9" />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full h-11 text-sm font-semibold">
+                  Weiter zum Fragebogen
+                </Button>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg shadow-primary/[0.03]">
+              <div className="p-4 border-b border-border bg-muted/30">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{flugName}</span> · {flugDienstnummer}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Bestanden ab 11-15 Punkten</p>
+              </div>
+              <iframe
+                src={`${GOOGLE_FORM_URL}?entry.1677498625=${encodeURIComponent(flugDienstnummer)}&entry.1040aborar=${encodeURIComponent(flugName)}&embedded=true`}
+                width="100%"
+                height="500"
+                className="border-0"
+                title="A.S.D Theorieprüfung"
+              >
+                Laden...
+              </iframe>
+            </div>
+          )}
+
+          <p className="text-center text-sm text-muted-foreground">
+            <button onClick={() => { setShowFlugAnmeldung(false); setFlugSubmitted(false); }} className="text-primary hover:underline font-medium inline-flex items-center gap-1">
+              <ArrowLeft className="w-3 h-3" /> Zurück zur Anmeldung
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
@@ -118,6 +208,17 @@ const Auth = () => {
               {loading ? "Laden..." : isLogin ? "Anmelden" : "Registrieren"}
             </Button>
           </form>
+        </div>
+
+        {/* Fluglizenz button */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowFlugAnmeldung(true)}
+            className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
+          >
+            <Plane className="w-4 h-4" />
+            Fluglizenzen Anmeldung
+          </button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
