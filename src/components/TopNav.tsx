@@ -14,6 +14,7 @@ const navItems = [
   { to: "/member", label: "Member", emoji: "👤" },
   { to: "/fluglizenzen", label: "Fluglizenzen", emoji: "✈️" },
   { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
+  { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
 ];
 
 const TopNav = () => {
