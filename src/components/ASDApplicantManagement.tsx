@@ -101,7 +101,7 @@ const ASDApplicantManagement = () => {
 
   // Toggle progress
   const toggleProgressMutation = useMutation({
-    mutationFn: async ({ applicantId, moduleId, completed }: { applicantId: string; moduleId: string; completed: boolean }) => {
+    mutationFn: async ({ applicantId, moduleId, completed, timeValue }: { applicantId: string; moduleId: string; completed: boolean; timeValue?: string }) => {
       const existing = allProgress?.find(
         (p) => p.applicant_id === applicantId && p.module_id === moduleId
       );
@@ -113,6 +113,7 @@ const ASDApplicantManagement = () => {
             completed,
             completed_by: completed ? user!.id : null,
             completed_at: completed ? new Date().toISOString() : null,
+            time_value: timeValue ?? existing.time_value,
           })
           .eq("id", existing.id);
         if (error) throw error;
@@ -123,6 +124,36 @@ const ASDApplicantManagement = () => {
           completed,
           completed_by: completed ? user!.id : null,
           completed_at: completed ? new Date().toISOString() : null,
+          time_value: timeValue ?? null,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["asd-applicant-progress"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Update time value
+  const updateTimeMutation = useMutation({
+    mutationFn: async ({ applicantId, moduleId, timeValue }: { applicantId: string; moduleId: string; timeValue: string }) => {
+      const existing = allProgress?.find(
+        (p) => p.applicant_id === applicantId && p.module_id === moduleId
+      );
+      if (existing) {
+        const { error } = await supabase
+          .from("asd_applicant_progress")
+          .update({ time_value: timeValue })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("asd_applicant_progress").insert({
+          applicant_id: applicantId,
+          module_id: moduleId,
+          completed: false,
+          time_value: timeValue,
         });
         if (error) throw error;
       }
