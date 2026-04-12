@@ -238,9 +238,9 @@ const ASDApplicantManagement = () => {
                             );
                             const isCompleted = prog?.completed ?? false;
                             return (
-                              <label
+                              <div
                                 key={mod.id}
-                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 cursor-pointer transition-colors"
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 transition-colors"
                               >
                                 <Checkbox
                                   checked={isCompleted}
@@ -252,15 +252,37 @@ const ASDApplicantManagement = () => {
                                     })
                                   }
                                 />
-                                <span className={`text-sm ${isCompleted ? "text-green-500 line-through" : "text-foreground"}`}>
+                                <span className={`text-sm flex-1 ${isCompleted ? "text-green-500 line-through" : "text-foreground"}`}>
                                   {mod.name}
                                 </span>
+                                {mod.has_time_field && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                                    <Input
+                                      value={prog?.time_value ?? ""}
+                                      onChange={(e) => {}}
+                                      onBlur={(e) =>
+                                        updateTimeMutation.mutate({
+                                          applicantId: applicant.id,
+                                          moduleId: mod.id,
+                                          timeValue: e.target.value,
+                                        })
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                      }}
+                                      placeholder="00:00"
+                                      className="w-20 h-7 text-xs bg-background border-border"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
+                                )}
                                 {isCompleted && prog?.completed_at && (
-                                  <span className="text-xs text-muted-foreground ml-auto">
+                                  <span className="text-xs text-muted-foreground">
                                     {new Date(prog.completed_at).toLocaleDateString("de-DE")}
                                   </span>
                                 )}
-                              </label>
+                              </div>
                             );
                           })}
                         </div>
