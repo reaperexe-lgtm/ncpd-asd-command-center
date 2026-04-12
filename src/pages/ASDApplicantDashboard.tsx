@@ -42,6 +42,41 @@ const ASDApplicantDashboard = () => {
     enabled: !!user,
   });
 
+  const TRAINER_ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"];
+  const ROLE_LABELS: Record<string, string> = {
+    director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+    ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder",
+  };
+  const ROLE_BADGE_COLORS: Record<string, string> = {
+    director: "bg-red-500/20 text-red-400 border-red-500/30",
+    co_director: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    supervisor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    ausbilder: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    trial_ausbilder: "bg-lime-500/20 text-lime-400 border-lime-500/30",
+  };
+
+  const { data: trainerContacts } = useQuery({
+    queryKey: ["trainer-contacts-applicant"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", TRAINER_ROLES as any);
+      if (!roles?.length) return [];
+      const userIds = roles.map((r) => r.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, dienstnummer, phone_number")
+        .in("id", userIds);
+      return (profiles || [])
+        .filter((p) => p.phone_number)
+        .map((p) => ({
+          ...p,
+          role: roles.find((r) => r.user_id === p.id)?.role || "member",
+        }));
+    },
+  });
+
   const completedCount = progress?.filter((p) => p.completed).length ?? 0;
   const totalCount = modules?.length ?? 0;
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
