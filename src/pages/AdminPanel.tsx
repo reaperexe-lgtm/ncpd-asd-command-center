@@ -433,8 +433,8 @@ const AdminPanel = () => {
                         <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                         <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                       </Select>
-                      <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ userId: u.id, approve: false })} className="gap-1.5 h-7 text-xs">
-                        <UserX className="w-3 h-3" /> Sperren
+                      <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                        <Ban className="w-3 h-3" /> Sperren
                       </Button>
                     </div>
                   </div>
@@ -484,8 +484,8 @@ const AdminPanel = () => {
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ userId: u.id, approve: false })} className="gap-1.5 h-7 text-xs">
-                            <UserX className="w-3 h-3" /> Sperren
+                          <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                            <Ban className="w-3 h-3" /> Sperren
                           </Button>
                         </td>
                       </tr>
