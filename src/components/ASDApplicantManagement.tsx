@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Plus, Trash2, GripVertical, ChevronDown, ChevronRight,
-  CheckCircle, Circle, Settings, Users, GraduationCap
+  CheckCircle, Circle, Settings, Users, GraduationCap, Clock
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -101,7 +101,7 @@ const ASDApplicantManagement = () => {
 
   // Toggle progress
   const toggleProgressMutation = useMutation({
-    mutationFn: async ({ applicantId, moduleId, completed }: { applicantId: string; moduleId: string; completed: boolean }) => {
+    mutationFn: async ({ applicantId, moduleId, completed, timeValue }: { applicantId: string; moduleId: string; completed: boolean; timeValue?: string }) => {
       const existing = allProgress?.find(
         (p) => p.applicant_id === applicantId && p.module_id === moduleId
       );
@@ -113,6 +113,7 @@ const ASDApplicantManagement = () => {
             completed,
             completed_by: completed ? user!.id : null,
             completed_at: completed ? new Date().toISOString() : null,
+            time_value: timeValue ?? existing.time_value,
           })
           .eq("id", existing.id);
         if (error) throw error;
@@ -123,6 +124,36 @@ const ASDApplicantManagement = () => {
           completed,
           completed_by: completed ? user!.id : null,
           completed_at: completed ? new Date().toISOString() : null,
+          time_value: timeValue ?? null,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["asd-applicant-progress"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Update time value
+  const updateTimeMutation = useMutation({
+    mutationFn: async ({ applicantId, moduleId, timeValue }: { applicantId: string; moduleId: string; timeValue: string }) => {
+      const existing = allProgress?.find(
+        (p) => p.applicant_id === applicantId && p.module_id === moduleId
+      );
+      if (existing) {
+        const { error } = await supabase
+          .from("asd_applicant_progress")
+          .update({ time_value: timeValue })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("asd_applicant_progress").insert({
+          applicant_id: applicantId,
+          module_id: moduleId,
+          completed: false,
+          time_value: timeValue,
         });
         if (error) throw error;
       }
@@ -207,9 +238,9 @@ const ASDApplicantManagement = () => {
                             );
                             const isCompleted = prog?.completed ?? false;
                             return (
-                              <label
+                              <div
                                 key={mod.id}
-                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 cursor-pointer transition-colors"
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 transition-colors"
                               >
                                 <Checkbox
                                   checked={isCompleted}
@@ -221,15 +252,37 @@ const ASDApplicantManagement = () => {
                                     })
                                   }
                                 />
-                                <span className={`text-sm ${isCompleted ? "text-green-500 line-through" : "text-foreground"}`}>
+                                <span className={`text-sm flex-1 ${isCompleted ? "text-green-500 line-through" : "text-foreground"}`}>
                                   {mod.name}
                                 </span>
+                                {mod.has_time_field && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                                    <Input
+                                      defaultValue={prog?.time_value ?? ""}
+                                      key={`${applicant.id}-${mod.id}-${prog?.time_value}`}
+                                      onBlur={(e) =>
+                                        updateTimeMutation.mutate({
+                                          applicantId: applicant.id,
+                                          moduleId: mod.id,
+                                          timeValue: e.target.value,
+                                        })
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                      }}
+                                      placeholder="00:00"
+                                      className="w-20 h-7 text-xs bg-background border-border"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
+                                )}
                                 {isCompleted && prog?.completed_at && (
-                                  <span className="text-xs text-muted-foreground ml-auto">
+                                  <span className="text-xs text-muted-foreground">
                                     {new Date(prog.completed_at).toLocaleDateString("de-DE")}
                                   </span>
                                 )}
-                              </label>
+                              </div>
                             );
                           })}
                         </div>
