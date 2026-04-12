@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, ClipboardCheck, FileCheck, Users } from "lucide-react";
+import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3 } from "lucide-react";
 import TheoryExamResultsPage from "./TheoryExamResultsPage";
 import TrainingModules from "@/components/TrainingModules";
 import PracticalExam from "@/components/PracticalExam";
 import ASDApplicantManagement from "@/components/ASDApplicantManagement";
+import AusbilderStatistik from "@/components/AusbilderStatistik";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
