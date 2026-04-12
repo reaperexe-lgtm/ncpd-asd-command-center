@@ -1,16 +1,36 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import ncpdBadge from "@/assets/ncpd-badge.png";
 import heliWatermark from "@/assets/heli-watermark.png";
 
 const FluglizenzenUrkunde = () => {
+  const certificateRef = useRef<HTMLDivElement>(null);
   const [candidateName, setCandidateName] = useState("Stewie Smith");
   const [flightTime, setFlightTime] = useState("7:35");
   const [directorName, setDirectorName] = useState("Pablo Morales");
   const [coDirectorName, setCoDirectorName] = useState("Gabriel Rodrigues");
   const [directorTitle, setDirectorTitle] = useState("Director");
   const [coDirectorTitle, setCoDirectorTitle] = useState("Co-Director");
+
+  const handleDownloadPdf = async () => {
+    if (!certificateRef.current) return;
+    const canvas = await html2canvas(certificateRef.current, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+    pdf.save(`Fluglizenz_${candidateName.replace(/\s+/g, "_")}.pdf`);
+  };
 
   return (
     <div className="space-y-6">
@@ -43,11 +63,16 @@ const FluglizenzenUrkunde = () => {
             <Input className="mt-1 bg-background border-border" value={coDirectorTitle} onChange={(e) => setCoDirectorTitle(e.target.value)} />
           </div>
         </div>
+        <Button onClick={handleDownloadPdf} className="w-full md:w-auto">
+          <Download className="w-4 h-4 mr-2" />
+          Als PDF herunterladen
+        </Button>
       </div>
 
       {/* Certificate preview */}
       <div className="flex justify-center">
         <div
+          ref={certificateRef}
           className="relative bg-white text-black w-full max-w-[800px] aspect-[1.414/1] border-2 border-[#c9b06b] shadow-xl overflow-hidden"
           style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
         >
