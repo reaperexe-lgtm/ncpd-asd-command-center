@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
+import TheoryExam from "@/components/TheoryExam";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
+const TRAINER_ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"];
+const ROLE_LABELS: Record<string, string> = {
+  director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+  ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder",
+};
+const ROLE_BADGE_COLORS: Record<string, string> = {
+  director: "bg-red-500/20 text-red-400 border-red-500/30",
+  co_director: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  supervisor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  ausbilder: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  trial_ausbilder: "bg-lime-500/20 text-lime-400 border-lime-500/30",
+};
+
 const ASDApplicantDashboard = () => {
   const { user, profile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("fortschritt");
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("pruefung");
 
   const { data: modules } = useQuery({
     queryKey: ["asd-training-modules"],
@@ -42,18 +57,25 @@ const ASDApplicantDashboard = () => {
     enabled: !!user,
   });
 
-  const TRAINER_ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"];
-  const ROLE_LABELS: Record<string, string> = {
-    director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
-    ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder",
-  };
-  const ROLE_BADGE_COLORS: Record<string, string> = {
-    director: "bg-red-500/20 text-red-400 border-red-500/30",
-    co_director: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    supervisor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    ausbilder: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    trial_ausbilder: "bg-lime-500/20 text-lime-400 border-lime-500/30",
-  };
+  // Check if applicant has passed theory exam
+  const { data: theoryExamResult, refetch: refetchExam } = useQuery({
+    queryKey: ["applicant-theory-exam", profile?.dienstnummer],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("theory_exam_results")
+        .select("*")
+        .eq("dienstnummer", profile!.dienstnummer!)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+    enabled: !!profile?.dienstnummer,
+  });
+
+  const theoryPassed = theoryExamResult?.status === "passed";
+  const theorySubmitted = theoryExamResult?.status === "submitted";
+  const theoryFailed = theoryExamResult?.status === "failed";
 
   const { data: trainerContacts } = useQuery({
     queryKey: ["trainer-contacts-applicant"],
@@ -85,7 +107,6 @@ const ASDApplicantDashboard = () => {
     return progress?.find((p) => p.module_id === moduleId);
   };
 
-  // Group modules by category
   const groupedModules = modules?.reduce((acc, mod) => {
     if (!acc[mod.category]) acc[mod.category] = [];
     acc[mod.category].push(mod);
@@ -120,6 +141,41 @@ const ASDApplicantDashboard = () => {
             <GraduationCap className="w-6 h-6 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Dein Ausbildungsfortschritt</h2>
           </div>
+
+          {/* Theory exam status */}
+          <div className={`flex items-center gap-3 p-3 rounded-lg border mb-4 ${
+            theoryPassed
+              ? "border-green-500/30 bg-green-500/5"
+              : theorySubmitted
+                ? "border-yellow-500/30 bg-yellow-500/5"
+                : "border-orange-500/30 bg-orange-500/5"
+          }`}>
+            {theoryPassed ? (
+              <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+            ) : theorySubmitted ? (
+              <Clock className="w-5 h-5 text-yellow-500 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0" />
+            )}
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${
+                theoryPassed ? "text-green-500" : theorySubmitted ? "text-yellow-500" : "text-orange-500"
+              }`}>
+                Theorieprüfung: {theoryPassed ? "Bestanden ✓" : theorySubmitted ? "Wird bewertet..." : theoryFailed ? "Nicht bestanden – erneut ablegen" : "Noch nicht abgelegt"}
+              </p>
+              {!theoryPassed && !theorySubmitted && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Die Theorieprüfung muss bestanden werden, bevor die Ausbildungsmodule freigeschaltet werden.
+                </p>
+              )}
+            </div>
+            {theoryPassed && theoryExamResult && (
+              <span className="text-xs text-muted-foreground">
+                {theoryExamResult.score}/{theoryExamResult.max_score} Punkte
+              </span>
+            )}
+          </div>
+
           <Progress value={progressPercent} className="h-3 mb-2" />
           <p className="text-sm text-muted-foreground">
             {completedCount} von {totalCount} Modulen abgeschlossen ({Math.round(progressPercent)}%)
@@ -127,28 +183,75 @@ const ASDApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-4 bg-secondary/50 border border-border">
-            <TabsTrigger value="fortschritt" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+          <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
+            <TabsTrigger value="pruefung" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+              <ClipboardCheck className="w-4 h-4" />
+              Theorieprüfung
+            </TabsTrigger>
+            <TabsTrigger value="fortschritt" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <GraduationCap className="w-4 h-4" />
               Fortschritt
             </TabsTrigger>
-            <TabsTrigger value="mitarbeiter" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="mitarbeiter" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <Phone className="w-4 h-4" />
               Mitarbeiter
             </TabsTrigger>
-            <TabsTrigger value="leitfaden" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="leitfaden" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <BookOpen className="w-4 h-4" />
               Leitfaden
             </TabsTrigger>
-            <TabsTrigger value="theorie" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="theorie" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <BookOpen className="w-4 h-4" />
               Theorieausbildung
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="pruefung" className="mt-6">
+            {theoryPassed ? (
+              <div className="border border-green-500/30 bg-green-500/5 rounded-xl p-8 text-center space-y-3">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+                <h2 className="text-xl font-bold text-green-500">Theorieprüfung bestanden!</h2>
+                <p className="text-muted-foreground">
+                  Du hast die Theorieprüfung mit {theoryExamResult?.score}/{theoryExamResult?.max_score} Punkten bestanden.
+                  Die Ausbildungsmodule sind nun freigeschaltet.
+                </p>
+                <Button onClick={() => setActiveTab("fortschritt")} className="mt-4">
+                  Zu den Ausbildungsmodulen
+                </Button>
+              </div>
+            ) : theorySubmitted ? (
+              <div className="border border-yellow-500/30 bg-yellow-500/5 rounded-xl p-8 text-center space-y-3">
+                <Clock className="w-16 h-16 text-yellow-500 mx-auto" />
+                <h2 className="text-xl font-bold text-yellow-500">Prüfung wird bewertet</h2>
+                <p className="text-muted-foreground">
+                  Deine Theorieprüfung wurde eingereicht und wird von einem Ausbilder bewertet.
+                  Du wirst benachrichtigt, sobald das Ergebnis vorliegt.
+                </p>
+              </div>
+            ) : (
+              <TheoryExam
+                onBack={() => {}}
+                embedded
+                prefillName={profile?.name || ""}
+                prefillDienstnummer={profile?.dienstnummer || ""}
+                onExamCompleted={() => refetchExam()}
+              />
+            )}
+          </TabsContent>
+
           <TabsContent value="fortschritt" className="mt-6">
-            {/* Module List */}
-            {totalCount === 0 ? (
+            {!theoryPassed ? (
+              <div className="border border-orange-500/30 bg-orange-500/5 rounded-xl p-8 text-center space-y-3">
+                <Lock className="w-16 h-16 text-orange-500 mx-auto" />
+                <h2 className="text-xl font-bold text-orange-500">Module gesperrt</h2>
+                <p className="text-muted-foreground">
+                  Du musst zuerst die Theorieprüfung bestehen, bevor du mit den Ausbildungsmodulen beginnen kannst.
+                </p>
+                <Button onClick={() => setActiveTab("pruefung")} variant="outline" className="mt-4">
+                  Zur Theorieprüfung
+                </Button>
+              </div>
+            ) : totalCount === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 Noch keine Ausbildungsmodule konfiguriert.
               </div>

@@ -20,12 +20,16 @@ interface ExamQuestion {
 
 interface TheoryExamProps {
   onBack: () => void;
+  embedded?: boolean;
+  prefillName?: string;
+  prefillDienstnummer?: string;
+  onExamCompleted?: () => void;
 }
 
-const TheoryExam = ({ onBack }: TheoryExamProps) => {
+const TheoryExam = ({ onBack, embedded, prefillName, prefillDienstnummer, onExamCompleted }: TheoryExamProps) => {
   const [step, setStep] = useState<"info" | "quiz" | "done">("info");
-  const [name, setName] = useState("");
-  const [dienstnummer, setDienstnummer] = useState("");
+  const [name, setName] = useState(prefillName || "");
+  const [dienstnummer, setDienstnummer] = useState(prefillDienstnummer || "");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -137,7 +141,8 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
       if (error) throw error;
       setSubmittedExamId(inserted.id);
       setExamResult({ status: "submitted", score: null, max_score: maxScore, reviewed_by: null, reviewer_name: null });
-      setStep("done");
+    setStep("done");
+    onExamCompleted?.();
     } catch (error: any) {
       toast.error("Fehler beim Einreichen: " + error.message);
     } finally {
@@ -157,9 +162,9 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      <SlideshowBackground />
-      <div className="w-full max-w-2xl space-y-6 relative">
+    <div className={embedded ? "w-full space-y-6" : "min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden"}>
+      {!embedded && <SlideshowBackground />}
+      <div className={embedded ? "w-full space-y-6" : "w-full max-w-2xl space-y-6 relative"}>
         {/* Header */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
@@ -342,11 +347,13 @@ const TheoryExam = ({ onBack }: TheoryExamProps) => {
           </div>
         )}
 
-        <p className="text-center text-sm text-muted-foreground">
-          <button onClick={onBack} className="text-primary hover:underline font-medium inline-flex items-center gap-1">
-            <ArrowLeft className="w-3 h-3" /> Zurück zur Anmeldung
-          </button>
-        </p>
+        {!embedded && (
+          <p className="text-center text-sm text-muted-foreground">
+            <button onClick={onBack} className="text-primary hover:underline font-medium inline-flex items-center gap-1">
+              <ArrowLeft className="w-3 h-3" /> Zurück zur Anmeldung
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
