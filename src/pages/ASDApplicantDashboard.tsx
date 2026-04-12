@@ -206,27 +206,31 @@ const ASDApplicantDashboard = () => {
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
             <TabsTrigger value="pruefung" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <ClipboardCheck className="w-4 h-4" />
               Theorieprüfung
             </TabsTrigger>
-            <TabsTrigger value="fortschritt" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="fortschritt" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <GraduationCap className="w-4 h-4" />
               Fortschritt
+              {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
-            <TabsTrigger value="mitarbeiter" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="mitarbeiter" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <Phone className="w-4 h-4" />
               Mitarbeiter
+              {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
-            <TabsTrigger value="leitfaden" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="leitfaden" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <BookOpen className="w-4 h-4" />
               Leitfaden
+              {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
-            <TabsTrigger value="theorie" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <TabsTrigger value="theorie" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <BookOpen className="w-4 h-4" />
               Theorieausbildung
+              {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
           </TabsList>
 
@@ -259,6 +263,7 @@ const ASDApplicantDashboard = () => {
                 prefillName={profile?.name || ""}
                 prefillDienstnummer={profile?.dienstnummer || ""}
                 onExamCompleted={() => refetchExam()}
+                onStepChange={handleExamStepChange}
               />
             )}
           </TabsContent>
