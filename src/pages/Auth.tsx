@@ -14,9 +14,10 @@ import TheoryExam from "@/components/TheoryExam";
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
 
 const Auth = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showFlugAnmeldung, setShowFlugAnmeldung] = useState(false);
+  const [isASDSignup, setIsASDSignup] = useState(false);
   const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
   const [vorname, setVorname] = useState("");
@@ -24,7 +25,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
 
   if (authLoading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) {
+    if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
+    return <Navigate to="/" replace />;
+  }
 
   if (showFlugAnmeldung) {
     return <TheoryExam onBack={() => setShowFlugAnmeldung(false)} />;
@@ -45,12 +49,24 @@ const Auth = () => {
           email,
           password,
           options: {
-            data: { name: fullName, dienstnummer },
+            data: {
+              name: fullName,
+              dienstnummer,
+              ...(isASDSignup ? { is_asd_applicant: true } : {}),
+            },
             emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
-        toast.success("Registrierung erfolgreich! Bitte warte auf die Freischaltung.");
+        toast.success(
+          isASDSignup
+            ? "Registrierung erfolgreich! Du kannst dich jetzt anmelden."
+            : "Registrierung erfolgreich! Bitte warte auf die Freischaltung."
+        );
+        if (isASDSignup) {
+          setIsASDSignup(false);
+          setIsLogin(true);
+        }
       }
     } catch (error: any) {
       toast.error(error.message);
