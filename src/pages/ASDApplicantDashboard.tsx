@@ -206,6 +206,53 @@ const ASDApplicantDashboard = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="mitarbeiter" className="mt-6">
+            <div className="border border-border rounded-xl bg-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Phone className="w-6 h-6 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Deine Ausbilder</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Hier findest du die Kontaktdaten deiner Ausbilder. Klicke auf die Nummer, um sie zu kopieren.
+              </p>
+              <div className="space-y-3">
+                {(trainerContacts || []).map((trainer) => (
+                  <div key={trainer.id} className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border">
+                    <div>
+                      <p className="font-medium text-foreground">{trainer.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={`text-xs ${ROLE_BADGE_COLORS[trainer.role] || ""}`}>
+                          {ROLE_LABELS[trainer.role] || trainer.role}
+                        </Badge>
+                        {trainer.dienstnummer && (
+                          <span className="text-xs text-muted-foreground">#{trainer.dienstnummer}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 font-mono"
+                      onClick={() => {
+                        navigator.clipboard.writeText(trainer.phone_number || "");
+                        toast.success("Nummer kopiert!");
+                      }}
+                    >
+                      <Phone className="w-3 h-3" />
+                      {trainer.phone_number}
+                      <Copy className="w-3 h-3 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+                {(!trainerContacts || trainerContacts.length === 0) && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Noch keine Kontaktdaten hinterlegt.
+                  </p>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="leitfaden" className="mt-6">
             <LeitfadenContent />
           </TabsContent>
