@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3 } from "lucide-react";
+import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3, Phone } from "lucide-react";
 import TheoryExamResultsPage from "./TheoryExamResultsPage";
 import TrainingModules from "@/components/TrainingModules";
 import PracticalExam from "@/components/PracticalExam";
 import ASDApplicantManagement from "@/components/ASDApplicantManagement";
 import AusbilderStatistik from "@/components/AusbilderStatistik";
+import AusbilderKontakte from "@/components/AusbilderKontakte";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
@@ -25,28 +26,32 @@ const AusbilderPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-6 bg-secondary/50 border border-border">
-          <TabsTrigger value="pruefungen" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+        <TabsList className="w-full grid grid-cols-7 bg-secondary/50 border border-border">
+          <TabsTrigger value="pruefungen" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <ClipboardCheck className="w-4 h-4" />
             Theorie
           </TabsTrigger>
-          <TabsTrigger value="asd1" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="asd1" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <FileCheck className="w-4 h-4" />
             Praxis ASD 1
           </TabsTrigger>
-          <TabsTrigger value="asd2" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="asd2" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <FileCheck className="w-4 h-4" />
             Praxis ASD 2
           </TabsTrigger>
-          <TabsTrigger value="ausbildungen" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="ausbildungen" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <GraduationCap className="w-4 h-4" />
             Ausbildungen
           </TabsTrigger>
-          <TabsTrigger value="bewerber" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="bewerber" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <Users className="w-4 h-4" />
             ASD-Bewerber
           </TabsTrigger>
-          <TabsTrigger value="statistik" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="kontakte" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <Phone className="w-4 h-4" />
+            Kontakte
+          </TabsTrigger>
+          <TabsTrigger value="statistik" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <BarChart3 className="w-4 h-4" />
             Statistik
           </TabsTrigger>
@@ -70,6 +75,10 @@ const AusbilderPage = () => {
 
         <TabsContent value="bewerber" className="mt-6">
           <ASDApplicantManagement />
+        </TabsContent>
+
+        <TabsContent value="kontakte" className="mt-6">
+          <AusbilderKontakte />
         </TabsContent>
 
         <TabsContent value="statistik" className="mt-6">
