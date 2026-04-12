@@ -62,6 +62,14 @@ const ProtectedRoutes = () => {
   );
 };
 
+const ASDDashboardRoute = () => {
+  const { user, role, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="text-primary animate-pulse">Laden...</div></div>;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (role !== "asd_applicant") return <Navigate to="/" replace />;
+  return <ASDApplicantDashboard />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
