@@ -80,11 +80,11 @@ const FluglizenzenUrkunde = () => {
           <div className="absolute inset-3 border border-[#c9b06b]/60 z-10 pointer-events-none" />
 
           {/* Helicopter watermark background */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1]">
             <img
               src={heliWatermark}
               alt=""
-              className="w-[65%] h-auto opacity-[0.08] select-none"
+              className="w-[70%] h-auto opacity-[0.12] select-none"
               draggable={false}
             />
           </div>
