@@ -1,0 +1,1 @@
+ALTER TABLE public.flight_licenses ADD COLUMN flight_time text DEFAULT NULL;
