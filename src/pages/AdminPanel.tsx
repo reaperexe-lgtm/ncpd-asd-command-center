@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -164,7 +164,7 @@ const AdminPanel = () => {
   const approveMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
       if (approve) {
-        const { error } = await supabase.from("profiles").update({ is_approved: true }).eq("id", userId);
+        const { error } = await supabase.from("profiles").update({ is_approved: true, is_blocked: false } as any).eq("id", userId);
         if (error) throw error;
       } else {
         // Reject = delete user completely so name/dienstnummer become available again
@@ -179,6 +179,24 @@ const AdminPanel = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success(vars.approve ? "Benutzer freigeschaltet" : "Benutzer abgelehnt und gelöscht");
       logActivity(vars.approve ? "Benutzer freigeschaltet" : "Benutzer abgelehnt und gelöscht", "admin", { target_user_id: vars.userId });
+    },
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: async ({ userId, block }: { userId: string; block: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ 
+        is_blocked: block, 
+        is_approved: !block 
+      } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      const targetName = users?.find(u => u.id === vars.userId)?.name || "Unbekannt";
+      toast.success(vars.block ? `${targetName} wurde gesperrt` : `${targetName} wurde entsperrt`);
+      logActivity(vars.block ? "Benutzer gesperrt" : "Benutzer entsperrt", "admin", { 
+        target_user_id: vars.userId, target_name: targetName 
+      });
     },
   });
 
@@ -280,8 +298,9 @@ const AdminPanel = () => {
 
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
-  const pending = users?.filter((u) => !u.is_approved) || [];
-  const approved = users?.filter((u) => u.is_approved) || [];
+  const pending = users?.filter((u) => !u.is_approved && !(u as any).is_blocked) || [];
+  const approved = users?.filter((u) => u.is_approved && !(u as any).is_blocked) || [];
+  const blocked = users?.filter((u) => (u as any).is_blocked) || [];
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -322,9 +341,17 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
+          </TabsTrigger>
+          <TabsTrigger value="blocked" className="gap-1.5 text-xs relative">
+            <Ban className="w-3.5 h-3.5" /> Gesperrt
+            {blocked.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {blocked.length}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5 text-xs">
             <Lock className="w-3.5 h-3.5" /> Rechte
@@ -406,8 +433,8 @@ const AdminPanel = () => {
                         <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                         <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                       </Select>
-                      <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ userId: u.id, approve: false })} className="gap-1.5 h-7 text-xs">
-                        <UserX className="w-3 h-3" /> Sperren
+                      <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                        <Ban className="w-3 h-3" /> Sperren
                       </Button>
                     </div>
                   </div>
@@ -457,8 +484,8 @@ const AdminPanel = () => {
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <Button size="sm" variant="destructive" onClick={() => approveMutation.mutate({ userId: u.id, approve: false })} className="gap-1.5 h-7 text-xs">
-                            <UserX className="w-3 h-3" /> Sperren
+                          <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                            <Ban className="w-3 h-3" /> Sperren
                           </Button>
                         </td>
                       </tr>
@@ -471,7 +498,42 @@ const AdminPanel = () => {
           )}
         </TabsContent>
 
-        {/* Permissions Tab */}
+        {/* Blocked Users Tab */}
+        <TabsContent value="blocked">
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-destructive uppercase tracking-wider flex items-center gap-2">
+              <Ban className="w-4 h-4" /> Gesperrte Benutzer ({blocked.length})
+            </h2>
+            {blocked.length === 0 ? (
+              <div className="text-center py-12 text-sm text-muted-foreground bg-card border border-border rounded-lg">
+                Keine gesperrten Benutzer vorhanden
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {blocked.map((u) => (
+                  <div key={u.id} className="bg-card border border-destructive/20 rounded-lg px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{u.name || "Unbekannt"}</p>
+                        <p className="text-xs text-muted-foreground">{u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role] || u.role}</p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">Gesperrt</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" onClick={() => blockMutation.mutate({ userId: u.id, block: false })} className="gap-1.5 h-8 text-xs">
+                        <Unlock className="w-3.5 h-3.5" /> Entsperren
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(u.id)} className="gap-1.5 h-8 text-xs">
+                        <Trash2 className="w-3.5 h-3.5" /> Endgültig löschen
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
         <TabsContent value="permissions">
           <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
         </TabsContent>
