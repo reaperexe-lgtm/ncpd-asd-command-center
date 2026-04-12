@@ -462,46 +462,6 @@ const AdminPanel = () => {
         {/* Permissions Tab */}
         <TabsContent value="permissions">
           <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
-
-                {/* Users per Role */}
-                <div className="bg-card border border-border rounded-lg overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background/50">
-                    <Shield className="w-4 h-4 text-primary" />
-                    <h2 className="text-sm font-bold text-primary">Benutzer nach Rolle</h2>
-                  </div>
-                  <div className="divide-y divide-border/30">
-                    {ROLES.map(role => {
-                      const roleUsers = usersByRole[role] || [];
-                      return (
-                        <div key={role} className="px-4 py-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-primary">{ROLE_LABELS[role]}</span>
-                            <span className="text-[10px] text-muted-foreground">{roleUsers.length} Benutzer</span>
-                          </div>
-                          {roleUsers.length === 0 ? (
-                            <p className="text-[10px] text-muted-foreground italic">Keine Benutzer</p>
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {roleUsers.map(u => (
-                                <div key={u.id} className="flex items-center gap-2 bg-background border border-border rounded-md px-2.5 py-1.5">
-                                  <span className="text-xs font-medium">{u.name}</span>
-                                  {u.dienstnummer && <span className="text-[10px] text-muted-foreground font-mono">({u.dienstnummer})</span>}
-                                  <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
-                                    <SelectTrigger className="w-28 h-6 text-[10px] bg-background border-border ml-1"><SelectValue /></SelectTrigger>
-                                    <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
-                                  </Select>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
         </TabsContent>
 
 
