@@ -24,10 +24,16 @@ interface TheoryExamProps {
   prefillName?: string;
   prefillDienstnummer?: string;
   onExamCompleted?: () => void;
+  onStepChange?: (step: "info" | "quiz" | "done") => void;
 }
 
-const TheoryExam = ({ onBack, embedded, prefillName, prefillDienstnummer, onExamCompleted }: TheoryExamProps) => {
-  const [step, setStep] = useState<"info" | "quiz" | "done">("info");
+const TheoryExam = ({ onBack, embedded, prefillName, prefillDienstnummer, onExamCompleted, onStepChange }: TheoryExamProps) => {
+  const [step, setStepInternal] = useState<"info" | "quiz" | "done">("info");
+  
+  const setStep = (newStep: "info" | "quiz" | "done") => {
+    setStepInternal(newStep);
+    onStepChange?.(newStep);
+  };
   const [name, setName] = useState(prefillName || "");
   const [dienstnummer, setDienstnummer] = useState(prefillDienstnummer || "");
   const [currentQuestion, setCurrentQuestion] = useState(0);
