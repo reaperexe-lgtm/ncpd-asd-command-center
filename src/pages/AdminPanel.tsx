@@ -163,13 +163,22 @@ const AdminPanel = () => {
 
   const approveMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
-      const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("id", userId);
-      if (error) throw error;
+      if (approve) {
+        const { error } = await supabase.from("profiles").update({ is_approved: true }).eq("id", userId);
+        if (error) throw error;
+      } else {
+        // Reject = delete user completely so name/dienstnummer become available again
+        const { data, error } = await supabase.functions.invoke("delete-user", {
+          body: { userId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("Status aktualisiert");
-      logActivity(vars.approve ? "Benutzer freigeschaltet" : "Benutzer gesperrt", "admin", { target_user_id: vars.userId });
+      toast.success(vars.approve ? "Benutzer freigeschaltet" : "Benutzer abgelehnt und gelöscht");
+      logActivity(vars.approve ? "Benutzer freigeschaltet" : "Benutzer abgelehnt und gelöscht", "admin", { target_user_id: vars.userId });
     },
   });
 
@@ -193,13 +202,15 @@ const AdminPanel = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-      const { error } = await supabase.from("profiles").delete().eq("id", userId);
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("Anfrage gelöscht");
+      toast.success("Benutzer gelöscht");
       logActivity("Benutzer gelöscht", "admin", { target_user_id: userId });
     },
     onError: (e: any) => toast.error(e.message),
