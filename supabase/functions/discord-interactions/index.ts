@@ -3,7 +3,6 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
-// Verify Discord interaction signature
 async function verifySignature(req: Request, publicKey: string): Promise<{ valid: boolean; body: string }> {
   const signature = req.headers.get("x-signature-ed25519");
   const timestamp = req.headers.get("x-signature-timestamp");
@@ -38,6 +37,89 @@ function hexToUint8Array(hex: string): Uint8Array {
   return bytes;
 }
 
+async function getTopProtokollschreiber(supabaseAdmin: any, startDate: Date, now: Date) {
+  // Missions protokollschreiber
+  const { data: missions } = await supabaseAdmin
+    .from("missions")
+    .select("protokollschreiber")
+    .gte("created_at", startDate.toISOString())
+    .lte("created_at", now.toISOString())
+    .not("protokollschreiber", "is", null);
+
+  // Pursuits (10-80) created_by counts as protocol too
+  const { data: pursuits } = await supabaseAdmin
+    .from("pursuits")
+    .select("created_by")
+    .gte("created_at", startDate.toISOString())
+    .lte("created_at", now.toISOString());
+
+  const counts: Record<string, { missions: number; pursuits: number }> = {};
+
+  for (const m of missions || []) {
+    if (m.protokollschreiber) {
+      if (!counts[m.protokollschreiber]) counts[m.protokollschreiber] = { missions: 0, pursuits: 0 };
+      counts[m.protokollschreiber].missions++;
+    }
+  }
+
+  for (const p of pursuits || []) {
+    if (p.created_by) {
+      if (!counts[p.created_by]) counts[p.created_by] = { missions: 0, pursuits: 0 };
+      counts[p.created_by].pursuits++;
+    }
+  }
+
+  const userIds = Object.keys(counts);
+  let profileMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name")
+      .in("id", userIds);
+    for (const p of profiles || []) {
+      profileMap[p.id] = p.name;
+    }
+  }
+
+  const sorted = Object.entries(counts)
+    .map(([userId, c]) => ({ userId, name: profileMap[userId] || "Unbekannt", total: c.missions + c.pursuits, missions: c.missions, pursuits: c.pursuits }))
+    .sort((a, b) => b.total - a.total);
+
+  return { sorted, totalMissions: missions?.length || 0, totalPursuits: pursuits?.length || 0 };
+}
+
+function getAsdWeekStart(now: Date): Date {
+  const startDate = new Date(now);
+  const dayOfWeek = now.getDay();
+  startDate.setDate(now.getDate() - (dayOfWeek === 0 ? 0 : dayOfWeek));
+  startDate.setHours(18, 20, 0, 0);
+  if (now < startDate) {
+    startDate.setDate(startDate.getDate() - 7);
+  }
+  return startDate;
+}
+
+function buildLeaderboard(sorted: any[], label: string, startDate: Date, now: Date, totalMissions: number, totalPursuits: number): string {
+  const medals = ["🥇", "🥈", "🥉"];
+  let leaderboard = "";
+
+  sorted.slice(0, 15).forEach((entry, idx) => {
+    const prefix = idx < 3 ? medals[idx] : `**${idx + 1}.**`;
+    leaderboard += `${prefix} **${entry.name}** — ${entry.total} Protokoll${entry.total !== 1 ? "e" : ""} (📋 ${entry.missions} + 🚔 ${entry.pursuits})\n`;
+  });
+
+  if (!leaderboard) leaderboard = "Keine Protokolle in diesem Zeitraum.\n";
+
+  return [
+    label,
+    `━━━━━━━━━━━━━━━`,
+    leaderboard.trim(),
+    ``,
+    `📅 Zeitraum: ${startDate.toLocaleDateString("de-DE")} – ${now.toLocaleDateString("de-DE")}`,
+    `📝 Gesamt: **${totalMissions + totalPursuits}** Protokolle (📋 ${totalMissions} Einsätze + 🚔 ${totalPursuits} 10-80)`,
+  ].join("\n");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -62,10 +144,18 @@ Deno.serve(async (req) => {
           {
             name: "name",
             description: "Name der Person",
-            type: 3, // STRING
+            type: 3,
             required: true,
           },
         ],
+      },
+      {
+        name: "topwoche",
+        description: "Zeigt die Top-Protokollschreiber der aktuellen ASD-Woche",
+      },
+      {
+        name: "topmonat",
+        description: "Zeigt die Top-Protokollschreiber des aktuellen Monats",
       },
     ];
 
@@ -93,122 +183,136 @@ Deno.serve(async (req) => {
 
   const interaction = JSON.parse(body);
 
-  // PING (type 1) - Discord verification
+  // PING
   if (interaction.type === 1) {
     return new Response(JSON.stringify({ type: 1 }), {
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  // Slash command (type 2)
-  if (interaction.type === 2 && interaction.data?.name === "stats") {
-    const searchName = interaction.data.options?.find((o: any) => o.name === "name")?.value;
-    if (!searchName) {
-      return new Response(JSON.stringify({
-        type: 4,
-        data: { content: "❌ Bitte gib einen Namen an.", flags: 64 },
-      }), { headers: { "Content-Type": "application/json" } });
-    }
+  // Slash commands
+  if (interaction.type === 2) {
+    const commandName = interaction.data?.name;
 
-    try {
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-      // Find the profile by name (case-insensitive partial match)
-      const { data: profiles } = await supabaseAdmin
-        .from("profiles")
-        .select("id, name, dienstnummer, image_url")
-        .ilike("name", `%${searchName}%`)
-        .limit(1);
-
-      if (!profiles || profiles.length === 0) {
+    // /stats command
+    if (commandName === "stats") {
+      const searchName = interaction.data.options?.find((o: any) => o.name === "name")?.value;
+      if (!searchName) {
         return new Response(JSON.stringify({
           type: 4,
-          data: { content: `❌ Kein Mitglied mit dem Namen "${searchName}" gefunden.`, flags: 64 },
+          data: { content: "❌ Bitte gib einen Namen an.", flags: 64 },
         }), { headers: { "Content-Type": "application/json" } });
       }
 
-      const profile = profiles[0];
+      try {
+        const { data: profiles } = await supabaseAdmin
+          .from("profiles")
+          .select("id, name, dienstnummer, image_url")
+          .ilike("name", `%${searchName}%`)
+          .limit(1);
 
-      // Calculate week range (Sunday 18:20 to Sunday 18:20)
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const startDate = new Date(now);
-      startDate.setDate(now.getDate() - (dayOfWeek === 0 ? 0 : dayOfWeek));
-      startDate.setHours(18, 20, 0, 0);
-      if (now < startDate) {
-        startDate.setDate(startDate.getDate() - 7);
+        if (!profiles || profiles.length === 0) {
+          return new Response(JSON.stringify({
+            type: 4,
+            data: { content: `❌ Kein Mitglied mit dem Namen "${searchName}" gefunden.`, flags: 64 },
+          }), { headers: { "Content-Type": "application/json" } });
+        }
+
+        const profile = profiles[0];
+        const now = new Date();
+        const startDate = getAsdWeekStart(now);
+
+        const { data: missionsCreated } = await supabaseAdmin
+          .from("missions").select("id").eq("created_by", profile.id).gte("created_at", startDate.toISOString());
+        const { data: protokolle } = await supabaseAdmin
+          .from("missions").select("id").eq("protokollschreiber", profile.id).gte("created_at", startDate.toISOString());
+        const { data: crewMissions } = await supabaseAdmin
+          .from("missions").select("id")
+          .or(`pilot.eq.${profile.name},co_pilot.eq.${profile.name},left_gunner.eq.${profile.name},right_gunner.eq.${profile.name}`)
+          .gte("created_at", startDate.toISOString());
+        const { data: pursuitsCreated } = await supabaseAdmin
+          .from("pursuits").select("id").eq("created_by", profile.id).gte("created_at", startDate.toISOString());
+        const { data: pursuitCrew } = await supabaseAdmin
+          .from("pursuits").select("id")
+          .or(`pilot.eq.${profile.name},co_pilot.eq.${profile.name},left_gunner.eq.${profile.name},right_gunner.eq.${profile.name},pursuer.eq.${profile.name}`)
+          .gte("created_at", startDate.toISOString());
+        const { data: licenses } = await supabaseAdmin
+          .from("flight_licenses").select("id").eq("name", profile.name);
+
+        const totalProtokolle = (protokolle?.length || 0) + (pursuitsCreated?.length || 0);
+
+        const statsMsg = [
+          `📊 **Wochenstatistik: ${profile.name}** (${profile.dienstnummer || "–"})`,
+          `━━━━━━━━━━━━━━━`,
+          `📋 Einsätze erstellt: **${missionsCreated?.length || 0}**`,
+          `📝 Protokolle geschrieben: **${totalProtokolle}** (${protokolle?.length || 0} Einsätze + ${pursuitsCreated?.length || 0} 10-80)`,
+          `🚁 Einsatz-Besatzung: **${crewMissions?.length || 0}**`,
+          `🚔 10-80 erstellt: **${pursuitsCreated?.length || 0}**`,
+          `🚔 10-80 Besatzung: **${pursuitCrew?.length || 0}**`,
+          `✈️ Fluglizenzen: **${licenses?.length || 0}**`,
+          ``,
+          `📅 Zeitraum: ${startDate.toLocaleDateString("de-DE")} – ${now.toLocaleDateString("de-DE")}`,
+        ].join("\n");
+
+        return new Response(JSON.stringify({
+          type: 4,
+          data: { content: statsMsg },
+        }), { headers: { "Content-Type": "application/json" } });
+
+      } catch (error) {
+        console.error("Stats error:", error);
+        return new Response(JSON.stringify({
+          type: 4,
+          data: { content: `❌ Fehler: ${error.message}`, flags: 64 },
+        }), { headers: { "Content-Type": "application/json" } });
       }
+    }
 
-      // Missions created by user
-      const { data: missionsCreated } = await supabaseAdmin
-        .from("missions")
-        .select("id")
-        .eq("created_by", profile.id)
-        .gte("created_at", startDate.toISOString());
+    // /topwoche command
+    if (commandName === "topwoche") {
+      try {
+        const now = new Date();
+        const startDate = getAsdWeekStart(now);
+        const { sorted, totalMissions, totalPursuits } = await getTopProtokollschreiber(supabaseAdmin, startDate, now);
+        const message = buildLeaderboard(sorted, "🏆 **Top-Protokollschreiber — ASD Woche**", startDate, now, totalMissions, totalPursuits);
 
-      // Missions where user was protokollschreiber
-      const { data: protokolle } = await supabaseAdmin
-        .from("missions")
-        .select("id")
-        .eq("protokollschreiber", profile.id)
-        .gte("created_at", startDate.toISOString());
+        return new Response(JSON.stringify({
+          type: 4,
+          data: { content: message },
+        }), { headers: { "Content-Type": "application/json" } });
+      } catch (error) {
+        console.error("Topwoche error:", error);
+        return new Response(JSON.stringify({
+          type: 4,
+          data: { content: `❌ Fehler: ${error.message}`, flags: 64 },
+        }), { headers: { "Content-Type": "application/json" } });
+      }
+    }
 
-      // Missions where user was in crew (pilot, co_pilot, left_gunner, right_gunner)
-      const { data: crewMissions } = await supabaseAdmin
-        .from("missions")
-        .select("id")
-        .or(`pilot.eq.${profile.name},co_pilot.eq.${profile.name},left_gunner.eq.${profile.name},right_gunner.eq.${profile.name}`)
-        .gte("created_at", startDate.toISOString());
+    // /topmonat command
+    if (commandName === "topmonat") {
+      try {
+        const now = new Date();
+        const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        const { sorted, totalMissions, totalPursuits } = await getTopProtokollschreiber(supabaseAdmin, startDate, now);
+        const message = buildLeaderboard(sorted, "🏆 **Top-Protokollschreiber — Monat**", startDate, now, totalMissions, totalPursuits);
 
-      // Pursuits created by user
-      const { data: pursuitsCreated } = await supabaseAdmin
-        .from("pursuits")
-        .select("id")
-        .eq("created_by", profile.id)
-        .gte("created_at", startDate.toISOString());
-
-      // Pursuits where user was in crew
-      const { data: pursuitCrew } = await supabaseAdmin
-        .from("pursuits")
-        .select("id")
-        .or(`pilot.eq.${profile.name},co_pilot.eq.${profile.name},left_gunner.eq.${profile.name},right_gunner.eq.${profile.name},pursuer.eq.${profile.name}`)
-        .gte("created_at", startDate.toISOString());
-
-      // Flight licenses
-      const { data: licenses } = await supabaseAdmin
-        .from("flight_licenses")
-        .select("id")
-        .eq("name", profile.name);
-
-      const totalProtokolle = (protokolle?.length || 0) + (pursuitsCreated?.length || 0);
-
-      const statsMsg = [
-        `📊 **Wochenstatistik: ${profile.name}** (${profile.dienstnummer || "–"})`,
-        `━━━━━━━━━━━━━━━`,
-        `📋 Einsätze erstellt: **${missionsCreated?.length || 0}**`,
-        `📝 Protokolle geschrieben: **${totalProtokolle}** (${protokolle?.length || 0} Einsätze + ${pursuitsCreated?.length || 0} 10-80)`,
-        `🚁 Einsatz-Besatzung: **${crewMissions?.length || 0}**`,
-        `🚔 10-80 erstellt: **${pursuitsCreated?.length || 0}**`,
-        `🚔 10-80 Besatzung: **${pursuitCrew?.length || 0}**`,
-        `✈️ Fluglizenzen: **${licenses?.length || 0}**`,
-        ``,
-        `📅 Zeitraum: ${startDate.toLocaleDateString("de-DE")} – ${now.toLocaleDateString("de-DE")}`,
-      ].join("\n");
-
-      return new Response(JSON.stringify({
-        type: 4,
-        data: { content: statsMsg },
-      }), { headers: { "Content-Type": "application/json" } });
-
-    } catch (error) {
-      console.error("Stats error:", error);
-      return new Response(JSON.stringify({
-        type: 4,
-        data: { content: `❌ Fehler beim Abrufen der Statistik: ${error.message}`, flags: 64 },
-      }), { headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({
+          type: 4,
+          data: { content: message },
+        }), { headers: { "Content-Type": "application/json" } });
+      } catch (error) {
+        console.error("Topmonat error:", error);
+        return new Response(JSON.stringify({
+          type: 4,
+          data: { content: `❌ Fehler: ${error.message}`, flags: 64 },
+        }), { headers: { "Content-Type": "application/json" } });
+      }
     }
   }
 
