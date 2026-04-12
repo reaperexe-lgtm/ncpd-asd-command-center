@@ -297,7 +297,7 @@ const FluglizenzenPage = () => {
           {showForm && (
             <div className="bg-card border border-primary/20 rounded-lg p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
               <h3 className="font-semibold text-primary text-sm">Neue Fluglizenz</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div><Label>Name</Label><Input className="mt-1 bg-background border-border" placeholder="Vor- und Nachname" value={name} onChange={(e) => setName(e.target.value)} /></div>
                 <div><Label>Ausstellungsdatum</Label><Input type="date" className="mt-1 bg-background border-border" value={date} onChange={(e) => setDate(e.target.value)} /></div>
                 <div>
@@ -314,6 +314,7 @@ const FluglizenzenPage = () => {
                     <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                <div><Label>Flugzeit</Label><Input className="mt-1 bg-background border-border" placeholder="z.B. 12:34" value={flightTime} onChange={(e) => setFlightTime(e.target.value)} /></div>
               </div>
               <div className="flex justify-end">
                 <Button onClick={() => addLicense.mutate()} disabled={!name || !team || addLicense.isPending}>Speichern</Button>
@@ -354,6 +355,7 @@ const FluglizenzenPage = () => {
                         Status <SortIcon column="status" />
                       </button>
                     </th>
+                    <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Flugzeit</th>
                     {canManageLicenses && <th className="px-4 py-3 w-24" />}
                   </tr>
                 </thead>
@@ -398,6 +400,9 @@ const FluglizenzenPage = () => {
                             })()}
                           </td>
                           <td className="px-4 py-2">
+                            <Input value={editFlightTime} onChange={(e) => setEditFlightTime(e.target.value)} className="h-8 text-sm bg-background border-border" placeholder="z.B. 12:34" />
+                          </td>
+                          <td className="px-4 py-2">
                             <div className="flex items-center gap-1">
                               <button onClick={saveEdit} disabled={updateLicense.isPending} className="p-1.5 rounded-md text-green-400 hover:bg-green-500/10 transition-colors active:scale-95">
                                 <Check className="w-4 h-4" />
@@ -435,6 +440,7 @@ const FluglizenzenPage = () => {
                             <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-500/10 text-green-400">Aktiv</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{l.flight_time || "–"}</td>
                         {canManageLicenses && (
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1">
