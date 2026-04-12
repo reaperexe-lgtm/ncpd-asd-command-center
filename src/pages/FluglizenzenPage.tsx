@@ -457,7 +457,7 @@ const FluglizenzenPage = () => {
                     );
                   })}
                   {sorted.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                       {filterUnit !== "all" ? `Keine Lizenzen für ${filterUnit}` : "Keine Einträge vorhanden"}
                     </td></tr>
                   )}
