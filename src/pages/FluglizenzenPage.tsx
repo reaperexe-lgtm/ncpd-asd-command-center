@@ -57,6 +57,7 @@ const FluglizenzenPage = () => {
   const [date, setDate] = useState("");
   const [team, setTeam] = useState("");
   const [unit, setUnit] = useState("");
+  const [flightTime, setFlightTime] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [filterUnit, setFilterUnit] = useState<string>("all");
   const [editingLimit, setEditingLimit] = useState<string | null>(null);
