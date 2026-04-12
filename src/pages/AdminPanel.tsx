@@ -202,13 +202,15 @@ const AdminPanel = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-      const { error } = await supabase.from("profiles").delete().eq("id", userId);
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("Anfrage gelöscht");
+      toast.success("Benutzer gelöscht");
       logActivity("Benutzer gelöscht", "admin", { target_user_id: userId });
     },
     onError: (e: any) => toast.error(e.message),
