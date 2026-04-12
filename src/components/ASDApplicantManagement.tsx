@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Plus, Trash2, GripVertical, ChevronDown, ChevronRight,
-  CheckCircle, Circle, Settings, Users, GraduationCap, Clock
+  CheckCircle, Circle, Settings, Users, GraduationCap, Clock,
+  Pencil, Save, X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -20,6 +21,11 @@ const ASDApplicantManagement = () => {
   const [newModuleName, setNewModuleName] = useState("");
   const [newModuleCategory, setNewModuleCategory] = useState("Ausbildung");
   const [expandedApplicant, setExpandedApplicant] = useState<string | null>(null);
+  const [editingModule, setEditingModule] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editHasTimeField, setEditHasTimeField] = useState(false);
 
   // Fetch modules
   const { data: modules } = useQuery({
@@ -101,6 +107,23 @@ const ASDApplicantManagement = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Update module
+  const updateModuleMutation = useMutation({
+    mutationFn: async ({ id, name, category, description, has_time_field }: { id: string; name: string; category: string; description: string; has_time_field: boolean }) => {
+      const { error } = await supabase
+        .from("asd_training_modules")
+        .update({ name, category, description: description || null, has_time_field })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["asd-training-modules"] });
+      setEditingModule(null);
+      toast.success("Modul aktualisiert");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Delete module
   const deleteModuleMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -176,6 +199,14 @@ const ASDApplicantManagement = () => {
     return acc;
   }, {} as Record<string, typeof modules>);
 
+  const startEditing = (mod: any) => {
+    setEditingModule(mod.id);
+    setEditName(mod.name);
+    setEditCategory(mod.category);
+    setEditDescription(mod.description ?? "");
+    setEditHasTimeField(mod.has_time_field);
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -237,23 +268,27 @@ const ASDApplicantManagement = () => {
                             return (
                               <div
                                 key={mod.id}
-                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 transition-colors"
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 transition-colors cursor-pointer select-none"
+                                onClick={(e) => {
+                                  // Don't toggle when clicking on the time input
+                                  if ((e.target as HTMLElement).tagName === "INPUT") return;
+                                  toggleProgressMutation.mutate({
+                                    applicantId: applicant.id,
+                                    moduleId: mod.id,
+                                    completed: !isCompleted,
+                                  });
+                                }}
                               >
                                 <Checkbox
                                   checked={isCompleted}
-                                  onCheckedChange={(checked) =>
-                                    toggleProgressMutation.mutate({
-                                      applicantId: applicant.id,
-                                      moduleId: mod.id,
-                                      completed: !!checked,
-                                    })
-                                  }
+                                  onCheckedChange={() => {}}
+                                  className="pointer-events-none"
                                 />
                                 <span className={`text-sm flex-1 ${isCompleted ? "text-green-500 line-through" : "text-foreground"}`}>
                                   {mod.name}
                                 </span>
                                 {mod.has_time_field && (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                                     <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                                     <Input
                                       defaultValue={prog?.time_value ?? ""}
@@ -270,7 +305,6 @@ const ASDApplicantManagement = () => {
                                       }}
                                       placeholder="00:00"
                                       className="w-20 h-7 text-xs bg-background border-border"
-                                      onClick={(e) => e.stopPropagation()}
                                     />
                                   </div>
                                 )}
@@ -330,22 +364,100 @@ const ASDApplicantManagement = () => {
                   {mods!.map((mod) => (
                     <div
                       key={mod.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card"
+                      className="rounded-lg border border-border bg-card"
                     >
-                      <GripVertical className="w-4 h-4 text-muted-foreground" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">{mod.name}</p>
-                        {mod.description && <p className="text-xs text-muted-foreground">{mod.description}</p>}
-                      </div>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{mod.category}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteModuleMutation.mutate(mod.id)}
-                        className="text-destructive hover:text-destructive h-8 w-8"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {editingModule === mod.id ? (
+                        <div className="p-3 space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder="Name"
+                              className="bg-background border-border"
+                            />
+                            <Input
+                              value={editCategory}
+                              onChange={(e) => setEditCategory(e.target.value)}
+                              placeholder="Kategorie"
+                              className="bg-background border-border"
+                            />
+                          </div>
+                          <Input
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder="Beschreibung (optional)"
+                            className="bg-background border-border"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={editHasTimeField}
+                              onCheckedChange={(c) => setEditHasTimeField(!!c)}
+                              id={`time-${mod.id}`}
+                            />
+                            <label htmlFor={`time-${mod.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                              Zeitfeld anzeigen
+                            </label>
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingModule(null)}
+                              className="gap-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Abbrechen
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateModuleMutation.mutate({
+                                  id: mod.id,
+                                  name: editName,
+                                  category: editCategory,
+                                  description: editDescription,
+                                  has_time_field: editHasTimeField,
+                                })
+                              }
+                              disabled={!editName.trim()}
+                              className="gap-1"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              Speichern
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 p-3">
+                          <GripVertical className="w-4 h-4 text-muted-foreground" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">{mod.name}</p>
+                            {mod.description && <p className="text-xs text-muted-foreground">{mod.description}</p>}
+                            {mod.has_time_field && (
+                              <span className="text-xs text-blue-400 flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3" /> Zeitfeld aktiv
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{mod.category}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEditing(mod)}
+                            className="text-muted-foreground hover:text-foreground h-8 w-8"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteModuleMutation.mutate(mod.id)}
+                            className="text-destructive hover:text-destructive h-8 w-8"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
