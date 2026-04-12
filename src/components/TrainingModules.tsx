@@ -286,7 +286,7 @@ const TrainingModules = ({ onNavigateToExam }: { onNavigateToExam?: (examType: "
                             )}
                             {mod.name === "NCPD ASD | Ausbildungsleitfaden" && showLeitfaden && (
                               <div className="mt-4">
-                                <LeitfadenContent />
+                                <LeitfadenContent onNavigateToExam={onNavigateToExam} />
                               </div>
                             )}
                             {mod.name === "ASD | Theorieausbildung" && showTheorie && (
