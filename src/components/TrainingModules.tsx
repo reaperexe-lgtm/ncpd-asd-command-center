@@ -28,7 +28,7 @@ interface TrainingModule {
 
 const CATEGORIES = ["Grundausbildung", "Waffenausbildung", "Flugausbildung", "Spezialausbildung", "Allgemein"];
 
-const TrainingModules = () => {
+const TrainingModules = ({ onNavigateToExam }: { onNavigateToExam?: (examType: "ASD1" | "ASD2") => void }) => {
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
