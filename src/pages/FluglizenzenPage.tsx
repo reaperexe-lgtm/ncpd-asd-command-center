@@ -69,6 +69,7 @@ const FluglizenzenPage = () => {
   const [editDate, setEditDate] = useState("");
   const [editTeam, setEditTeam] = useState("");
   const [editUnit, setEditUnit] = useState("");
+  const [editFlightTime, setEditFlightTime] = useState("");
 
   // Sorting state
   const [sortKey, setSortKey] = useState<SortKey>("status");
@@ -113,20 +114,20 @@ const FluglizenzenPage = () => {
 
   const addLicense = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("flight_licenses").insert({ name, license_date: date || new Date().toISOString().split("T")[0], team, unit: unit || null });
+      const { error } = await supabase.from("flight_licenses").insert({ name, license_date: date || new Date().toISOString().split("T")[0], team, unit: unit || null, flight_time: flightTime || null });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["flight-licenses"] });
       toast.success("Fluglizenz hinzugefügt");
       logActivity("Fluglizenz erstellt", "fluglizenz", { name, team, unit });
-      setName(""); setDate(""); setTeam(""); setUnit(""); setShowForm(false);
+      setName(""); setDate(""); setTeam(""); setUnit(""); setFlightTime(""); setShowForm(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const updateLicense = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: { name: string; license_date: string; team: string; unit: string | null } }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: { name: string; license_date: string; team: string; unit: string | null; flight_time: string | null } }) => {
       const { error } = await supabase.from("flight_licenses").update(updates).eq("id", id);
       if (error) throw error;
     },
@@ -153,6 +154,7 @@ const FluglizenzenPage = () => {
     setEditDate(l.license_date);
     setEditTeam(l.team);
     setEditUnit(l.unit || "Keine");
+    setEditFlightTime(l.flight_time || "");
   };
 
   const saveEdit = () => {
@@ -164,6 +166,7 @@ const FluglizenzenPage = () => {
         license_date: editDate,
         team: editTeam,
         unit: editUnit === "Keine" ? null : editUnit,
+        flight_time: editFlightTime || null,
       },
     });
   };
