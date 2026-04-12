@@ -20,12 +20,13 @@ import VerfolgungPage from "./pages/VerfolgungPage";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
 import AusbilderPage from "./pages/AusbilderPage";
+import ASDApplicantDashboard from "./pages/ASDApplicantDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoutes = () => {
-  const { user, isApproved, loading } = useAuth();
+  const { user, isApproved, role, loading } = useAuth();
 
   if (loading) {
     return (
@@ -36,6 +37,7 @@ const ProtectedRoutes = () => {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
   if (!isApproved) return <WaitingApproval />;
 
   return (
@@ -69,6 +71,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/asd-dashboard" element={<ASDDashboardRoute />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </AuthProvider>

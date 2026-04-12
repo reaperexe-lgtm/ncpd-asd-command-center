@@ -164,21 +164,19 @@ const Auth = () => {
           </button>
         </div>
 
-        <div className="flex justify-center">
-          <button
-            onClick={() => setShowFlugAnmeldung(true)}
-            className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
-          >
-            <Plane className="w-4 h-4" />
-            Fluglizenzen Theorieprüfung
-          </button>
-        </div>
-
         <p className="text-center text-sm text-muted-foreground">
-          {isLogin ? "Noch kein Konto?" : "Bereits registriert?"}{" "}
-          <button onClick={() => setIsLogin(!isLogin)} className="text-primary hover:underline font-medium">
-            {isLogin ? "Registrieren" : "Anmelden"}
-          </button>
+          {isASDSignup ? (
+            <button onClick={() => { setIsASDSignup(false); setIsLogin(true); }} className="text-primary hover:underline font-medium">
+              Zurück zur Anmeldung
+            </button>
+          ) : (
+            <>
+              {isLogin ? "Noch kein Konto?" : "Bereits registriert?"}{" "}
+              <button onClick={() => setIsLogin(!isLogin)} className="text-primary hover:underline font-medium">
+                {isLogin ? "Registrieren" : "Anmelden"}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
