@@ -142,24 +142,18 @@ const ASDApplicantManagement = () => {
   // Update time value
   const updateTimeMutation = useMutation({
     mutationFn: async ({ applicantId, moduleId, timeValue }: { applicantId: string; moduleId: string; timeValue: string }) => {
-      const existing = allProgress?.find(
-        (p) => p.applicant_id === applicantId && p.module_id === moduleId
-      );
-      if (existing) {
-        const { error } = await supabase
-          .from("asd_applicant_progress")
-          .update({ time_value: timeValue })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("asd_applicant_progress").insert({
-          applicant_id: applicantId,
-          module_id: moduleId,
-          completed: false,
-          time_value: timeValue,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from("asd_applicant_progress")
+        .upsert(
+          {
+            applicant_id: applicantId,
+            module_id: moduleId,
+            completed: false,
+            time_value: timeValue,
+          },
+          { onConflict: "applicant_id,module_id" }
+        );
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
