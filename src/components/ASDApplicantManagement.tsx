@@ -114,35 +114,23 @@ const ASDApplicantManagement = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Toggle progress
+  // Toggle progress - use upsert to avoid conflicts
   const toggleProgressMutation = useMutation({
     mutationFn: async ({ applicantId, moduleId, completed, timeValue }: { applicantId: string; moduleId: string; completed: boolean; timeValue?: string }) => {
-      const existing = allProgress?.find(
-        (p) => p.applicant_id === applicantId && p.module_id === moduleId
-      );
-
-      if (existing) {
-        const { error } = await supabase
-          .from("asd_applicant_progress")
-          .update({
+      const { error } = await supabase
+        .from("asd_applicant_progress")
+        .upsert(
+          {
+            applicant_id: applicantId,
+            module_id: moduleId,
             completed,
             completed_by: completed ? user!.id : null,
             completed_at: completed ? new Date().toISOString() : null,
-            time_value: timeValue ?? existing.time_value,
-          })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("asd_applicant_progress").insert({
-          applicant_id: applicantId,
-          module_id: moduleId,
-          completed,
-          completed_by: completed ? user!.id : null,
-          completed_at: completed ? new Date().toISOString() : null,
-          time_value: timeValue ?? null,
-        });
-        if (error) throw error;
-      }
+            time_value: timeValue ?? null,
+          },
+          { onConflict: "applicant_id,module_id" }
+        );
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
