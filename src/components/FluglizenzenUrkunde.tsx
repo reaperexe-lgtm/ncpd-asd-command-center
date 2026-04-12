@@ -98,7 +98,7 @@ const FluglizenzenUrkunde = () => {
             <div className="text-center w-full max-w-[70%]">
               <p
                 className="text-[clamp(1.5rem,4.5vw,3.2rem)] leading-tight text-[#1a1a1a]"
-                style={{ fontFamily: "'Pinyon Script', 'Dancing Script', cursive, Georgia, serif" }}
+                style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
               >
                 {candidateName || "Name eingeben"}
               </p>
@@ -117,7 +117,7 @@ const FluglizenzenUrkunde = () => {
               <div className="text-center">
                 <p
                   className="text-[clamp(1rem,2.5vw,1.8rem)] text-[#1a1a1a]"
-                  style={{ fontFamily: "'Pinyon Script', 'Dancing Script', cursive, Georgia, serif" }}
+                  style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
                 >
                   {directorName}
                 </p>
@@ -130,7 +130,7 @@ const FluglizenzenUrkunde = () => {
               <div className="text-center">
                 <p
                   className="text-[clamp(1rem,2.5vw,1.8rem)] text-[#1a1a1a]"
-                  style={{ fontFamily: "'Pinyon Script', 'Dancing Script', cursive, Georgia, serif" }}
+                  style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
                 >
                   {coDirectorName}
                 </p>
