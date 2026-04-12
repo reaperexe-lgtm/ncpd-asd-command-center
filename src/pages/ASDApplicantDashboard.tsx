@@ -1,13 +1,15 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
+import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
 const ASDApplicantDashboard = () => {
@@ -38,6 +40,41 @@ const ASDApplicantDashboard = () => {
       return data;
     },
     enabled: !!user,
+  });
+
+  const TRAINER_ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"];
+  const ROLE_LABELS: Record<string, string> = {
+    director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+    ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder",
+  };
+  const ROLE_BADGE_COLORS: Record<string, string> = {
+    director: "bg-red-500/20 text-red-400 border-red-500/30",
+    co_director: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    supervisor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    ausbilder: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    trial_ausbilder: "bg-lime-500/20 text-lime-400 border-lime-500/30",
+  };
+
+  const { data: trainerContacts } = useQuery({
+    queryKey: ["trainer-contacts-applicant"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", TRAINER_ROLES as any);
+      if (!roles?.length) return [];
+      const userIds = roles.map((r) => r.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, dienstnummer, phone_number")
+        .in("id", userIds);
+      return (profiles || [])
+        .filter((p) => p.phone_number)
+        .map((p) => ({
+          ...p,
+          role: roles.find((r) => r.user_id === p.id)?.role || "member",
+        }));
+    },
   });
 
   const completedCount = progress?.filter((p) => p.completed).length ?? 0;
@@ -90,16 +127,20 @@ const ASDApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3 bg-secondary/50 border border-border">
-            <TabsTrigger value="fortschritt" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="w-full grid grid-cols-4 bg-secondary/50 border border-border">
+            <TabsTrigger value="fortschritt" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <GraduationCap className="w-4 h-4" />
               Fortschritt
             </TabsTrigger>
-            <TabsTrigger value="leitfaden" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="mitarbeiter" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+              <Phone className="w-4 h-4" />
+              Mitarbeiter
+            </TabsTrigger>
+            <TabsTrigger value="leitfaden" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <BookOpen className="w-4 h-4" />
               Leitfaden
             </TabsTrigger>
-            <TabsTrigger value="theorie" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="theorie" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <BookOpen className="w-4 h-4" />
               Theorieausbildung
             </TabsTrigger>
@@ -163,6 +204,53 @@ const ASDApplicantDashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="mitarbeiter" className="mt-6">
+            <div className="border border-border rounded-xl bg-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Phone className="w-6 h-6 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Deine Ausbilder</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Hier findest du die Kontaktdaten deiner Ausbilder. Klicke auf die Nummer, um sie zu kopieren.
+              </p>
+              <div className="space-y-3">
+                {(trainerContacts || []).map((trainer) => (
+                  <div key={trainer.id} className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border">
+                    <div>
+                      <p className="font-medium text-foreground">{trainer.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={`text-xs ${ROLE_BADGE_COLORS[trainer.role] || ""}`}>
+                          {ROLE_LABELS[trainer.role] || trainer.role}
+                        </Badge>
+                        {trainer.dienstnummer && (
+                          <span className="text-xs text-muted-foreground">#{trainer.dienstnummer}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 font-mono"
+                      onClick={() => {
+                        navigator.clipboard.writeText(trainer.phone_number || "");
+                        toast.success("Nummer kopiert!");
+                      }}
+                    >
+                      <Phone className="w-3 h-3" />
+                      {trainer.phone_number}
+                      <Copy className="w-3 h-3 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+                {(!trainerContacts || trainerContacts.length === 0) && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Noch keine Kontaktdaten hinterlegt.
+                  </p>
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="leitfaden" className="mt-6">

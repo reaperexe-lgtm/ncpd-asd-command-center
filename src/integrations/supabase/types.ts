@@ -480,6 +480,7 @@ export type Database = {
           is_approved: boolean
           is_blocked: boolean
           name: string
+          phone_number: string | null
           updated_at: string
         }
         Insert: {
@@ -491,6 +492,7 @@ export type Database = {
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
+          phone_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -502,6 +504,7 @@ export type Database = {
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
+          phone_number?: string | null
           updated_at?: string
         }
         Relationships: []
