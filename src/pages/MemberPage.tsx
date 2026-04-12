@@ -135,8 +135,28 @@ const MemberPage = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Add new flight license
+  const addLicenseMutation = useMutation({
+    mutationFn: async ({ name, team }: { name: string; team: string }) => {
+      const { error } = await supabase.from("flight_licenses").insert({
+        name,
+        team,
+        status: "Aktiv",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["member-licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["member-stats"] });
+      toast.success("Fluglizenz hinzugefügt");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const [uploadingLicenseId, setUploadingLicenseId] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [showAddLicense, setShowAddLicense] = useState(false);
+  const [newLicenseTeam, setNewLicenseTeam] = useState("ASD");
 
   // Group by role
   const grouped: Record<string, typeof members> = {};
