@@ -1,13 +1,16 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import ncpdBadge from "@/assets/ncpd-badge.png";
+import heliWatermark from "@/assets/heli-watermark.png";
 
 const FluglizenzenUrkunde = () => {
   const [candidateName, setCandidateName] = useState("Stewie Smith");
   const [flightTime, setFlightTime] = useState("7:35");
-  const certRef = useRef<HTMLDivElement>(null);
+  const [directorName, setDirectorName] = useState("Pablo Morales");
+  const [coDirectorName, setCoDirectorName] = useState("Gabriel Rodrigues");
+  const [directorTitle, setDirectorTitle] = useState("Director");
+  const [coDirectorTitle, setCoDirectorTitle] = useState("Co-Director");
 
   return (
     <div className="space-y-6">
@@ -17,21 +20,27 @@ const FluglizenzenUrkunde = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Name des Absolventen</Label>
-            <Input
-              className="mt-1 bg-background border-border"
-              placeholder="Vor- und Nachname"
-              value={candidateName}
-              onChange={(e) => setCandidateName(e.target.value)}
-            />
+            <Input className="mt-1 bg-background border-border" placeholder="Vor- und Nachname" value={candidateName} onChange={(e) => setCandidateName(e.target.value)} />
           </div>
           <div>
             <Label>Flugzeit (Minuten)</Label>
-            <Input
-              className="mt-1 bg-background border-border"
-              placeholder="z.B. 7:35"
-              value={flightTime}
-              onChange={(e) => setFlightTime(e.target.value)}
-            />
+            <Input className="mt-1 bg-background border-border" placeholder="z.B. 7:35" value={flightTime} onChange={(e) => setFlightTime(e.target.value)} />
+          </div>
+          <div>
+            <Label>Director Name</Label>
+            <Input className="mt-1 bg-background border-border" value={directorName} onChange={(e) => setDirectorName(e.target.value)} />
+          </div>
+          <div>
+            <Label>Director Titel</Label>
+            <Input className="mt-1 bg-background border-border" value={directorTitle} onChange={(e) => setDirectorTitle(e.target.value)} />
+          </div>
+          <div>
+            <Label>Co-Director Name</Label>
+            <Input className="mt-1 bg-background border-border" value={coDirectorName} onChange={(e) => setCoDirectorName(e.target.value)} />
+          </div>
+          <div>
+            <Label>Co-Director Titel</Label>
+            <Input className="mt-1 bg-background border-border" value={coDirectorTitle} onChange={(e) => setCoDirectorTitle(e.target.value)} />
           </div>
         </div>
       </div>
@@ -39,18 +48,20 @@ const FluglizenzenUrkunde = () => {
       {/* Certificate preview */}
       <div className="flex justify-center">
         <div
-          ref={certRef}
-          className="relative bg-white text-black w-full max-w-[800px] aspect-[1.414/1] border-2 border-[#c9b06b] shadow-xl"
+          className="relative bg-white text-black w-full max-w-[800px] aspect-[1.414/1] border-2 border-[#c9b06b] shadow-xl overflow-hidden"
           style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
         >
           {/* Inner border */}
-          <div className="absolute inset-3 border border-[#c9b06b]/60" />
+          <div className="absolute inset-3 border border-[#c9b06b]/60 z-10 pointer-events-none" />
 
-          {/* Helicopter silhouette watermark */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
-            <svg viewBox="0 0 512 512" className="w-[60%] h-auto" fill="currentColor">
-              <path d="M504 168h-72.6l-51.7-77.6c-3.9-5.9-10.5-9.4-17.6-9.4H288V48h56c4.4 0 8-3.6 8-8V8c0-4.4-3.6-8-8-8H168c-4.4 0-8 3.6-8 8v32c0 4.4 3.6 8 8 8h56v33H149.9c-7.1 0-13.7 3.5-17.6 9.4L80.6 168H8c-4.4 0-8 3.6-8 8v16c0 4.4 3.6 8 8 8h48v64c0 8.8 7.2 16 16 16h16c8.8 0 16-7.2 16-16v-64h304v64c0 8.8 7.2 16 16 16h16c8.8 0 16-7.2 16-16v-64h48c4.4 0 8-3.6 8-8v-16c0-4.4-3.6-8-8-8zM160.6 168l34.6-52h121.6l34.6 52H160.6zM304 384H208c-8.8 0-16 7.2-16 16v64c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48v-64c0-8.8-7.2-16-16-16z" />
-            </svg>
+          {/* Helicopter watermark background */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img
+              src={heliWatermark}
+              alt=""
+              className="w-[65%] h-auto opacity-[0.08] select-none"
+              draggable={false}
+            />
           </div>
 
           {/* Content */}
@@ -68,17 +79,20 @@ const FluglizenzenUrkunde = () => {
               </p>
             </div>
 
-            {/* Badge placeholder */}
-            <div className="w-[clamp(50px,10vw,80px)] h-[clamp(50px,10vw,80px)] rounded-full bg-gradient-to-br from-[#1a1a3e] to-[#2a2a5e] border-2 border-[#c9b06b]/50 flex items-center justify-center shadow-md">
-              <span className="text-white text-[clamp(0.4rem,0.8vw,0.6rem)] font-bold tracking-wider">NCPD</span>
+            {/* Badge */}
+            <div className="w-[clamp(60px,12vw,100px)] h-[clamp(60px,12vw,100px)] rounded-full overflow-hidden shadow-lg">
+              <img
+                src={ncpdBadge}
+                alt="NCPD Fluglizenz Badge"
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
             </div>
 
             {/* Awarded to */}
-            <div className="text-center space-y-1">
-              <p className="text-[clamp(0.5rem,1.1vw,0.7rem)] tracking-[0.2em] text-[#888] uppercase">
-                Diese wird vergeben an
-              </p>
-            </div>
+            <p className="text-[clamp(0.5rem,1.1vw,0.7rem)] tracking-[0.2em] text-[#888] uppercase">
+              Diese wird vergeben an
+            </p>
 
             {/* Name */}
             <div className="text-center w-full max-w-[70%]">
@@ -105,26 +119,26 @@ const FluglizenzenUrkunde = () => {
                   className="text-[clamp(1rem,2.5vw,1.8rem)] text-[#1a1a1a]"
                   style={{ fontFamily: "'Pinyon Script', 'Dancing Script', cursive, Georgia, serif" }}
                 >
-                  Pablo Morales
+                  {directorName}
                 </p>
                 <div className="w-full h-[1px] bg-[#c9b06b]/60" />
                 <p className="text-[clamp(0.45rem,0.9vw,0.6rem)] tracking-[0.25em] text-[#666] uppercase mt-1">
-                  Pablo Morales
+                  {directorName}
                 </p>
-                <p className="text-[clamp(0.4rem,0.8vw,0.55rem)] text-[#999]">Director</p>
+                <p className="text-[clamp(0.4rem,0.8vw,0.55rem)] text-[#999]">{directorTitle}</p>
               </div>
               <div className="text-center">
                 <p
                   className="text-[clamp(1rem,2.5vw,1.8rem)] text-[#1a1a1a]"
                   style={{ fontFamily: "'Pinyon Script', 'Dancing Script', cursive, Georgia, serif" }}
                 >
-                  Gabriel Rodrigues
+                  {coDirectorName}
                 </p>
                 <div className="w-full h-[1px] bg-[#c9b06b]/60" />
                 <p className="text-[clamp(0.45rem,0.9vw,0.6rem)] tracking-[0.25em] text-[#666] uppercase mt-1">
-                  Gabriel Rodrigues
+                  {coDirectorName}
                 </p>
-                <p className="text-[clamp(0.4rem,0.8vw,0.55rem)] text-[#999]">Co-Director</p>
+                <p className="text-[clamp(0.4rem,0.8vw,0.55rem)] text-[#999]">{coDirectorTitle}</p>
               </div>
             </div>
           </div>
