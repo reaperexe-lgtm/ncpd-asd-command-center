@@ -9,12 +9,28 @@ import ncpdBadge from "@/assets/ncpd-badge.png";
 import heliWatermark from "@/assets/heli-watermark.png";
 
 const FluglizenzenUrkunde = () => {
+  const certificateRef = useRef<HTMLDivElement>(null);
   const [candidateName, setCandidateName] = useState("Stewie Smith");
   const [flightTime, setFlightTime] = useState("7:35");
   const [directorName, setDirectorName] = useState("Pablo Morales");
   const [coDirectorName, setCoDirectorName] = useState("Gabriel Rodrigues");
   const [directorTitle, setDirectorTitle] = useState("Director");
   const [coDirectorTitle, setCoDirectorTitle] = useState("Co-Director");
+
+  const handleDownloadPdf = async () => {
+    if (!certificateRef.current) return;
+    const canvas = await html2canvas(certificateRef.current, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+    pdf.save(`Fluglizenz_${candidateName.replace(/\s+/g, "_")}.pdf`);
+  };
 
   return (
     <div className="space-y-6">
