@@ -80,7 +80,7 @@ const FluglizenzenUrkunde = () => {
             </div>
 
             {/* Badge */}
-            <div className="w-[clamp(60px,12vw,100px)] h-[clamp(60px,12vw,100px)] rounded-full overflow-hidden shadow-lg">
+            <div className="w-[clamp(80px,16vw,140px)] h-[clamp(80px,16vw,140px)] rounded-full overflow-hidden shadow-lg">
               <img
                 src={ncpdBadge}
                 alt="NCPD Fluglizenz Badge"
