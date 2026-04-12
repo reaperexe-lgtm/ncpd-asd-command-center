@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Plus, Trash2, GripVertical, ChevronDown, ChevronRight,
-  CheckCircle, Circle, Settings, Users, GraduationCap
+  CheckCircle, Circle, Settings, Users, GraduationCap, Clock
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
