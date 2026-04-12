@@ -20,12 +20,16 @@ interface ExamQuestion {
 
 interface TheoryExamProps {
   onBack: () => void;
+  embedded?: boolean;
+  prefillName?: string;
+  prefillDienstnummer?: string;
+  onExamCompleted?: () => void;
 }
 
-const TheoryExam = ({ onBack }: TheoryExamProps) => {
+const TheoryExam = ({ onBack, embedded, prefillName, prefillDienstnummer, onExamCompleted }: TheoryExamProps) => {
   const [step, setStep] = useState<"info" | "quiz" | "done">("info");
-  const [name, setName] = useState("");
-  const [dienstnummer, setDienstnummer] = useState("");
+  const [name, setName] = useState(prefillName || "");
+  const [dienstnummer, setDienstnummer] = useState(prefillDienstnummer || "");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
