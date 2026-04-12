@@ -298,8 +298,9 @@ const AdminPanel = () => {
 
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
-  const pending = users?.filter((u) => !u.is_approved) || [];
-  const approved = users?.filter((u) => u.is_approved) || [];
+  const pending = users?.filter((u) => !u.is_approved && !(u as any).is_blocked) || [];
+  const approved = users?.filter((u) => u.is_approved && !(u as any).is_blocked) || [];
+  const blocked = users?.filter((u) => (u as any).is_blocked) || [];
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
