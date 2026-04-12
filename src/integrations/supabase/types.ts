@@ -68,6 +68,83 @@ export type Database = {
         }
         Relationships: []
       }
+      asd_applicant_progress: {
+        Row: {
+          applicant_id: string
+          completed: boolean
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          module_id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_id: string
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          module_id: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          module_id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asd_applicant_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "asd_training_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asd_training_modules: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       casino_balances: {
         Row: {
           balance: number
@@ -722,6 +799,7 @@ export type Database = {
         | "member"
         | "trial_member"
         | "admin"
+        | "asd_applicant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -858,6 +936,7 @@ export const Constants = {
         "member",
         "trial_member",
         "admin",
+        "asd_applicant",
       ],
     },
   },

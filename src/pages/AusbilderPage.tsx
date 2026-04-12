@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, ClipboardCheck, FileCheck } from "lucide-react";
+import { GraduationCap, ClipboardCheck, FileCheck, Users } from "lucide-react";
 import TheoryExamResultsPage from "./TheoryExamResultsPage";
 import TrainingModules from "@/components/TrainingModules";
 import PracticalExam from "@/components/PracticalExam";
+import ASDApplicantManagement from "@/components/ASDApplicantManagement";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
@@ -23,7 +24,7 @@ const AusbilderPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-4 bg-secondary/50 border border-border">
+        <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
           <TabsTrigger value="pruefungen" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <ClipboardCheck className="w-4 h-4" />
             Theorie
@@ -39,6 +40,10 @@ const AusbilderPage = () => {
           <TabsTrigger value="ausbildungen" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <GraduationCap className="w-4 h-4" />
             Ausbildungen
+          </TabsTrigger>
+          <TabsTrigger value="bewerber" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Users className="w-4 h-4" />
+            ASD-Bewerber
           </TabsTrigger>
         </TabsList>
 
@@ -56,6 +61,10 @@ const AusbilderPage = () => {
 
         <TabsContent value="ausbildungen" className="mt-6">
           <TrainingModules onNavigateToExam={(examType) => setActiveTab(examType === "ASD1" ? "asd1" : "asd2")} />
+        </TabsContent>
+
+        <TabsContent value="bewerber" className="mt-6">
+          <ASDApplicantManagement />
         </TabsContent>
       </Tabs>
     </div>

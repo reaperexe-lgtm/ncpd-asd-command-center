@@ -8,15 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
-import { Shield, User, Lock, Hash, Plane } from "lucide-react";
+import { Shield, User, Lock, Hash, Plane, GraduationCap } from "lucide-react";
 import TheoryExam from "@/components/TheoryExam";
 
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
 
 const Auth = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showFlugAnmeldung, setShowFlugAnmeldung] = useState(false);
+  const [isASDSignup, setIsASDSignup] = useState(false);
   const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
   const [vorname, setVorname] = useState("");
@@ -24,7 +25,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
 
   if (authLoading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) {
+    if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
+    return <Navigate to="/" replace />;
+  }
 
   if (showFlugAnmeldung) {
     return <TheoryExam onBack={() => setShowFlugAnmeldung(false)} />;
@@ -45,12 +49,24 @@ const Auth = () => {
           email,
           password,
           options: {
-            data: { name: fullName, dienstnummer },
+            data: {
+              name: fullName,
+              dienstnummer,
+              ...(isASDSignup ? { is_asd_applicant: true } : {}),
+            },
             emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
-        toast.success("Registrierung erfolgreich! Bitte warte auf die Freischaltung.");
+        toast.success(
+          isASDSignup
+            ? "Registrierung erfolgreich! Du kannst dich jetzt anmelden."
+            : "Registrierung erfolgreich! Bitte warte auf die Freischaltung."
+        );
+        if (isASDSignup) {
+          setIsASDSignup(false);
+          setIsLogin(true);
+        }
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -76,14 +92,18 @@ const Auth = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary tracking-tight">Air Support Division</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLogin ? "Melde dich an, um fortzufahren" : "Erstelle deinen Zugang"}
+              {isASDSignup
+                ? "Registriere dich als ASD-Bewerber"
+                : isLogin
+                  ? "Melde dich an, um fortzufahren"
+                  : "Erstelle deinen Zugang"}
             </p>
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-lg shadow-primary/[0.03]">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {!isLogin && (
+            {(!isLogin || isASDSignup) && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="vorname" className="text-xs">Vorname</Label>
@@ -119,12 +139,12 @@ const Auth = () => {
             </div>
 
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
-              {loading ? "Laden..." : isLogin ? "Anmelden" : "Registrieren"}
+              {loading ? "Laden..." : isASDSignup ? "Als ASD-Bewerber registrieren" : isLogin ? "Anmelden" : "Registrieren"}
             </Button>
           </form>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-2">
           <button
             onClick={() => setShowFlugAnmeldung(true)}
             className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
@@ -132,13 +152,31 @@ const Auth = () => {
             <Plane className="w-4 h-4" />
             Fluglizenzen Theorieprüfung
           </button>
+          <button
+            onClick={() => {
+              setIsASDSignup(true);
+              setIsLogin(false);
+            }}
+            className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
+          >
+            <GraduationCap className="w-4 h-4" />
+            ASD-Bewerber Registrierung
+          </button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          {isLogin ? "Noch kein Konto?" : "Bereits registriert?"}{" "}
-          <button onClick={() => setIsLogin(!isLogin)} className="text-primary hover:underline font-medium">
-            {isLogin ? "Registrieren" : "Anmelden"}
-          </button>
+          {isASDSignup ? (
+            <button onClick={() => { setIsASDSignup(false); setIsLogin(true); }} className="text-primary hover:underline font-medium">
+              Zurück zur Anmeldung
+            </button>
+          ) : (
+            <>
+              {isLogin ? "Noch kein Konto?" : "Bereits registriert?"}{" "}
+              <button onClick={() => setIsLogin(!isLogin)} className="text-primary hover:underline font-medium">
+                {isLogin ? "Registrieren" : "Anmelden"}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
