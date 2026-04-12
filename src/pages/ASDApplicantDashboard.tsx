@@ -151,9 +151,15 @@ const ASDApplicantDashboard = () => {
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={examInProgress}
+            onClick={examInProgress ? undefined : signOut}
+            className="gap-2"
+          >
             <LogOut className="w-4 h-4" />
-            Abmelden
+            {examInProgress ? "Gesperrt" : "Abmelden"}
           </Button>
         </div>
       </div>
