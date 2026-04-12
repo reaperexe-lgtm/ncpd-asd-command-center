@@ -159,11 +159,13 @@ const FluglizenzenPage = () => {
 
   const saveEdit = () => {
     if (!editingId || !editName || !editTeam) return;
+    const originalLicense = licenses?.find(l => l.id === editingId);
+    const dateToSave = editDate || originalLicense?.license_date || new Date().toISOString().split("T")[0];
     updateLicense.mutate({
       id: editingId,
       updates: {
         name: editName,
-        license_date: editDate,
+        license_date: dateToSave,
         team: editTeam,
         unit: editUnit === "Keine" ? null : editUnit,
         flight_time: editFlightTime || null,
