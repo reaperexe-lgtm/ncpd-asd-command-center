@@ -20,6 +20,7 @@ import VerfolgungPage from "./pages/VerfolgungPage";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
 import AusbilderPage from "./pages/AusbilderPage";
+import AufstellungsprotokollPage from "./pages/AufstellungsprotokollPage";
 import ASDApplicantDashboard from "./pages/ASDApplicantDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +57,7 @@ const ProtectedRoutes = () => {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/ausbilder" element={<AusbilderPage />} />
+        <Route path="/aufstellungsprotokoll" element={<AufstellungsprotokollPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
