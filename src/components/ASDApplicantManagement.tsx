@@ -67,6 +67,21 @@ const ASDApplicantManagement = () => {
     },
   });
 
+  // Realtime subscription for progress updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("asd-progress-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "asd_applicant_progress" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   // Add module
   const addModuleMutation = useMutation({
     mutationFn: async () => {
