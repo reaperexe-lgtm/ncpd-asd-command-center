@@ -259,8 +259,8 @@ const ASDApplicantManagement = () => {
                                   <div className="flex items-center gap-1">
                                     <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                                     <Input
-                                      value={prog?.time_value ?? ""}
-                                      onChange={(e) => {}}
+                                      defaultValue={prog?.time_value ?? ""}
+                                      key={`${applicant.id}-${mod.id}-${prog?.time_value}`}
                                       onBlur={(e) =>
                                         updateTimeMutation.mutate({
                                           applicantId: applicant.id,
