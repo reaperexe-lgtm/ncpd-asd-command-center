@@ -164,7 +164,7 @@ const AdminPanel = () => {
   const approveMutation = useMutation({
     mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
       if (approve) {
-        const { error } = await supabase.from("profiles").update({ is_approved: true }).eq("id", userId);
+        const { error } = await supabase.from("profiles").update({ is_approved: true, is_blocked: false } as any).eq("id", userId);
         if (error) throw error;
       } else {
         // Reject = delete user completely so name/dienstnummer become available again
@@ -179,6 +179,24 @@ const AdminPanel = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success(vars.approve ? "Benutzer freigeschaltet" : "Benutzer abgelehnt und gelöscht");
       logActivity(vars.approve ? "Benutzer freigeschaltet" : "Benutzer abgelehnt und gelöscht", "admin", { target_user_id: vars.userId });
+    },
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: async ({ userId, block }: { userId: string; block: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ 
+        is_blocked: block, 
+        is_approved: !block 
+      } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      const targetName = users?.find(u => u.id === vars.userId)?.name || "Unbekannt";
+      toast.success(vars.block ? `${targetName} wurde gesperrt` : `${targetName} wurde entsperrt`);
+      logActivity(vars.block ? "Benutzer gesperrt" : "Benutzer entsperrt", "admin", { 
+        target_user_id: vars.userId, target_name: targetName 
+      });
     },
   });
 
