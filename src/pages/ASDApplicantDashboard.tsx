@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,11 +142,19 @@ const ASDApplicantDashboard = () => {
                                 <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
                               )}
                             </div>
-                            {isCompleted && prog?.completed_at && (
-                              <span className="text-xs text-muted-foreground shrink-0">
-                                {new Date(prog.completed_at).toLocaleDateString("de-DE")}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {prog?.time_value && (
+                                <span className="text-xs text-primary flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {prog.time_value}
+                                </span>
+                              )}
+                              {isCompleted && prog?.completed_at && (
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(prog.completed_at).toLocaleDateString("de-DE")}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
