@@ -478,6 +478,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_approved: boolean
+          is_blocked: boolean
           name: string
           updated_at: string
         }
@@ -488,6 +489,7 @@ export type Database = {
           id: string
           image_url?: string | null
           is_approved?: boolean
+          is_blocked?: boolean
           name?: string
           updated_at?: string
         }
@@ -498,6 +500,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_approved?: boolean
+          is_blocked?: boolean
           name?: string
           updated_at?: string
         }
