@@ -341,9 +341,17 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
+          </TabsTrigger>
+          <TabsTrigger value="blocked" className="gap-1.5 text-xs relative">
+            <Ban className="w-3.5 h-3.5" /> Gesperrt
+            {blocked.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {blocked.length}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5 text-xs">
             <Lock className="w-3.5 h-3.5" /> Rechte
