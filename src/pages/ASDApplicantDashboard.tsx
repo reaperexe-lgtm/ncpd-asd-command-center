@@ -127,16 +127,20 @@ const ASDApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3 bg-secondary/50 border border-border">
-            <TabsTrigger value="fortschritt" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="w-full grid grid-cols-4 bg-secondary/50 border border-border">
+            <TabsTrigger value="fortschritt" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <GraduationCap className="w-4 h-4" />
               Fortschritt
             </TabsTrigger>
-            <TabsTrigger value="leitfaden" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="mitarbeiter" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+              <Phone className="w-4 h-4" />
+              Mitarbeiter
+            </TabsTrigger>
+            <TabsTrigger value="leitfaden" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <BookOpen className="w-4 h-4" />
               Leitfaden
             </TabsTrigger>
-            <TabsTrigger value="theorie" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="theorie" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <BookOpen className="w-4 h-4" />
               Theorieausbildung
             </TabsTrigger>
