@@ -1,13 +1,15 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
+import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
 const ASDApplicantDashboard = () => {
