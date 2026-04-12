@@ -78,6 +78,7 @@ export type Database = {
           id: string
           module_id: string
           notes: string | null
+          time_value: string | null
           updated_at: string
         }
         Insert: {
@@ -89,6 +90,7 @@ export type Database = {
           id?: string
           module_id: string
           notes?: string | null
+          time_value?: string | null
           updated_at?: string
         }
         Update: {
@@ -100,6 +102,7 @@ export type Database = {
           id?: string
           module_id?: string
           notes?: string | null
+          time_value?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -117,6 +120,7 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          has_time_field: boolean
           id: string
           is_active: boolean
           name: string
@@ -127,6 +131,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          has_time_field?: boolean
           id?: string
           is_active?: boolean
           name: string
@@ -137,6 +142,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          has_time_field?: boolean
           id?: string
           is_active?: boolean
           name?: string
@@ -173,6 +179,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           license_date: string
           name: string
           status: string
@@ -182,6 +189,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           license_date?: string
           name: string
           status?: string
@@ -191,6 +199,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           license_date?: string
           name?: string
           status?: string
