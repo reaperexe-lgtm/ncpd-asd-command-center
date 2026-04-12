@@ -300,6 +300,30 @@ export type Database = {
           },
         ]
       }
+      permission_settings: {
+        Row: {
+          allowed: boolean
+          id: string
+          permission_key: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          allowed?: boolean
+          id?: string
+          permission_key: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          permission_key?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       practical_exam_results: {
         Row: {
           candidate_dienstnummer: string

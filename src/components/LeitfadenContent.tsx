@@ -10,7 +10,7 @@ import {
   BookOpen, MapPin, Crosshair, Navigation, Clock, Plane
 } from "lucide-react";
 
-const LeitfadenContent = () => {
+const LeitfadenContent = ({ onNavigateToExam }: { onNavigateToExam?: (examType: "ASD1" | "ASD2") => void }) => {
   return (
     <div className="space-y-8">
       {/* Cover */}
@@ -36,8 +36,20 @@ const LeitfadenContent = () => {
           Wähle eine der beiden Prüfungsstrecken:
         </p>
         <div className="flex gap-3 mt-2">
-          <Badge variant="outline" className="text-sm px-3 py-1">Bewerbungsprüfung ASD 1</Badge>
-          <Badge variant="outline" className="text-sm px-3 py-1">Bewerbungsprüfung ASD 2</Badge>
+          <Badge 
+            variant="outline" 
+            className="text-sm px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+            onClick={() => onNavigateToExam?.("ASD1")}
+          >
+            Bewerbungsprüfung ASD 1
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className="text-sm px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+            onClick={() => onNavigateToExam?.("ASD2")}
+          >
+            Bewerbungsprüfung ASD 2
+          </Badge>
         </div>
       </Section>
 
