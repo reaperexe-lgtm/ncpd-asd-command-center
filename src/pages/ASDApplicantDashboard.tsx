@@ -30,6 +30,30 @@ const ASDApplicantDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pruefung");
+  const [examInProgress, setExamInProgress] = useState(false);
+
+  // Prevent leaving the page during exam
+  useEffect(() => {
+    if (!examInProgress) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [examInProgress]);
+
+  const handleTabChange = useCallback((value: string) => {
+    if (examInProgress) {
+      toast.error("Du kannst während der Prüfung nicht die Seite wechseln!");
+      return;
+    }
+    setActiveTab(value);
+  }, [examInProgress]);
+
+  const handleExamStepChange = useCallback((step: "info" | "quiz" | "done") => {
+    setExamInProgress(step === "quiz");
+  }, []);
 
   const { data: modules } = useQuery({
     queryKey: ["asd-training-modules"],
