@@ -498,7 +498,42 @@ const AdminPanel = () => {
           )}
         </TabsContent>
 
-        {/* Permissions Tab */}
+        {/* Blocked Users Tab */}
+        <TabsContent value="blocked">
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-destructive uppercase tracking-wider flex items-center gap-2">
+              <Ban className="w-4 h-4" /> Gesperrte Benutzer ({blocked.length})
+            </h2>
+            {blocked.length === 0 ? (
+              <div className="text-center py-12 text-sm text-muted-foreground bg-card border border-border rounded-lg">
+                Keine gesperrten Benutzer vorhanden
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {blocked.map((u) => (
+                  <div key={u.id} className="bg-card border border-destructive/20 rounded-lg px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{u.name || "Unbekannt"}</p>
+                        <p className="text-xs text-muted-foreground">{u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role] || u.role}</p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">Gesperrt</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" onClick={() => blockMutation.mutate({ userId: u.id, block: false })} className="gap-1.5 h-8 text-xs">
+                        <Unlock className="w-3.5 h-3.5" /> Entsperren
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(u.id)} className="gap-1.5 h-8 text-xs">
+                        <Trash2 className="w-3.5 h-3.5" /> Endgültig löschen
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
         <TabsContent value="permissions">
           <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
         </TabsContent>
