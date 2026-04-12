@@ -2,9 +2,11 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, FileText, Siren, Plane, Upload, Trash2, Image } from "lucide-react";
+import { Users, FileText, Siren, Plane, Upload, Trash2, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -135,8 +137,28 @@ const MemberPage = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Add new flight license
+  const addLicenseMutation = useMutation({
+    mutationFn: async ({ name, team }: { name: string; team: string }) => {
+      const { error } = await supabase.from("flight_licenses").insert({
+        name,
+        team,
+        status: "Aktiv",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["member-licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["member-stats"] });
+      toast.success("Fluglizenz hinzugefügt");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const [uploadingLicenseId, setUploadingLicenseId] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [showAddLicense, setShowAddLicense] = useState(false);
+  const [newLicenseTeam, setNewLicenseTeam] = useState("ASD");
 
   // Group by role
   const grouped: Record<string, typeof members> = {};
@@ -252,57 +274,101 @@ const MemberPage = () => {
             </div>
 
             {/* Flight Licenses with Images */}
-            {memberLicenses && memberLicenses.length > 0 && (
-              <div className="space-y-3">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Fluglizenzen</h3>
-                {memberLicenses.map((license) => (
-                  <div key={license.id} className="border border-border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{license.team}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {license.status} · {new Date(license.license_date).toLocaleDateString("de-DE")}
-                        </p>
-                      </div>
-                      {canManageLicenses && !license.image_url && (
+                {canManageLicenses && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-7"
+                    onClick={() => setShowAddLicense(!showAddLicense)}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Hinzufügen
+                  </Button>
+                )}
+              </div>
+
+              {showAddLicense && canManageLicenses && (
+                <div className="flex gap-2 items-end">
+                  <Select value={newLicenseTeam} onValueChange={setNewLicenseTeam}>
+                    <SelectTrigger className="w-32 h-8 text-xs bg-background border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ASD">ASD</SelectItem>
+                      <SelectItem value="SWAT">SWAT</SelectItem>
+                      <SelectItem value="FIB">FIB</SelectItem>
+                      <SelectItem value="PD">PD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => {
+                      if (selectedMember?.name) {
+                        addLicenseMutation.mutate({ name: selectedMember.name, team: newLicenseTeam });
+                        setShowAddLicense(false);
+                      }
+                    }}
+                  >
+                    Speichern
+                  </Button>
+                </div>
+              )}
+
+              {memberLicenses?.map((license) => (
+                <div key={license.id} className="border border-border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{license.team}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {license.status} · {new Date(license.license_date).toLocaleDateString("de-DE")}
+                      </p>
+                    </div>
+                    {canManageLicenses && !license.image_url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs"
+                        onClick={() => {
+                          setUploadingLicenseId(license.id);
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        Bild
+                      </Button>
+                    )}
+                  </div>
+                  {license.image_url && (
+                    <div className="relative group">
+                      <img
+                        src={license.image_url}
+                        alt="Fluglizenz"
+                        className="w-full rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => setViewingImage(license.image_url)}
+                      />
+                      {canManageLicenses && (
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 text-xs"
-                          onClick={() => {
-                            setUploadingLicenseId(license.id);
-                            fileInputRef.current?.click();
-                          }}
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImageMutation.mutate(license.id)}
                         >
-                          <Upload className="w-3.5 h-3.5" />
-                          Bild
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}
                     </div>
-                    {license.image_url && (
-                      <div className="relative group">
-                        <img
-                          src={license.image_url}
-                          alt="Fluglizenz"
-                          className="w-full rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => setViewingImage(license.image_url)}
-                        />
-                        {canManageLicenses && (
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeImageMutation.mutate(license.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
+                </div>
+              ))}
+
+              {(!memberLicenses || memberLicenses.length === 0) && !showAddLicense && (
+                <p className="text-xs text-muted-foreground">Keine Fluglizenzen vorhanden.</p>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

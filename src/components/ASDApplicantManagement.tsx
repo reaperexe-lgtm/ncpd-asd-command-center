@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,6 +67,21 @@ const ASDApplicantManagement = () => {
     },
   });
 
+  // Realtime subscription for progress updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("asd-progress-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "asd_applicant_progress" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   // Add module
   const addModuleMutation = useMutation({
     mutationFn: async () => {
@@ -99,35 +114,23 @@ const ASDApplicantManagement = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Toggle progress
+  // Toggle progress - use upsert to avoid conflicts
   const toggleProgressMutation = useMutation({
     mutationFn: async ({ applicantId, moduleId, completed, timeValue }: { applicantId: string; moduleId: string; completed: boolean; timeValue?: string }) => {
-      const existing = allProgress?.find(
-        (p) => p.applicant_id === applicantId && p.module_id === moduleId
-      );
-
-      if (existing) {
-        const { error } = await supabase
-          .from("asd_applicant_progress")
-          .update({
+      const { error } = await supabase
+        .from("asd_applicant_progress")
+        .upsert(
+          {
+            applicant_id: applicantId,
+            module_id: moduleId,
             completed,
             completed_by: completed ? user!.id : null,
             completed_at: completed ? new Date().toISOString() : null,
-            time_value: timeValue ?? existing.time_value,
-          })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("asd_applicant_progress").insert({
-          applicant_id: applicantId,
-          module_id: moduleId,
-          completed,
-          completed_by: completed ? user!.id : null,
-          completed_at: completed ? new Date().toISOString() : null,
-          time_value: timeValue ?? null,
-        });
-        if (error) throw error;
-      }
+            time_value: timeValue ?? null,
+          },
+          { onConflict: "applicant_id,module_id" }
+        );
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
@@ -139,24 +142,18 @@ const ASDApplicantManagement = () => {
   // Update time value
   const updateTimeMutation = useMutation({
     mutationFn: async ({ applicantId, moduleId, timeValue }: { applicantId: string; moduleId: string; timeValue: string }) => {
-      const existing = allProgress?.find(
-        (p) => p.applicant_id === applicantId && p.module_id === moduleId
-      );
-      if (existing) {
-        const { error } = await supabase
-          .from("asd_applicant_progress")
-          .update({ time_value: timeValue })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("asd_applicant_progress").insert({
-          applicant_id: applicantId,
-          module_id: moduleId,
-          completed: false,
-          time_value: timeValue,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from("asd_applicant_progress")
+        .upsert(
+          {
+            applicant_id: applicantId,
+            module_id: moduleId,
+            completed: false,
+            time_value: timeValue,
+          },
+          { onConflict: "applicant_id,module_id" }
+        );
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["asd-all-progress"] });
