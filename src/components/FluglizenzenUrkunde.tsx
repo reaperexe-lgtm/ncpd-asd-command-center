@@ -84,7 +84,7 @@ const FluglizenzenUrkunde = () => {
             <img
               src={heliWatermark}
               alt=""
-              className="w-[70%] h-auto opacity-[0.12] select-none"
+              className="w-[70%] h-auto opacity-50 select-none"
               draggable={false}
             />
           </div>
