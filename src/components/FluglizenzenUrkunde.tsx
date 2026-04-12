@@ -63,11 +63,16 @@ const FluglizenzenUrkunde = () => {
             <Input className="mt-1 bg-background border-border" value={coDirectorTitle} onChange={(e) => setCoDirectorTitle(e.target.value)} />
           </div>
         </div>
+        <Button onClick={handleDownloadPdf} className="w-full md:w-auto">
+          <Download className="w-4 h-4 mr-2" />
+          Als PDF herunterladen
+        </Button>
       </div>
 
       {/* Certificate preview */}
       <div className="flex justify-center">
         <div
+          ref={certificateRef}
           className="relative bg-white text-black w-full max-w-[800px] aspect-[1.414/1] border-2 border-[#c9b06b] shadow-xl overflow-hidden"
           style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
         >
