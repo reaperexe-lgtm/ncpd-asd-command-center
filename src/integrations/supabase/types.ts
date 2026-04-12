@@ -178,6 +178,7 @@ export type Database = {
       flight_licenses: {
         Row: {
           created_at: string
+          flight_time: string | null
           id: string
           image_url: string | null
           license_date: string
@@ -188,6 +189,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          flight_time?: string | null
           id?: string
           image_url?: string | null
           license_date?: string
@@ -198,6 +200,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          flight_time?: string | null
           id?: string
           image_url?: string | null
           license_date?: string
