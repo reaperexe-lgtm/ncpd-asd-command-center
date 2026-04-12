@@ -33,7 +33,7 @@ const AusbilderStatistik = () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", TRAINER_ROLES);
+        .in("role", TRAINER_ROLES as any);
       if (!roles?.length) return [];
 
       const userIds = roles.map((r) => r.user_id);

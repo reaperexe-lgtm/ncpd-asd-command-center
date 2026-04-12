@@ -25,7 +25,7 @@ const AusbilderPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
+        <TabsList className="w-full grid grid-cols-6 bg-secondary/50 border border-border">
           <TabsTrigger value="pruefungen" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <ClipboardCheck className="w-4 h-4" />
             Theorie
@@ -45,6 +45,10 @@ const AusbilderPage = () => {
           <TabsTrigger value="bewerber" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Users className="w-4 h-4" />
             ASD-Bewerber
+          </TabsTrigger>
+          <TabsTrigger value="statistik" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <BarChart3 className="w-4 h-4" />
+            Statistik
           </TabsTrigger>
         </TabsList>
 
@@ -66,6 +70,10 @@ const AusbilderPage = () => {
 
         <TabsContent value="bewerber" className="mt-6">
           <ASDApplicantManagement />
+        </TabsContent>
+
+        <TabsContent value="statistik" className="mt-6">
+          <AusbilderStatistik />
         </TabsContent>
       </Tabs>
     </div>
