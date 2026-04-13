@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
   const { user, profile } = useAuth();
