@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Download, Plus, Trash2, FileText, Save } from "lucide-react";
+import { Download, Plus, Trash2, FileText, Save, ChevronDown, Clock, User } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import asdLogoFull from "@/assets/asd-logo-full.png";
@@ -44,9 +44,12 @@ interface ProtocolSection {
 
 const AufstellungsprotokollPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const protocolRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [viewingProtocol, setViewingProtocol] = useState<any | null>(null);
+  const [showSaved, setShowSaved] = useState(false);
 
   const [titel, setTitel] = useState("Air Support Division");
   const [untertitel, setUntertitel] = useState("Narco City Police Department");
@@ -159,6 +162,18 @@ const AufstellungsprotokollPage = () => {
     return groups;
   };
 
+  // Fetch saved protocols
+  const { data: savedProtocols = [] } = useQuery({
+    queryKey: ["formation-protocols"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("formation_protocols")
+        .select("*")
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
   const saveProtocol = async () => {
     if (!user) return;
     setSaving(true);
@@ -180,6 +195,7 @@ const AufstellungsprotokollPage = () => {
         created_by: user.id,
       });
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["formation-protocols"] });
       toast.success("Aufstellungsprotokoll gespeichert!");
     } catch (err: any) {
       toast.error("Fehler beim Speichern: " + err.message);
