@@ -164,6 +164,56 @@ const ProfilePage = () => {
           {saving ? "Speichere..." : "Profil speichern"}
         </Button>
       </div>
+
+      {/* Discord Notifications */}
+      <div className="bg-card border border-border rounded-lg p-5 space-y-5">
+        <div className="flex items-center gap-2">
+          <Bell className="w-5 h-5 text-[#5865F2]" />
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Discord-Benachrichtigungen</h2>
+            <p className="text-[10px] text-muted-foreground">Welche Benachrichtigungen möchtest du per Discord erhalten?</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Top Woche</p>
+              <p className="text-[10px] text-muted-foreground">Wöchentlicher Report der Top-Protokollschreiber</p>
+            </div>
+            <Switch
+              checked={notifications.top_woche}
+              onCheckedChange={(v) => setNotifications((n) => ({ ...n, top_woche: v }))}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Top Monat</p>
+              <p className="text-[10px] text-muted-foreground">Monatlicher Report der Top-Protokollschreiber</p>
+            </div>
+            <Switch
+              checked={notifications.top_monat}
+              onCheckedChange={(v) => setNotifications((n) => ({ ...n, top_monat: v }))}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Top Me</p>
+              <p className="text-[10px] text-muted-foreground">Persönliche Statistik: wie viele Protokolle du geschrieben hast</p>
+            </div>
+            <Switch
+              checked={notifications.top_me}
+              onCheckedChange={(v) => setNotifications((n) => ({ ...n, top_me: v }))}
+            />
+          </div>
+        </div>
+
+        <p className="text-[10px] text-muted-foreground">
+          Änderungen werden beim Speichern des Profils übernommen.
+        </p>
+      </div>
     </div>
   );
 };
