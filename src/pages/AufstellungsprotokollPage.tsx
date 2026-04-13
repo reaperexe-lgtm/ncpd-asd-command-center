@@ -435,6 +435,10 @@ const AufstellungsprotokollPage = () => {
                       m.status === "Anwesend" ? "#e65100"
                       : m.status === "Abgemeldet" ? "#e65100"
                       : "#1565c0";
+                    const statusText =
+                      m.status === "Anwesend" ? "Abgemeldet ✗"
+                      : m.status === "Abgemeldet" ? "Abgemeldet ✗"
+                      : "Im Einsatz";
                     rows.push(
                       <tr
                         key={m.id}
@@ -452,7 +456,7 @@ const AufstellungsprotokollPage = () => {
                             background: statusBg, color: "#fff", padding: "2px 10px",
                             borderRadius: "4px", fontSize: "10px", fontWeight: "bold",
                           }}>
-                            {m.status === "Anwesend" ? "Abgemeldet ✗" : m.status === "Abgemeldet" ? "Abgemeldet ✗" : "Im Einsatz"}
+                            {statusText}
                           </span>
                         </td>
                       </tr>
