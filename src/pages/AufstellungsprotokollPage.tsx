@@ -350,6 +350,106 @@ const AufstellungsprotokollPage = () => {
         ))}
       </div>
 
+      {/* Saved Protocols */}
+      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <button
+          onClick={() => setShowSaved(!showSaved)}
+          className="flex items-center justify-between w-full"
+        >
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            Gespeicherte Protokolle ({savedProtocols.length})
+          </h2>
+          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showSaved ? "rotate-180" : ""}`} />
+        </button>
+
+        {showSaved && (
+          <div className="space-y-3">
+            {savedProtocols.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Noch keine Protokolle gespeichert.</p>
+            ) : (
+              savedProtocols.map((p) => (
+                <div key={p.id} className="border border-border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setViewingProtocol(viewingProtocol?.id === p.id ? null : p)}
+                    className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{p.titel}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          {new Date(p.datum).toLocaleDateString("de-DE")} · {p.uhrzeit}
+                          <span className="text-muted-foreground/50">·</span>
+                          <User className="w-3 h-3" />
+                          {p.protokollfuehrer}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${viewingProtocol?.id === p.id ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {viewingProtocol?.id === p.id && (
+                    <div className="border-t border-border px-4 py-4 space-y-4 bg-secondary/10">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div><span className="text-muted-foreground">Untertitel:</span> <span className="text-foreground">{p.untertitel || "–"}</span></div>
+                        <div><span className="text-muted-foreground">Ort:</span> <span className="text-foreground">{p.ort}</span></div>
+                      </div>
+
+                      {/* Attendance */}
+                      {(p.attendance as any[])?.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground mb-2">Anwesenheit</h3>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border">
+                                <th className="text-left p-1.5 text-muted-foreground">Name</th>
+                                <th className="text-left p-1.5 text-muted-foreground">Position</th>
+                                <th className="text-left p-1.5 text-muted-foreground">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(p.attendance as any[]).map((a: any, i: number) => (
+                                <tr key={i} className="border-b border-border/30">
+                                  <td className="p-1.5 text-foreground">{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
+                                  <td className="p-1.5 text-foreground">{a.roleLabel}</td>
+                                  <td className="p-1.5">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                      a.status === "Anwesend" ? "bg-green-600 text-white"
+                                      : a.status === "Im Einsatz" ? "bg-blue-600 text-white"
+                                      : "bg-orange-500 text-white"
+                                    }`}>
+                                      {a.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Sections */}
+                      {(p.sections as any[])?.length > 0 && (
+                        <div className="space-y-2">
+                          {(p.sections as any[]).map((s: any, i: number) => (
+                            <div key={i}>
+                              <h3 className="text-sm font-semibold text-foreground">{i + 2}. {s.title || "Ohne Titel"}</h3>
+                              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{s.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
       {/* PDF Preview (hidden, rendered for html2canvas) */}
       <div
         ref={protocolRef}
