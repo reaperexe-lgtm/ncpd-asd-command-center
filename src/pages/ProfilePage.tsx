@@ -18,6 +18,11 @@ const ProfilePage = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [notifications, setNotifications] = useState({
+    top_woche: true,
+    top_monat: true,
+    top_me: true,
+  });
 
   useEffect(() => {
     if (profile) {
