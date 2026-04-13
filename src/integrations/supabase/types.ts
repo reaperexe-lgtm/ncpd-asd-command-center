@@ -544,6 +544,7 @@ export type Database = {
           created_at: string
           dienstnummer: string | null
           discord_id: string | null
+          discord_notifications: Json
           id: string
           image_url: string | null
           is_approved: boolean
@@ -556,6 +557,7 @@ export type Database = {
           created_at?: string
           dienstnummer?: string | null
           discord_id?: string | null
+          discord_notifications?: Json
           id: string
           image_url?: string | null
           is_approved?: boolean
@@ -568,6 +570,7 @@ export type Database = {
           created_at?: string
           dienstnummer?: string | null
           discord_id?: string | null
+          discord_notifications?: Json
           id?: string
           image_url?: string | null
           is_approved?: boolean

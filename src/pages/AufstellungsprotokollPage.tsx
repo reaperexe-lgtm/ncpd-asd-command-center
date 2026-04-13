@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Download, Plus, Trash2, FileText, Save } from "lucide-react";
+import { Download, Plus, Trash2, FileText, Save, ChevronDown, Clock, User } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import asdLogoFull from "@/assets/asd-logo-full.png";
@@ -44,9 +44,12 @@ interface ProtocolSection {
 
 const AufstellungsprotokollPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const protocolRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [viewingProtocol, setViewingProtocol] = useState<any | null>(null);
+  const [showSaved, setShowSaved] = useState(false);
 
   const [titel, setTitel] = useState("Air Support Division");
   const [untertitel, setUntertitel] = useState("Narco City Police Department");
@@ -159,6 +162,18 @@ const AufstellungsprotokollPage = () => {
     return groups;
   };
 
+  // Fetch saved protocols
+  const { data: savedProtocols = [] } = useQuery({
+    queryKey: ["formation-protocols"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("formation_protocols")
+        .select("*")
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
   const saveProtocol = async () => {
     if (!user) return;
     setSaving(true);
@@ -180,6 +195,7 @@ const AufstellungsprotokollPage = () => {
         created_by: user.id,
       });
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["formation-protocols"] });
       toast.success("Aufstellungsprotokoll gespeichert!");
     } catch (err: any) {
       toast.error("Fehler beim Speichern: " + err.message);
@@ -332,6 +348,106 @@ const AufstellungsprotokollPage = () => {
             <Textarea placeholder="Inhalt..." value={s.content} onChange={(e) => updateSection(s.id, "content", e.target.value)} rows={4} />
           </div>
         ))}
+      </div>
+
+      {/* Saved Protocols */}
+      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <button
+          onClick={() => setShowSaved(!showSaved)}
+          className="flex items-center justify-between w-full"
+        >
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            Gespeicherte Protokolle ({savedProtocols.length})
+          </h2>
+          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showSaved ? "rotate-180" : ""}`} />
+        </button>
+
+        {showSaved && (
+          <div className="space-y-3">
+            {savedProtocols.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Noch keine Protokolle gespeichert.</p>
+            ) : (
+              savedProtocols.map((p) => (
+                <div key={p.id} className="border border-border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setViewingProtocol(viewingProtocol?.id === p.id ? null : p)}
+                    className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{p.titel}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          {new Date(p.datum).toLocaleDateString("de-DE")} · {p.uhrzeit}
+                          <span className="text-muted-foreground/50">·</span>
+                          <User className="w-3 h-3" />
+                          {p.protokollfuehrer}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${viewingProtocol?.id === p.id ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {viewingProtocol?.id === p.id && (
+                    <div className="border-t border-border px-4 py-4 space-y-4 bg-secondary/10">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div><span className="text-muted-foreground">Untertitel:</span> <span className="text-foreground">{p.untertitel || "–"}</span></div>
+                        <div><span className="text-muted-foreground">Ort:</span> <span className="text-foreground">{p.ort}</span></div>
+                      </div>
+
+                      {/* Attendance */}
+                      {(p.attendance as any[])?.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground mb-2">Anwesenheit</h3>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border">
+                                <th className="text-left p-1.5 text-muted-foreground">Name</th>
+                                <th className="text-left p-1.5 text-muted-foreground">Position</th>
+                                <th className="text-left p-1.5 text-muted-foreground">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(p.attendance as any[]).map((a: any, i: number) => (
+                                <tr key={i} className="border-b border-border/30">
+                                  <td className="p-1.5 text-foreground">{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
+                                  <td className="p-1.5 text-foreground">{a.roleLabel}</td>
+                                  <td className="p-1.5">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                      a.status === "Anwesend" ? "bg-green-600 text-white"
+                                      : a.status === "Im Einsatz" ? "bg-blue-600 text-white"
+                                      : "bg-orange-500 text-white"
+                                    }`}>
+                                      {a.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Sections */}
+                      {(p.sections as any[])?.length > 0 && (
+                        <div className="space-y-2">
+                          {(p.sections as any[]).map((s: any, i: number) => (
+                            <div key={i}>
+                              <h3 className="text-sm font-semibold text-foreground">{i + 2}. {s.title || "Ohne Titel"}</h3>
+                              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{s.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* PDF Preview (hidden, rendered for html2canvas) */}

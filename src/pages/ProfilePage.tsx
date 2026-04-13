@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
   const { user, profile } = useAuth();
@@ -17,6 +18,11 @@ const ProfilePage = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [notifications, setNotifications] = useState({
+    top_woche: true,
+    top_monat: true,
+    top_me: true,
+  });
 
   useEffect(() => {
     if (profile) {
@@ -26,8 +32,11 @@ const ProfilePage = () => {
     }
     // Load discord_id from DB
     if (user) {
-      supabase.from("profiles").select("discord_id").eq("id", user.id).single().then(({ data }) => {
+      supabase.from("profiles").select("discord_id, discord_notifications").eq("id", user.id).single().then(({ data }) => {
         if (data?.discord_id) setDiscordId(data.discord_id);
+        if (data?.discord_notifications) {
+          setNotifications(data.discord_notifications as any);
+        }
       });
     }
   }, [profile, user]);
@@ -61,6 +70,7 @@ const ProfilePage = () => {
         dienstnummer: dienstnummer.trim() || null,
         image_url: imageUrl,
         discord_id: discordId.trim() || null,
+        discord_notifications: notifications,
       } as any, { onConflict: "id" });
       if (error) throw error;
 
@@ -153,6 +163,56 @@ const ProfilePage = () => {
           <Save className="w-4 h-4" />
           {saving ? "Speichere..." : "Profil speichern"}
         </Button>
+      </div>
+
+      {/* Discord Notifications */}
+      <div className="bg-card border border-border rounded-lg p-5 space-y-5">
+        <div className="flex items-center gap-2">
+          <Bell className="w-5 h-5 text-[#5865F2]" />
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Discord-Benachrichtigungen</h2>
+            <p className="text-[10px] text-muted-foreground">Welche Benachrichtigungen möchtest du per Discord erhalten?</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Top Woche</p>
+              <p className="text-[10px] text-muted-foreground">Wöchentlicher Report der Top-Protokollschreiber</p>
+            </div>
+            <Switch
+              checked={notifications.top_woche}
+              onCheckedChange={(v) => setNotifications((n) => ({ ...n, top_woche: v }))}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Top Monat</p>
+              <p className="text-[10px] text-muted-foreground">Monatlicher Report der Top-Protokollschreiber</p>
+            </div>
+            <Switch
+              checked={notifications.top_monat}
+              onCheckedChange={(v) => setNotifications((n) => ({ ...n, top_monat: v }))}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Top Me</p>
+              <p className="text-[10px] text-muted-foreground">Persönliche Statistik: wie viele Protokolle du geschrieben hast</p>
+            </div>
+            <Switch
+              checked={notifications.top_me}
+              onCheckedChange={(v) => setNotifications((n) => ({ ...n, top_me: v }))}
+            />
+          </div>
+        </div>
+
+        <p className="text-[10px] text-muted-foreground">
+          Änderungen werden beim Speichern des Profils übernommen.
+        </p>
       </div>
     </div>
   );
