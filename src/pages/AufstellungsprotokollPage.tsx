@@ -436,7 +436,7 @@ const AufstellungsprotokollPage = () => {
                       : m.status === "Abgemeldet" ? "#e65100"
                       : "#1565c0";
                     const statusText =
-                      m.status === "Anwesend" ? "Abgemeldet ✗"
+                      m.status === "Anwesend" ? "Abgemeldet ✓"
                       : m.status === "Abgemeldet" ? "Abgemeldet ✗"
                       : "Im Einsatz";
                     rows.push(
