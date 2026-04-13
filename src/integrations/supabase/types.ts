@@ -175,6 +175,33 @@ export type Database = {
         }
         Relationships: []
       }
+      changelogs: {
+        Row: {
+          changes: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+          version: string
+        }
+        Insert: {
+          changes?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+          version: string
+        }
+        Update: {
+          changes?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
       flight_licenses: {
         Row: {
           created_at: string
@@ -208,6 +235,48 @@ export type Database = {
           status?: string
           team?: string
           unit?: string | null
+        }
+        Relationships: []
+      }
+      formation_protocols: {
+        Row: {
+          attendance: Json | null
+          created_at: string
+          created_by: string
+          datum: string
+          id: string
+          ort: string
+          protokollfuehrer: string
+          sections: Json | null
+          titel: string
+          uhrzeit: string
+          untertitel: string | null
+        }
+        Insert: {
+          attendance?: Json | null
+          created_at?: string
+          created_by: string
+          datum: string
+          id?: string
+          ort?: string
+          protokollfuehrer: string
+          sections?: Json | null
+          titel: string
+          uhrzeit: string
+          untertitel?: string | null
+        }
+        Update: {
+          attendance?: Json | null
+          created_at?: string
+          created_by?: string
+          datum?: string
+          id?: string
+          ort?: string
+          protokollfuehrer?: string
+          sections?: Json | null
+          titel?: string
+          uhrzeit?: string
+          untertitel?: string | null
         }
         Relationships: []
       }
