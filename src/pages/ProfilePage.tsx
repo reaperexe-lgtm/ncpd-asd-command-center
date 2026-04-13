@@ -32,8 +32,11 @@ const ProfilePage = () => {
     }
     // Load discord_id from DB
     if (user) {
-      supabase.from("profiles").select("discord_id").eq("id", user.id).single().then(({ data }) => {
+      supabase.from("profiles").select("discord_id, discord_notifications").eq("id", user.id).single().then(({ data }) => {
         if (data?.discord_id) setDiscordId(data.discord_id);
+        if (data?.discord_notifications) {
+          setNotifications(data.discord_notifications as any);
+        }
       });
     }
   }, [profile, user]);
@@ -67,6 +70,7 @@ const ProfilePage = () => {
         dienstnummer: dienstnummer.trim() || null,
         image_url: imageUrl,
         discord_id: discordId.trim() || null,
+        discord_notifications: notifications,
       } as any, { onConflict: "id" });
       if (error) throw error;
 
