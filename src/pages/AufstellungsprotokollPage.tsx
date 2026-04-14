@@ -387,7 +387,22 @@ const AufstellungsprotokollPage = () => {
                         </p>
                       </div>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${viewingProtocol?.id === p.id ? "rotate-180" : ""}`} />
+                   <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          generatePDFFromSaved(p);
+                        }}
+                        disabled={generating}
+                      >
+                        <Download className="w-3 h-3" />
+                        PDF
+                      </Button>
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${viewingProtocol?.id === p.id ? "rotate-180" : ""}`} />
+                    </div>
                   </button>
 
                   {viewingProtocol?.id === p.id && (
