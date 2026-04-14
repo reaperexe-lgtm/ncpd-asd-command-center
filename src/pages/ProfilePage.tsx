@@ -154,9 +154,17 @@ const ProfilePage = () => {
               className="bg-background border-border pl-9" 
             />
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Deine Discord User-ID für Bot-Benachrichtigungen. Rechtsklick auf deinen Namen in Discord → "ID kopieren"
-          </p>
+          <div className="bg-[#5865F2]/10 border border-[#5865F2]/20 rounded-md p-2.5 space-y-1">
+            <p className="text-[11px] text-foreground font-medium flex items-center gap-1.5">
+              💡 Wozu wird die Discord ID benötigt?
+            </p>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Mit deiner Discord ID kannst du den <span className="font-mono bg-muted px-1 rounded text-foreground">/topme</span> Command in Discord nutzen, um deine persönliche Wochenstatistik abzurufen.
+            </p>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground">So findest du deine ID:</span> Discord Einstellungen → Erweitert → Entwicklermodus aktivieren → Rechtsklick auf deinen Namen → „Benutzer-ID kopieren"
+            </p>
+          </div>
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
