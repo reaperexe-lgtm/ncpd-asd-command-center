@@ -463,9 +463,20 @@ const AufstellungsprotokollPage = () => {
                         disabled={generating}
                       >
                         <Download className="w-3 h-3" />
-                        PDF
-                      </Button>
-                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${viewingProtocol?.id === p.id ? "rotate-180" : ""}`} />
+                         PDF
+                       </Button>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className="gap-1 text-xs text-destructive hover:text-destructive"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           deleteProtocol(p.id);
+                         }}
+                       >
+                         <Trash2 className="w-3 h-3" />
+                       </Button>
+                       <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${viewingProtocol?.id === p.id ? "rotate-180" : ""}`} />
                     </div>
                   </button>
 
