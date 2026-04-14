@@ -249,6 +249,57 @@ const AufstellungsprotokollPage = () => {
     }
   };
 
+  const [savedPdfData, setSavedPdfData] = useState<{
+    titel: string; untertitel: string; datum: string; uhrzeit: string;
+    protokollfuehrer: string; sections: ProtocolSection[];
+    attendance: MemberAttendance[];
+  } | null>(null);
+
+  const generatePDFFromSaved = async (protocol: any) => {
+    // Temporarily override state for PDF rendering
+    const savedAttendance: MemberAttendance[] = ((protocol.attendance as any[]) || []).map((a: any, i: number) => ({
+      id: `saved-${i}`,
+      name: a.name,
+      dienstnummer: a.dienstnummer || null,
+      role: "",
+      roleLabel: a.roleLabel || "",
+      roleOrder: i,
+      status: a.status || "Anwesend",
+    }));
+    const savedSections: ProtocolSection[] = ((protocol.sections as any[]) || []).map((s: any, i: number) => ({
+      id: `saved-${i}`,
+      title: s.title || "",
+      content: s.content || "",
+    }));
+
+    // Store current state
+    const prevTitel = titel, prevUntertitel = untertitel, prevDatum = datum;
+    const prevUhrzeit = uhrzeit, prevProtokollfuehrer = protokollfuehrer;
+    const prevSections = sections, prevAttendance = attendance;
+
+    // Set saved protocol data
+    setTitel(protocol.titel);
+    setUntertitel(protocol.untertitel || "");
+    setDatum(protocol.datum);
+    setUhrzeit(protocol.uhrzeit);
+    setProtokollfuehrer(protocol.protokollfuehrer);
+    setSections(savedSections);
+    setAttendance(savedAttendance);
+
+    // Wait for re-render then generate
+    await new Promise((r) => setTimeout(r, 100));
+    await generatePDF();
+
+    // Restore state
+    setTitel(prevTitel);
+    setUntertitel(prevUntertitel);
+    setDatum(prevDatum);
+    setUhrzeit(prevUhrzeit);
+    setProtokollfuehrer(prevProtokollfuehrer);
+    setSections(prevSections);
+    setAttendance(prevAttendance);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4">
       <div className="flex items-center justify-between">
