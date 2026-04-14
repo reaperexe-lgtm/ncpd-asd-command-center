@@ -174,6 +174,19 @@ const AufstellungsprotokollPage = () => {
     },
   });
 
+  const deleteProtocol = async (id: string) => {
+    if (!confirm("Möchtest du dieses Protokoll wirklich löschen?")) return;
+    try {
+      const { error } = await supabase.from("formation_protocols").delete().eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["formation-protocols"] });
+      if (viewingProtocol?.id === id) setViewingProtocol(null);
+      toast.success("Protokoll gelöscht");
+    } catch (err: any) {
+      toast.error("Fehler beim Löschen: " + err.message);
+    }
+  };
+
   const saveProtocol = async () => {
     if (!user) return;
     setSaving(true);
