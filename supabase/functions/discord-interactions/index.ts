@@ -157,6 +157,10 @@ Deno.serve(async (req) => {
         name: "topmonat",
         description: "Zeigt die Top-Protokollschreiber des aktuellen Monats",
       },
+      {
+        name: "topme",
+        description: "Zeigt deine persönliche Protokoll-Statistik der aktuellen ASD-Woche",
+      },
     ];
 
     const res = await fetch(`${DISCORD_API}/applications/${appId}/commands`, {
