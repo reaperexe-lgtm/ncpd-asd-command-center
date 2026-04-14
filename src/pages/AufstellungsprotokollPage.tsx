@@ -74,7 +74,7 @@ const AufstellungsprotokollPage = () => {
       return profiles
         .filter((p) => {
           const role = roleMap.get(p.id);
-          return role && role !== "asd_applicant";
+          return role && role !== "asd_applicant" && role !== "admin";
         })
         .map((p) => {
           const role = roleMap.get(p.id) || "member";
