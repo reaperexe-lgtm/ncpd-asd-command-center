@@ -712,16 +712,12 @@ const AdminPanel = () => {
                   onClick={async () => {
                     setSavingLink(true);
                     try {
+                      // Update existing row
                       const { error } = await supabase
                         .from("permission_settings")
-                        .upsert({ permission_key: "discord_invite_link", role: discordInviteLink.trim(), allowed: true } as any, { onConflict: "permission_key,role" });
-                      // Fallback: update existing
-                      if (error) {
-                        await supabase
-                          .from("permission_settings")
-                          .update({ role: discordInviteLink.trim() } as any)
-                          .eq("permission_key", "discord_invite_link");
-                      }
+                        .update({ role: discordInviteLink.trim() } as any)
+                        .eq("permission_key", "discord_invite_link");
+                      if (error) throw error;
                       toast.success("Discord-Link gespeichert");
                       logActivity("Discord-Einladungslink aktualisiert", "admin", { link: discordInviteLink.trim() });
                     } catch {
