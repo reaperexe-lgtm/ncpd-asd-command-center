@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle, Bell } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
@@ -23,6 +23,7 @@ const ProfilePage = () => {
     top_monat: true,
     top_me: true,
   });
+  const [discordServerLink, setDiscordServerLink] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -37,6 +38,10 @@ const ProfilePage = () => {
         if (data?.discord_notifications) {
           setNotifications(data.discord_notifications as any);
         }
+      });
+      // Load discord server invite link
+      supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
+        if (data?.role) setDiscordServerLink(data.role);
       });
     }
   }, [profile, user]);
