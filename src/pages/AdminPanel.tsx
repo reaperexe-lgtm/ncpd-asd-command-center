@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -55,6 +55,16 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
   const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
+  const [discordInviteLink, setDiscordInviteLink] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
+
+  // Load discord invite link
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
+      if (data?.role) setDiscordInviteLink(data.role);
+    });
+  }, [isAdmin]);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -341,7 +351,7 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
           </TabsTrigger>
@@ -366,6 +376,9 @@ const AdminPanel = () => {
                 {pendingRequestCount}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-1.5 text-xs">
+            <Settings className="w-3.5 h-3.5" /> Einstellungen
           </TabsTrigger>
         </TabsList>
 
@@ -676,6 +689,55 @@ const AdminPanel = () => {
                 ))}
               </div>
             )}
+          </div>
+        </TabsContent>
+        {/* Settings Tab */}
+        <TabsContent value="settings">
+          <div className="space-y-6">
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" /> Discord-Server Einladungslink
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Dieser Link wird allen Nutzern im Profil angezeigt, damit sie dem Discord-Server beitreten können.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={discordInviteLink}
+                  onChange={(e) => setDiscordInviteLink(e.target.value)}
+                  placeholder="https://discord.gg/dein-server"
+                  className="bg-background border-border"
+                />
+                <Button
+                  onClick={async () => {
+                    setSavingLink(true);
+                    try {
+                      // Update existing row
+                      const { error } = await supabase
+                        .from("permission_settings")
+                        .update({ role: discordInviteLink.trim() } as any)
+                        .eq("permission_key", "discord_invite_link");
+                      if (error) throw error;
+                      toast.success("Discord-Link gespeichert");
+                      logActivity("Discord-Einladungslink aktualisiert", "admin", { link: discordInviteLink.trim() });
+                    } catch {
+                      toast.error("Fehler beim Speichern");
+                    } finally {
+                      setSavingLink(false);
+                    }
+                  }}
+                  disabled={savingLink}
+                  className="gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+              {discordInviteLink && (
+                <a href={discordInviteLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-[#5865F2] hover:underline">
+                  <ExternalLink className="w-3 h-3" /> Vorschau: {discordInviteLink}
+                </a>
+              )}
+            </div>
           </div>
         </TabsContent>
       </Tabs>

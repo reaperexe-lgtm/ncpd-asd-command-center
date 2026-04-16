@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle, Bell } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
@@ -23,6 +23,7 @@ const ProfilePage = () => {
     top_monat: true,
     top_me: true,
   });
+  const [discordServerLink, setDiscordServerLink] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -37,6 +38,10 @@ const ProfilePage = () => {
         if (data?.discord_notifications) {
           setNotifications(data.discord_notifications as any);
         }
+      });
+      // Load discord server invite link
+      supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
+        if (data?.role) setDiscordServerLink(data.role);
       });
     }
   }, [profile, user]);
@@ -165,6 +170,18 @@ const ProfilePage = () => {
               <span className="font-semibold text-foreground">So findest du deine ID:</span> Discord Einstellungen → Erweitert → Entwicklermodus aktivieren → Rechtsklick auf deinen Namen → „Benutzer-ID kopieren"
             </p>
           </div>
+          {discordServerLink && (
+            <a
+              href={discordServerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md px-4 py-2.5 text-xs font-medium transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Discord-Server beitreten
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
