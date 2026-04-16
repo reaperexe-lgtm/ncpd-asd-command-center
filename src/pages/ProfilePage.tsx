@@ -170,6 +170,18 @@ const ProfilePage = () => {
               <span className="font-semibold text-foreground">So findest du deine ID:</span> Discord Einstellungen → Erweitert → Entwicklermodus aktivieren → Rechtsklick auf deinen Namen → „Benutzer-ID kopieren"
             </p>
           </div>
+          {discordServerLink && (
+            <a
+              href={discordServerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md px-4 py-2.5 text-xs font-medium transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Discord-Server beitreten
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
