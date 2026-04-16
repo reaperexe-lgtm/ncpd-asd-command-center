@@ -351,7 +351,7 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
           </TabsTrigger>
@@ -376,6 +376,9 @@ const AdminPanel = () => {
                 {pendingRequestCount}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-1.5 text-xs">
+            <Settings className="w-3.5 h-3.5" /> Einstellungen
           </TabsTrigger>
         </TabsList>
 
