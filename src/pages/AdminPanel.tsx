@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -55,6 +55,16 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
   const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
+  const [discordInviteLink, setDiscordInviteLink] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
+
+  // Load discord invite link
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
+      if (data?.role) setDiscordInviteLink(data.role);
+    });
+  }, [isAdmin]);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
