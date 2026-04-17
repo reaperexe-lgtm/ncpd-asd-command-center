@@ -307,6 +307,15 @@ const StatistikPage = () => {
   const maxPursuit = pursuitRanking[0]?.[1] || 1;
   const weeklyPursuitTotal = weeklyPursuits.length;
 
+  // --- 10-80 Pursuit Stats (monthly) ---
+  const monthlyPursuitCounts: Record<string, number> = {};
+  monthlyPursuits.forEach((p) => {
+    monthlyPursuitCounts[p.created_by] = (monthlyPursuitCounts[p.created_by] || 0) + 1;
+  });
+  const monthlyPursuitRanking = Object.entries(monthlyPursuitCounts).sort((a, b) => b[1] - a[1]);
+  const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
+  const monthlyPursuitTotal = monthlyPursuits.length;
+
   // Protocols for selected writer - only current week
   const writerProtocols = selectedWriter
     ? weeklyMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
