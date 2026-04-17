@@ -307,6 +307,15 @@ const StatistikPage = () => {
   const maxPursuit = pursuitRanking[0]?.[1] || 1;
   const weeklyPursuitTotal = weeklyPursuits.length;
 
+  // --- 10-80 Pursuit Stats (monthly) ---
+  const monthlyPursuitCounts: Record<string, number> = {};
+  monthlyPursuits.forEach((p) => {
+    monthlyPursuitCounts[p.created_by] = (monthlyPursuitCounts[p.created_by] || 0) + 1;
+  });
+  const monthlyPursuitRanking = Object.entries(monthlyPursuitCounts).sort((a, b) => b[1] - a[1]);
+  const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
+  const monthlyPursuitTotal = monthlyPursuits.length;
+
   // Protocols for selected writer - only current week
   const writerProtocols = selectedWriter
     ? weeklyMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
@@ -452,6 +461,51 @@ const StatistikPage = () => {
                     className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
                     style={{
                       width: `${Math.max((count / maxPursuit) * 100, 20)}%`,
+                      backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
+                    }}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                  >
+                    <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
+                  </button>
+                </div>
+                <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 10-80 Verfolgungen – Gesamt (Monat) */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-primary flex items-center gap-2">
+            <Car className="w-5 h-5" />
+            10-80 Verfolgungen – Gesamt (Monat)
+          </h2>
+          <div className="flex items-center gap-2">
+            {(canReset || canResetDirect) && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
+                <RotateCw className="w-3 h-3" /> Reset
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+              Gesamt: {monthlyPursuitTotal}
+            </span>
+          </div>
+        </div>
+        <ResetInfoBlock entries={formatResetInfo(lastMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-3" />
+        {monthlyPursuitRanking.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diesen Monat</p>
+        ) : (
+          <div className="space-y-3">
+            {monthlyPursuitRanking.map(([id, count], i) => (
+              <div key={id} className="flex items-center justify-between group">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                  <button
+                    className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
+                    style={{
+                      width: `${Math.max((count / maxMonthlyPursuit) * 100, 20)}%`,
                       backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
                     }}
                     onClick={() => setSelectedWriter({ id, name: profileName(id) })}
