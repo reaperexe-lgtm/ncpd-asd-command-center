@@ -377,7 +377,7 @@ const StatistikPage = () => {
               <div key={id} className="flex items-center justify-between py-1.5 group">
                 <button
                   className="flex items-center gap-2 hover:underline text-left"
-                  onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: "missions", scope: "weekly" })}
                 >
                   <span className="text-base">{MEDAL[i] || ""}</span>
                   <span className="text-sm font-medium text-primary group-hover:text-accent-foreground transition-colors">{profileName(id)}</span>
