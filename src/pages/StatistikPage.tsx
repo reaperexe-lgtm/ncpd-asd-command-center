@@ -418,7 +418,7 @@ const StatistikPage = () => {
                       width: `${Math.max((count / maxAllTime) * 100, 20)}%`,
                       backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
                     }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "all", scope: "monthly" })}
                   >
                     <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </button>
@@ -463,7 +463,7 @@ const StatistikPage = () => {
                       width: `${Math.max((count / maxPursuit) * 100, 20)}%`,
                       backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
                     }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope: "weekly" })}
                   >
                     <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </button>
@@ -508,7 +508,7 @@ const StatistikPage = () => {
                       width: `${Math.max((count / maxMonthlyPursuit) * 100, 20)}%`,
                       backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
                     }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope: "monthly" })}
                   >
                     <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </button>
