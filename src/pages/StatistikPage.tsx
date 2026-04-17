@@ -316,12 +316,14 @@ const StatistikPage = () => {
   const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
   const monthlyPursuitTotal = monthlyPursuits.length;
 
-  // Protocols for selected writer - only current week
-  const writerProtocols = selectedWriter
-    ? weeklyMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
+  // Protocols for selected writer - filtered by type & scope
+  const writerSourceMissions = selectedWriter?.scope === "monthly" ? monthlyMissions : weeklyMissions;
+  const writerSourcePursuits = selectedWriter?.scope === "monthly" ? monthlyPursuits : weeklyPursuits;
+  const writerProtocols = selectedWriter && (selectedWriter.type === "all" || selectedWriter.type === "missions")
+    ? writerSourceMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
     : [];
-  const writerPursuits = selectedWriter
-    ? weeklyPursuits.filter((p) => p.created_by === selectedWriter.id)
+  const writerPursuits = selectedWriter && (selectedWriter.type === "all" || selectedWriter.type === "pursuits")
+    ? writerSourcePursuits.filter((p) => p.created_by === selectedWriter.id)
     : [];
 
   const ResetInfoBlock = ({ entries, className = "" }: { entries: string[], className?: string }) => (
