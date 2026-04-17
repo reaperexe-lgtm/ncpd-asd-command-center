@@ -108,7 +108,7 @@ const StatistikPage = () => {
   const canReset = ["director", "co_director", "supervisor"].includes(role || "");
   const canResetDirect = isAdmin;
   const queryClient = useQueryClient();
-  const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string } | null>(null);
+  const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } | null>(null);
   const [resetDialog, setResetDialog] = useState<string | null>(null);
   const [resetReason, setResetReason] = useState("");
 
