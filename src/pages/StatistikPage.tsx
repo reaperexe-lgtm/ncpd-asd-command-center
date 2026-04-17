@@ -689,7 +689,7 @@ const StatistikPage = () => {
                   </div>
                 ))}
               <p className="text-xs text-muted-foreground text-center pt-2">
-                {writerProtocols.length + writerPursuits.length} Protokoll{writerProtocols.length + writerPursuits.length !== 1 ? "e" : ""} diese Woche
+                {writerProtocols.length + writerPursuits.length} {selectedWriter?.type === "pursuits" ? "Verfolgung" : "Eintrag"}{(writerProtocols.length + writerPursuits.length) !== 1 ? (selectedWriter?.type === "pursuits" ? "en" : "e") : ""} {selectedWriter?.scope === "monthly" ? "diesen Monat" : "diese Woche"}
               </p>
             </div>
           )}
