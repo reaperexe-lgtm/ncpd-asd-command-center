@@ -298,13 +298,14 @@ const StatistikPage = () => {
   const monthlyEntries = Object.entries(monthly).slice(-6);
   const maxMonthly = Math.max(...monthlyEntries.map(([, v]) => v), 1);
 
-  // --- 10-80 Pursuit Stats ---
+  // --- 10-80 Pursuit Stats (weekly, follows ASD-Woche reset) ---
   const pursuitCreatorCounts: Record<string, number> = {};
-  filteredPursuits.forEach((p) => {
+  weeklyPursuits.forEach((p) => {
     pursuitCreatorCounts[p.created_by] = (pursuitCreatorCounts[p.created_by] || 0) + 1;
   });
   const pursuitRanking = Object.entries(pursuitCreatorCounts).sort((a, b) => b[1] - a[1]);
   const maxPursuit = pursuitRanking[0]?.[1] || 1;
+  const weeklyPursuitTotal = weeklyPursuits.length;
 
   // Protocols for selected writer - only current week
   const writerProtocols = selectedWriter
