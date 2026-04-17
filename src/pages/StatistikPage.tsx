@@ -108,7 +108,7 @@ const StatistikPage = () => {
   const canReset = ["director", "co_director", "supervisor"].includes(role || "");
   const canResetDirect = isAdmin;
   const queryClient = useQueryClient();
-  const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string } | null>(null);
+  const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } | null>(null);
   const [resetDialog, setResetDialog] = useState<string | null>(null);
   const [resetReason, setResetReason] = useState("");
 
@@ -316,12 +316,14 @@ const StatistikPage = () => {
   const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
   const monthlyPursuitTotal = monthlyPursuits.length;
 
-  // Protocols for selected writer - only current week
-  const writerProtocols = selectedWriter
-    ? weeklyMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
+  // Protocols for selected writer - filtered by type & scope
+  const writerSourceMissions = selectedWriter?.scope === "monthly" ? monthlyMissions : weeklyMissions;
+  const writerSourcePursuits = selectedWriter?.scope === "monthly" ? monthlyPursuits : weeklyPursuits;
+  const writerProtocols = selectedWriter && (selectedWriter.type === "all" || selectedWriter.type === "missions")
+    ? writerSourceMissions.filter((m) => m.protokollschreiber === selectedWriter.id)
     : [];
-  const writerPursuits = selectedWriter
-    ? weeklyPursuits.filter((p) => p.created_by === selectedWriter.id)
+  const writerPursuits = selectedWriter && (selectedWriter.type === "all" || selectedWriter.type === "pursuits")
+    ? writerSourcePursuits.filter((p) => p.created_by === selectedWriter.id)
     : [];
 
   const ResetInfoBlock = ({ entries, className = "" }: { entries: string[], className?: string }) => (
@@ -377,7 +379,7 @@ const StatistikPage = () => {
               <div key={id} className="flex items-center justify-between py-1.5 group">
                 <button
                   className="flex items-center gap-2 hover:underline text-left"
-                  onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: "missions", scope: "weekly" })}
                 >
                   <span className="text-base">{MEDAL[i] || ""}</span>
                   <span className="text-sm font-medium text-primary group-hover:text-accent-foreground transition-colors">{profileName(id)}</span>
@@ -418,7 +420,7 @@ const StatistikPage = () => {
                       width: `${Math.max((count / maxAllTime) * 100, 20)}%`,
                       backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
                     }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "all", scope: "monthly" })}
                   >
                     <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </button>
@@ -463,7 +465,7 @@ const StatistikPage = () => {
                       width: `${Math.max((count / maxPursuit) * 100, 20)}%`,
                       backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
                     }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope: "weekly" })}
                   >
                     <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </button>
@@ -508,7 +510,7 @@ const StatistikPage = () => {
                       width: `${Math.max((count / maxMonthlyPursuit) * 100, 20)}%`,
                       backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
                     }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id) })}
+                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope: "monthly" })}
                   >
                     <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                   </button>
@@ -634,11 +636,13 @@ const StatistikPage = () => {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-primary">
-              Protokolle von {selectedWriter?.name} (aktuelle Woche)
+              {selectedWriter?.type === "pursuits" ? "10-80 Verfolgungen" : "Protokolle"} von {selectedWriter?.name} ({selectedWriter?.scope === "monthly" ? "aktueller Monat" : "aktuelle Woche"})
             </DialogTitle>
           </DialogHeader>
           {writerProtocols.length === 0 && writerPursuits.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Keine Protokolle diese Woche</p>
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {selectedWriter?.type === "pursuits" ? "Keine 10-80 Verfolgungen" : "Keine Protokolle"} {selectedWriter?.scope === "monthly" ? "diesen Monat" : "diese Woche"}
+            </p>
           ) : (
             <div className="space-y-2 mt-2">
               {writerProtocols
@@ -685,7 +689,7 @@ const StatistikPage = () => {
                   </div>
                 ))}
               <p className="text-xs text-muted-foreground text-center pt-2">
-                {writerProtocols.length + writerPursuits.length} Protokoll{writerProtocols.length + writerPursuits.length !== 1 ? "e" : ""} diese Woche
+                {writerProtocols.length + writerPursuits.length} {selectedWriter?.type === "pursuits" ? "Verfolgung" : "Eintrag"}{(writerProtocols.length + writerPursuits.length) !== 1 ? (selectedWriter?.type === "pursuits" ? "en" : "e") : ""} {selectedWriter?.scope === "monthly" ? "diesen Monat" : "diese Woche"}
               </p>
             </div>
           )}
