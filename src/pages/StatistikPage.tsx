@@ -636,11 +636,13 @@ const StatistikPage = () => {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-primary">
-              Protokolle von {selectedWriter?.name} (aktuelle Woche)
+              {selectedWriter?.type === "pursuits" ? "10-80 Verfolgungen" : "Protokolle"} von {selectedWriter?.name} ({selectedWriter?.scope === "monthly" ? "aktueller Monat" : "aktuelle Woche"})
             </DialogTitle>
           </DialogHeader>
           {writerProtocols.length === 0 && writerPursuits.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Keine Protokolle diese Woche</p>
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {selectedWriter?.type === "pursuits" ? "Keine 10-80 Verfolgungen" : "Keine Protokolle"} {selectedWriter?.scope === "monthly" ? "diesen Monat" : "diese Woche"}
+            </p>
           ) : (
             <div className="space-y-2 mt-2">
               {writerProtocols
