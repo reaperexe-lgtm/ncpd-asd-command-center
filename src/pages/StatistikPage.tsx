@@ -8,7 +8,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const LOCATION_COLORS: Record<string, string> = {
@@ -112,6 +112,18 @@ const StatistikPage = () => {
   const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } | null>(null);
   const [resetDialog, setResetDialog] = useState<string | null>(null);
   const [resetReason, setResetReason] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Re-open writer dialog when navigating back from a protocol
+  useEffect(() => {
+    const state = location.state as { reopenWriter?: { id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } } | null;
+    if (state?.reopenWriter) {
+      setSelectedWriter(state.reopenWriter);
+      // Clear the state so it doesn't reopen on refresh
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   const { data: missions } = useQuery({
     queryKey: ["missions-stats"],
@@ -652,7 +664,7 @@ const StatistikPage = () => {
                   <Link
                     key={m.id}
                     to={`/protokolle?id=${m.id}&type=mission`}
-                    state={{ from: "stats", writerName: selectedWriter?.name }}
+                    state={{ from: "stats", writer: selectedWriter }}
                     onClick={() => setSelectedWriter(null)}
                     className="block bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between hover:bg-secondary hover:border-primary/40 transition-colors cursor-pointer"
                   >
@@ -681,7 +693,7 @@ const StatistikPage = () => {
                   <Link
                     key={p.id}
                     to={`/protokolle?id=${p.id}&type=pursuit`}
-                    state={{ from: "stats", writerName: selectedWriter?.name }}
+                    state={{ from: "stats", writer: selectedWriter }}
                     onClick={() => setSelectedWriter(null)}
                     className="block bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between hover:bg-secondary hover:border-destructive/40 transition-colors cursor-pointer"
                   >
