@@ -112,6 +112,18 @@ const StatistikPage = () => {
   const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } | null>(null);
   const [resetDialog, setResetDialog] = useState<string | null>(null);
   const [resetReason, setResetReason] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Re-open writer dialog when navigating back from a protocol
+  useEffect(() => {
+    const state = location.state as { reopenWriter?: { id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } } | null;
+    if (state?.reopenWriter) {
+      setSelectedWriter(state.reopenWriter);
+      // Clear the state so it doesn't reopen on refresh
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   const { data: missions } = useQuery({
     queryKey: ["missions-stats"],
