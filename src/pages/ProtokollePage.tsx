@@ -126,6 +126,15 @@ const ProtokollePage = () => {
 
   return (
     <div className="space-y-6">
+      {cameFromStats && (
+        <Link
+          to="/statistik"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          Zurück zur Statistik
+        </Link>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
