@@ -29,27 +29,37 @@ const ProtokollePage = () => {
   const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
     const t = searchParams.get("type");
     return t === "mission" || t === "pursuit" ? t : "all";
   });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-  // Auto-expand & scroll to entry when ?id= is present
+  const cameFromStats = (location.state as { from?: string } | null)?.from === "stats";
+
+  // Auto-expand, scroll to & highlight entry when ?id= is present
   useEffect(() => {
     const id = searchParams.get("id");
     const type = searchParams.get("type");
     if (!id) return;
     setExpandedId(type === "pursuit" ? `p-${id}` : id);
+    setHighlightedId(id);
     // Scroll after entries had a chance to render
-    const timer = setTimeout(() => {
+    const scrollTimer = setTimeout(() => {
       const el = document.getElementById(`protokoll-${id}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 350);
-    return () => clearTimeout(timer);
+    // Remove highlight after a few seconds
+    const highlightTimer = setTimeout(() => setHighlightedId(null), 4000);
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(highlightTimer);
+    };
   }, [searchParams]);
 
   const { data: missions, isLoading: missionsLoading } = useQuery({
