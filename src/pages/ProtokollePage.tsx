@@ -384,6 +384,7 @@ const ProtokollePage = () => {
               return (
                 <div
                   key={`p-${p.id}`}
+                  id={`protokoll-${p.id}`}
                   className={`rounded-xl overflow-hidden transition-all duration-300 ${
                     expanded
                       ? "border-2 border-primary/30 shadow-xl shadow-primary/10"
