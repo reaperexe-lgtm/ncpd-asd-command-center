@@ -132,6 +132,7 @@ const ProtokollePage = () => {
       {cameFromStats && (
         <Link
           to="/statistik"
+          state={writer ? { reopenWriter: writer } : undefined}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
