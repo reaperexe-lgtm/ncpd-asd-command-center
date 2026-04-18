@@ -649,7 +649,12 @@ const StatistikPage = () => {
               {writerProtocols
                 .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                 .map((m) => (
-                  <div key={m.id} className="bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between">
+                  <Link
+                    key={m.id}
+                    to={`/protokolle?id=${m.id}&type=mission`}
+                    onClick={() => setSelectedWriter(null)}
+                    className="block bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between hover:bg-secondary hover:border-primary/40 transition-colors cursor-pointer"
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xs font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-md shrink-0">
                         {m.location_type}
@@ -666,12 +671,18 @@ const StatistikPage = () => {
                         </p>
                       </div>
                     </div>
-                  </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </Link>
                 ))}
               {writerPursuits
                 .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                 .map((p) => (
-                  <div key={p.id} className="bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between">
+                  <Link
+                    key={p.id}
+                    to={`/protokolle?id=${p.id}&type=pursuit`}
+                    onClick={() => setSelectedWriter(null)}
+                    className="block bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between hover:bg-secondary hover:border-destructive/40 transition-colors cursor-pointer"
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xs font-bold bg-destructive/20 text-destructive px-2.5 py-1 rounded-md shrink-0">
                         10-80
@@ -687,7 +698,8 @@ const StatistikPage = () => {
                         </p>
                       </div>
                     </div>
-                  </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </Link>
                 ))}
               <p className="text-xs text-muted-foreground text-center pt-2">
                 {writerProtocols.length + writerPursuits.length} {selectedWriter?.type === "pursuits" ? "Verfolgung" : "Eintrag"}{(writerProtocols.length + writerPursuits.length) !== 1 ? (selectedWriter?.type === "pursuits" ? "en" : "e") : ""} {selectedWriter?.scope === "monthly" ? "diesen Monat" : "diese Woche"}
