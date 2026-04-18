@@ -652,7 +652,7 @@ const StatistikPage = () => {
                   <Link
                     key={m.id}
                     to={`/protokolle?id=${m.id}&type=mission`}
-                    state={{ from: "stats" }}
+                    state={{ from: "stats", writerName: selectedWriter?.name }}
                     onClick={() => setSelectedWriter(null)}
                     className="block bg-secondary/50 border border-border rounded-lg p-3 flex items-center justify-between hover:bg-secondary hover:border-primary/40 transition-colors cursor-pointer"
                   >
