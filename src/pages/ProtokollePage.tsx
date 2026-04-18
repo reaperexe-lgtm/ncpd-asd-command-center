@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield } from "lucide-react";
+import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
@@ -29,27 +29,37 @@ const ProtokollePage = () => {
   const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
     const t = searchParams.get("type");
     return t === "mission" || t === "pursuit" ? t : "all";
   });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-  // Auto-expand & scroll to entry when ?id= is present
+  const cameFromStats = (location.state as { from?: string } | null)?.from === "stats";
+
+  // Auto-expand, scroll to & highlight entry when ?id= is present
   useEffect(() => {
     const id = searchParams.get("id");
     const type = searchParams.get("type");
     if (!id) return;
     setExpandedId(type === "pursuit" ? `p-${id}` : id);
+    setHighlightedId(id);
     // Scroll after entries had a chance to render
-    const timer = setTimeout(() => {
+    const scrollTimer = setTimeout(() => {
       const el = document.getElementById(`protokoll-${id}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 350);
-    return () => clearTimeout(timer);
+    // Remove highlight after a few seconds
+    const highlightTimer = setTimeout(() => setHighlightedId(null), 4000);
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(highlightTimer);
+    };
   }, [searchParams]);
 
   const { data: missions, isLoading: missionsLoading } = useQuery({
@@ -116,6 +126,15 @@ const ProtokollePage = () => {
 
   return (
     <div className="space-y-6">
+      {cameFromStats && (
+        <Link
+          to="/statistik"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          Zurück zur Statistik
+        </Link>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -176,8 +195,10 @@ const ProtokollePage = () => {
                 <div
                   key={m.id}
                   id={`protokoll-${m.id}`}
-                  className={`rounded-xl overflow-hidden transition-all duration-300 ${
-                    expanded
+                  className={`rounded-xl overflow-hidden transition-all duration-500 ${
+                    highlightedId === m.id
+                      ? "border-2 border-primary shadow-2xl shadow-primary/50 ring-4 ring-primary/40 animate-pulse"
+                      : expanded
                       ? `border-2 ${style.border} shadow-xl ${style.glow}`
                       : "border border-border hover:border-primary/25 shadow-md shadow-black/10"
                   }`}
@@ -386,8 +407,10 @@ const ProtokollePage = () => {
                 <div
                   key={`p-${p.id}`}
                   id={`protokoll-${p.id}`}
-                  className={`rounded-xl overflow-hidden transition-all duration-300 ${
-                    expanded
+                  className={`rounded-xl overflow-hidden transition-all duration-500 ${
+                    highlightedId === p.id
+                      ? "border-2 border-destructive shadow-2xl shadow-destructive/50 ring-4 ring-destructive/40 animate-pulse"
+                      : expanded
                       ? "border-2 border-primary/30 shadow-xl shadow-primary/10"
                       : "border border-border hover:border-primary/25 shadow-md shadow-black/10"
                   }`}
