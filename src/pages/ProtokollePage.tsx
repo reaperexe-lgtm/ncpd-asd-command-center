@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield } from "lucide-react";
+import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
