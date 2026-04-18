@@ -38,7 +38,8 @@ const ProtokollePage = () => {
   });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-  const cameFromStats = (location.state as { from?: string } | null)?.from === "stats";
+  const cameFromStats = (location.state as { from?: string; writerName?: string } | null)?.from === "stats";
+  const writerName = (location.state as { from?: string; writerName?: string } | null)?.writerName;
 
   // Auto-expand, scroll to & highlight entry when ?id= is present
   useEffect(() => {
