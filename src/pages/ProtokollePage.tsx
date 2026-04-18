@@ -28,9 +28,28 @@ const ProtokollePage = () => {
   const { isAdmin, role } = useAuth();
   const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "mission" | "pursuit">("all");
+  const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
+    const t = searchParams.get("type");
+    return t === "mission" || t === "pursuit" ? t : "all";
+  });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+  // Auto-expand & scroll to entry when ?id= is present
+  useEffect(() => {
+    const id = searchParams.get("id");
+    if (!id) return;
+    setExpandedId(id);
+    // Scroll after entries had a chance to render
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`protokoll-${id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchParams]);
 
   const { data: missions, isLoading: missionsLoading } = useQuery({
     queryKey: ["missions"],
