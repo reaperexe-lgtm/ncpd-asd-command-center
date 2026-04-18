@@ -195,8 +195,10 @@ const ProtokollePage = () => {
                 <div
                   key={m.id}
                   id={`protokoll-${m.id}`}
-                  className={`rounded-xl overflow-hidden transition-all duration-300 ${
-                    expanded
+                  className={`rounded-xl overflow-hidden transition-all duration-500 ${
+                    highlightedId === m.id
+                      ? "border-2 border-primary shadow-2xl shadow-primary/50 ring-4 ring-primary/40 animate-pulse"
+                      : expanded
                       ? `border-2 ${style.border} shadow-xl ${style.glow}`
                       : "border border-border hover:border-primary/25 shadow-md shadow-black/10"
                   }`}
