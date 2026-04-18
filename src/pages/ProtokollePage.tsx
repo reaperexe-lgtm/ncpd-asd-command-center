@@ -39,8 +39,9 @@ const ProtokollePage = () => {
   // Auto-expand & scroll to entry when ?id= is present
   useEffect(() => {
     const id = searchParams.get("id");
+    const type = searchParams.get("type");
     if (!id) return;
-    setExpandedId(id);
+    setExpandedId(type === "pursuit" ? `p-${id}` : id);
     // Scroll after entries had a chance to render
     const timer = setTimeout(() => {
       const el = document.getElementById(`protokoll-${id}`);
