@@ -5,7 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
@@ -27,9 +28,29 @@ const ProtokollePage = () => {
   const { isAdmin, role } = useAuth();
   const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "mission" | "pursuit">("all");
+  const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
+    const t = searchParams.get("type");
+    return t === "mission" || t === "pursuit" ? t : "all";
+  });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+  // Auto-expand & scroll to entry when ?id= is present
+  useEffect(() => {
+    const id = searchParams.get("id");
+    const type = searchParams.get("type");
+    if (!id) return;
+    setExpandedId(type === "pursuit" ? `p-${id}` : id);
+    // Scroll after entries had a chance to render
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`protokoll-${id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchParams]);
 
   const { data: missions, isLoading: missionsLoading } = useQuery({
     queryKey: ["missions"],
@@ -154,6 +175,7 @@ const ProtokollePage = () => {
               return (
                 <div
                   key={m.id}
+                  id={`protokoll-${m.id}`}
                   className={`rounded-xl overflow-hidden transition-all duration-300 ${
                     expanded
                       ? `border-2 ${style.border} shadow-xl ${style.glow}`
@@ -363,6 +385,7 @@ const ProtokollePage = () => {
               return (
                 <div
                   key={`p-${p.id}`}
+                  id={`protokoll-${p.id}`}
                   className={`rounded-xl overflow-hidden transition-all duration-300 ${
                     expanded
                       ? "border-2 border-primary/30 shadow-xl shadow-primary/10"
