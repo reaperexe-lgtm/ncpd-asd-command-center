@@ -38,8 +38,10 @@ const ProtokollePage = () => {
   });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-  const cameFromStats = (location.state as { from?: string; writerName?: string } | null)?.from === "stats";
-  const writerName = (location.state as { from?: string; writerName?: string } | null)?.writerName;
+  const navState = location.state as { from?: string; writer?: { id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" }; writerName?: string } | null;
+  const cameFromStats = navState?.from === "stats";
+  const writer = navState?.writer;
+  const writerName = writer?.name || navState?.writerName;
 
   // Auto-expand, scroll to & highlight entry when ?id= is present
   useEffect(() => {
