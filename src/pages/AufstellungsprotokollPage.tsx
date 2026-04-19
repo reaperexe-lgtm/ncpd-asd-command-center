@@ -203,6 +203,7 @@ const AufstellungsprotokollPage = () => {
         attendance: attendance.map((a) => ({
           name: a.name,
           dienstnummer: a.dienstnummer,
+          internalDienstnummer: a.internalDienstnummer,
           roleLabel: a.roleLabel,
           status: a.status,
         })) as any,
@@ -275,6 +276,7 @@ const AufstellungsprotokollPage = () => {
       id: `saved-${i}`,
       name: a.name,
       dienstnummer: a.dienstnummer || null,
+      internalDienstnummer: a.internalDienstnummer || null,
       role: "",
       roleLabel: a.roleLabel || "",
       roleOrder: i,
