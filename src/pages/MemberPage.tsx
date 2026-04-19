@@ -204,6 +204,9 @@ const MemberPage = () => {
                     </div>
                     <h3 className={`font-bold text-sm ${ROLE_TEXT[role]}`}>{m.name}</h3>
                     <p className="text-[10px] text-muted-foreground mt-0.5">{ROLE_LABELS[role]}</p>
+                    {(m as any).internal_dienstnummer && (
+                      <p className="text-[10px] text-primary font-mono font-semibold">{(m as any).internal_dienstnummer}</p>
+                    )}
                     {m.dienstnummer && <p className="text-[10px] text-muted-foreground font-mono">{m.dienstnummer}</p>}
                   </button>
                 ))}
@@ -245,6 +248,7 @@ const MemberPage = () => {
                 <span>{selectedMember?.name}</span>
                 <p className="text-xs text-muted-foreground font-normal">
                   {ROLE_LABELS[selectedMember?.role] || selectedMember?.role}
+                  {selectedMember?.internal_dienstnummer && ` · ${selectedMember.internal_dienstnummer}`}
                   {selectedMember?.dienstnummer && ` · ${selectedMember.dienstnummer}`}
                 </p>
               </div>
