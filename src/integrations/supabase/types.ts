@@ -547,6 +547,7 @@ export type Database = {
           discord_notifications: Json
           id: string
           image_url: string | null
+          internal_dienstnummer: string | null
           is_approved: boolean
           is_blocked: boolean
           name: string
@@ -560,6 +561,7 @@ export type Database = {
           discord_notifications?: Json
           id: string
           image_url?: string | null
+          internal_dienstnummer?: string | null
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
@@ -573,6 +575,7 @@ export type Database = {
           discord_notifications?: Json
           id?: string
           image_url?: string | null
+          internal_dienstnummer?: string | null
           is_approved?: boolean
           is_blocked?: boolean
           name?: string

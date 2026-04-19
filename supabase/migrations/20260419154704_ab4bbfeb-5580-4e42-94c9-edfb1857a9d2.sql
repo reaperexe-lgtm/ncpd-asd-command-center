@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN internal_dienstnummer TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_internal_dienstnummer_unique ON public.profiles (internal_dienstnummer) WHERE internal_dienstnummer IS NOT NULL;
