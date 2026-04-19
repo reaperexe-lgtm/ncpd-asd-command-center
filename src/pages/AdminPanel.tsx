@@ -55,6 +55,7 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
   const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
+  const [editingInternalDn, setEditingInternalDn] = useState<Record<string, string>>({});
   const [discordInviteLink, setDiscordInviteLink] = useState("");
   const [savingLink, setSavingLink] = useState(false);
 
@@ -255,6 +256,24 @@ const AdminPanel = () => {
       setEditingDiscord((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const internalDnMutation = useMutation({
+    mutationFn: async ({ userId, internalDn }: { userId: string; internalDn: string }) => {
+      const value = internalDn.trim() || null;
+      const { error } = await supabase.from("profiles").update({ internal_dienstnummer: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Interne Dienstnummer gespeichert");
+      setEditingInternalDn((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => {
+      const msg = e?.message?.includes("unique") ? "Diese interne Dienstnummer ist bereits vergeben" : e.message;
+      toast.error(msg);
+    },
   });
 
   const handleResetRequest = useMutation({
