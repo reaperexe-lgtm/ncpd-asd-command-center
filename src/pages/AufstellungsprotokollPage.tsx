@@ -369,7 +369,7 @@ const AufstellungsprotokollPage = () => {
                   {group.members.map((m, mi) => (
                     <tr key={m.id} className={`border-b border-border/50 ${mi === 0 && gi > 0 ? "border-t-2 border-t-border" : ""}`}>
                       <td className="p-2 text-foreground">
-                        {m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
+                        {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                       </td>
                       <td className="p-2 text-foreground">{m.roleLabel}</td>
                       <td className="p-2">
@@ -505,7 +505,7 @@ const AufstellungsprotokollPage = () => {
                             <tbody>
                               {(p.attendance as any[]).map((a: any, i: number) => (
                                 <tr key={i} className="border-b border-border/30">
-                                  <td className="p-1.5 text-foreground">{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
+                                  <td className="p-1.5 text-foreground">{a.internalDienstnummer ? `[${a.internalDienstnummer}] ` : ""}{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
                                   <td className="p-1.5 text-foreground">{a.roleLabel}</td>
                                   <td className="p-1.5">
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
@@ -657,7 +657,7 @@ const AufstellungsprotokollPage = () => {
                         }}
                       >
                         <td style={{ padding: "6px 8px" }}>
-                          {m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
+                          {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                         </td>
                         <td style={{ padding: "6px 8px" }}>{m.roleLabel}</td>
                         <td style={{ padding: "6px 8px" }}>
