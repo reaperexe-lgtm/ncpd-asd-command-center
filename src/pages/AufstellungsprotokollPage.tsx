@@ -30,6 +30,7 @@ interface MemberAttendance {
   id: string;
   name: string;
   dienstnummer: string | null;
+  internalDienstnummer: string | null;
   role: string;
   roleLabel: string;
   roleOrder: number;
@@ -66,7 +67,7 @@ const AufstellungsprotokollPage = () => {
     queryFn: async () => {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, is_approved")
+        .select("id, name, dienstnummer, internal_dienstnummer, is_approved")
         .eq("is_approved", true);
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
       if (!profiles || !roles) return [];
@@ -79,7 +80,7 @@ const AufstellungsprotokollPage = () => {
         .map((p) => {
           const role = roleMap.get(p.id) || "member";
           const rd = ROLE_DISPLAY[role] || { label: role, order: 99 };
-          return { id: p.id, name: p.name, dienstnummer: p.dienstnummer, role, roleLabel: rd.label, roleOrder: rd.order };
+          return { id: p.id, name: p.name, dienstnummer: p.dienstnummer, internalDienstnummer: (p as any).internal_dienstnummer ?? null, role, roleLabel: rd.label, roleOrder: rd.order };
         })
         .sort((a, b) => a.roleOrder - b.roleOrder);
     },
