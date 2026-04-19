@@ -84,7 +84,7 @@ const ProtokollePage = () => {
   const { data: profiles } = useQuery({
     queryKey: ["profiles-map"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, name, dienstnummer");
+      const { data } = await supabase.from("profiles").select("id, name, dienstnummer, internal_dienstnummer");
       return data || [];
     },
   });
