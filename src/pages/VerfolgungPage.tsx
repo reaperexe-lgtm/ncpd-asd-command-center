@@ -42,7 +42,7 @@ const VerfolgungPage = () => {
   const { data: members } = useQuery({
     queryKey: ["members-select"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, name, dienstnummer").eq("is_approved", true);
+      const { data } = await supabase.from("profiles").select("id, name, dienstnummer, internal_dienstnummer").eq("is_approved", true);
       return data || [];
     },
   });
@@ -240,7 +240,7 @@ const VerfolgungPage = () => {
                   />
                   <datalist id={listId}>
                     {members?.map((m) => (
-                      <option key={m.id} value={m.name}>{m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}</option>
+                      <option key={m.id} value={m.name}>{m.name} {(m as any).internal_dienstnummer ? `[${(m as any).internal_dienstnummer}]` : ""} {m.dienstnummer ? `(${m.dienstnummer})` : ""}</option>
                     ))}
                   </datalist>
                 </div>

@@ -45,7 +45,7 @@ const AusbilderKontakte = () => {
       const userIds = roles.map((r) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, phone_number")
+        .select("id, name, dienstnummer, internal_dienstnummer, phone_number")
         .in("id", userIds);
 
       return (profiles || []).map((p) => ({
@@ -97,10 +97,13 @@ const AusbilderKontakte = () => {
               <div className="flex items-center gap-3">
                 <div>
                   <p className="font-medium text-foreground">{trainer.name}</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className={`text-xs ${ROLE_BADGE_COLORS[trainer.role] || ""}`}>
                       {ROLE_LABELS[trainer.role] || trainer.role}
                     </Badge>
+                    {(trainer as any).internal_dienstnummer && (
+                      <span className="text-xs text-primary font-mono font-semibold">{(trainer as any).internal_dienstnummer}</span>
+                    )}
                     {trainer.dienstnummer && (
                       <span className="text-xs text-muted-foreground">#{trainer.dienstnummer}</span>
                     )}

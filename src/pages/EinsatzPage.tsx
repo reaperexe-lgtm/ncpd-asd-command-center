@@ -56,7 +56,7 @@ const EinsatzPage = () => {
   const { data: members } = useQuery({
     queryKey: ["members-select"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, name, dienstnummer").eq("is_approved", true);
+      const { data } = await supabase.from("profiles").select("id, name, dienstnummer, internal_dienstnummer").eq("is_approved", true);
       return data || [];
     },
   });
@@ -151,7 +151,7 @@ const EinsatzPage = () => {
           <SelectContent>
             {members?.map((m) => (
               <SelectItem key={m.id} value={m.id}>
-                {m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
+                {m.name} {(m as any).internal_dienstnummer ? `[${(m as any).internal_dienstnummer}]` : ""} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
               </SelectItem>
             ))}
           </SelectContent>
@@ -360,7 +360,7 @@ const EinsatzPage = () => {
                 <datalist id={`${label}-list`}>
                   {members?.map((m) => (
                     <option key={m.id} value={m.name}>
-                      {m.name} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
+                      {m.name} {(m as any).internal_dienstnummer ? `[${(m as any).internal_dienstnummer}]` : ""} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
                     </option>
                   ))}
                 </datalist>
