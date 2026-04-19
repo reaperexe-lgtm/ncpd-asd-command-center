@@ -30,6 +30,7 @@ interface MemberAttendance {
   id: string;
   name: string;
   dienstnummer: string | null;
+  internalDienstnummer: string | null;
   role: string;
   roleLabel: string;
   roleOrder: number;
@@ -66,7 +67,7 @@ const AufstellungsprotokollPage = () => {
     queryFn: async () => {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, is_approved")
+        .select("id, name, dienstnummer, internal_dienstnummer, is_approved")
         .eq("is_approved", true);
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
       if (!profiles || !roles) return [];
@@ -79,7 +80,7 @@ const AufstellungsprotokollPage = () => {
         .map((p) => {
           const role = roleMap.get(p.id) || "member";
           const rd = ROLE_DISPLAY[role] || { label: role, order: 99 };
-          return { id: p.id, name: p.name, dienstnummer: p.dienstnummer, role, roleLabel: rd.label, roleOrder: rd.order };
+          return { id: p.id, name: p.name, dienstnummer: p.dienstnummer, internalDienstnummer: (p as any).internal_dienstnummer ?? null, role, roleLabel: rd.label, roleOrder: rd.order };
         })
         .sort((a, b) => a.roleOrder - b.roleOrder);
     },
@@ -202,6 +203,7 @@ const AufstellungsprotokollPage = () => {
         attendance: attendance.map((a) => ({
           name: a.name,
           dienstnummer: a.dienstnummer,
+          internalDienstnummer: a.internalDienstnummer,
           roleLabel: a.roleLabel,
           status: a.status,
         })) as any,
@@ -274,6 +276,7 @@ const AufstellungsprotokollPage = () => {
       id: `saved-${i}`,
       name: a.name,
       dienstnummer: a.dienstnummer || null,
+      internalDienstnummer: a.internalDienstnummer || null,
       role: "",
       roleLabel: a.roleLabel || "",
       roleOrder: i,
@@ -366,7 +369,7 @@ const AufstellungsprotokollPage = () => {
                   {group.members.map((m, mi) => (
                     <tr key={m.id} className={`border-b border-border/50 ${mi === 0 && gi > 0 ? "border-t-2 border-t-border" : ""}`}>
                       <td className="p-2 text-foreground">
-                        {m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
+                        {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                       </td>
                       <td className="p-2 text-foreground">{m.roleLabel}</td>
                       <td className="p-2">
@@ -502,7 +505,7 @@ const AufstellungsprotokollPage = () => {
                             <tbody>
                               {(p.attendance as any[]).map((a: any, i: number) => (
                                 <tr key={i} className="border-b border-border/30">
-                                  <td className="p-1.5 text-foreground">{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
+                                  <td className="p-1.5 text-foreground">{a.internalDienstnummer ? `[${a.internalDienstnummer}] ` : ""}{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
                                   <td className="p-1.5 text-foreground">{a.roleLabel}</td>
                                   <td className="p-1.5">
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
@@ -654,7 +657,7 @@ const AufstellungsprotokollPage = () => {
                         }}
                       >
                         <td style={{ padding: "6px 8px" }}>
-                          {m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
+                          {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                         </td>
                         <td style={{ padding: "6px 8px" }}>{m.roleLabel}</td>
                         <td style={{ padding: "6px 8px" }}>

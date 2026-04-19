@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -55,6 +55,7 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
   const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
+  const [editingInternalDn, setEditingInternalDn] = useState<Record<string, string>>({});
   const [discordInviteLink, setDiscordInviteLink] = useState("");
   const [savingLink, setSavingLink] = useState(false);
 
@@ -257,6 +258,24 @@ const AdminPanel = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const internalDnMutation = useMutation({
+    mutationFn: async ({ userId, internalDn }: { userId: string; internalDn: string }) => {
+      const value = internalDn.trim() || null;
+      const { error } = await supabase.from("profiles").update({ internal_dienstnummer: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Interne Dienstnummer gespeichert");
+      setEditingInternalDn((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => {
+      const msg = e?.message?.includes("unique") ? "Diese interne Dienstnummer ist bereits vergeben" : e.message;
+      toast.error(msg);
+    },
+  });
+
   const handleResetRequest = useMutation({
     mutationFn: async ({ requestId, approve, request }: { requestId: string; approve: boolean; request: any }) => {
       const { error } = await supabase
@@ -399,6 +418,20 @@ const AdminPanel = () => {
                           <p className="text-xs text-muted-foreground">{u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role]}</p>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <Input
+                          value={editingInternalDn[u.id] ?? (u as any).internal_dienstnummer ?? ""}
+                          onChange={(e) => setEditingInternalDn({ ...editingInternalDn, [u.id]: e.target.value })}
+                          placeholder="Interne DN (z.B. ASD-01)"
+                          className="h-7 text-xs bg-background border-border flex-1"
+                        />
+                        {editingInternalDn[u.id] !== undefined && editingInternalDn[u.id] !== ((u as any).internal_dienstnummer ?? "") && (
+                          <Button size="sm" className="h-7 text-xs px-2" onClick={() => internalDnMutation.mutate({ userId: u.id, internalDn: editingInternalDn[u.id] })}>
+                            ✓
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
                           <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
@@ -426,6 +459,20 @@ const AdminPanel = () => {
                         <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
                       </div>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <Input
+                        value={editingInternalDn[u.id] ?? (u as any).internal_dienstnummer ?? ""}
+                        onChange={(e) => setEditingInternalDn({ ...editingInternalDn, [u.id]: e.target.value })}
+                        placeholder="Interne DN (z.B. ASD-01)"
+                        className="h-7 text-xs bg-background border-border flex-1"
+                      />
+                      {editingInternalDn[u.id] !== undefined && editingInternalDn[u.id] !== ((u as any).internal_dienstnummer ?? "") && (
+                        <Button size="sm" className="h-7 text-xs px-2" onClick={() => internalDnMutation.mutate({ userId: u.id, internalDn: editingInternalDn[u.id] })}>
+                          ✓
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageCircle className="w-3.5 h-3.5 text-[#5865F2] shrink-0" />
@@ -460,6 +507,7 @@ const AdminPanel = () => {
                   <thead>
                     <tr className="border-b border-border bg-background/50">
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Interne DN</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Discord ID</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
@@ -471,6 +519,21 @@ const AdminPanel = () => {
                     {approved.map((u) => (
                       <tr key={u.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
                         <td className="px-4 py-3 font-medium">{u.name || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingInternalDn[u.id] ?? (u as any).internal_dienstnummer ?? ""}
+                              onChange={(e) => setEditingInternalDn({ ...editingInternalDn, [u.id]: e.target.value })}
+                              placeholder="ASD-01"
+                              className="h-7 text-xs bg-background border-border w-28 font-mono"
+                            />
+                            {editingInternalDn[u.id] !== undefined && editingInternalDn[u.id] !== ((u as any).internal_dienstnummer ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => internalDnMutation.mutate({ userId: u.id, internalDn: editingInternalDn[u.id] })}>
+                                ✓
+                              </Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.dienstnummer || "–"}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">

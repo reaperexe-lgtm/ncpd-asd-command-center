@@ -84,7 +84,7 @@ const ProtokollePage = () => {
   const { data: profiles } = useQuery({
     queryKey: ["profiles-map"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, name, dienstnummer");
+      const { data } = await supabase.from("profiles").select("id, name, dienstnummer, internal_dienstnummer");
       return data || [];
     },
   });
@@ -109,8 +109,11 @@ const ProtokollePage = () => {
 
   const getProfileName = (id: string | null) => {
     if (!id) return "–";
-    const p = profiles?.find((p) => p.id === id);
-    return p ? `${p.name}${p.dienstnummer ? ` (${p.dienstnummer})` : ""}` : "–";
+    const p = profiles?.find((p) => p.id === id) as any;
+    if (!p) return "–";
+    const intern = p.internal_dienstnummer ? ` [${p.internal_dienstnummer}]` : "";
+    const dn = p.dienstnummer ? ` (${p.dienstnummer})` : "";
+    return `${p.name}${intern}${dn}`;
   };
 
   const isLoading = missionsLoading || pursuitsLoading;
