@@ -13,6 +13,7 @@ const ProfilePage = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [dienstnummer, setDienstnummer] = useState("");
+  const [internalDienstnummer, setInternalDienstnummer] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [discordId, setDiscordId] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -33,11 +34,12 @@ const ProfilePage = () => {
     }
     // Load discord_id from DB
     if (user) {
-      supabase.from("profiles").select("discord_id, discord_notifications").eq("id", user.id).single().then(({ data }) => {
+      supabase.from("profiles").select("discord_id, discord_notifications, internal_dienstnummer").eq("id", user.id).single().then(({ data }) => {
         if (data?.discord_id) setDiscordId(data.discord_id);
         if (data?.discord_notifications) {
           setNotifications(data.discord_notifications as any);
         }
+        setInternalDienstnummer((data as any)?.internal_dienstnummer ?? null);
       });
       // Load discord server invite link
       supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
@@ -135,6 +137,20 @@ const ProfilePage = () => {
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-background border-border pl-9" />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Interne Dienstnummer (ASD)</Label>
+          <div className="relative">
+            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+            <Input
+              value={internalDienstnummer || ""}
+              readOnly
+              placeholder="Wird vom Admin vergeben"
+              className="bg-background/50 border-border pl-9 font-mono text-primary cursor-not-allowed"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground">Die interne ASD-Dienstnummer wird vom Admin im Admin-Panel vergeben.</p>
         </div>
 
         <div className="space-y-2">
