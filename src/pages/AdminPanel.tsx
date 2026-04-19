@@ -507,6 +507,7 @@ const AdminPanel = () => {
                   <thead>
                     <tr className="border-b border-border bg-background/50">
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Interne DN</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Discord ID</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
@@ -518,6 +519,21 @@ const AdminPanel = () => {
                     {approved.map((u) => (
                       <tr key={u.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
                         <td className="px-4 py-3 font-medium">{u.name || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingInternalDn[u.id] ?? (u as any).internal_dienstnummer ?? ""}
+                              onChange={(e) => setEditingInternalDn({ ...editingInternalDn, [u.id]: e.target.value })}
+                              placeholder="ASD-01"
+                              className="h-7 text-xs bg-background border-border w-28 font-mono"
+                            />
+                            {editingInternalDn[u.id] !== undefined && editingInternalDn[u.id] !== ((u as any).internal_dienstnummer ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => internalDnMutation.mutate({ userId: u.id, internalDn: editingInternalDn[u.id] })}>
+                                ✓
+                              </Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.dienstnummer || "–"}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
