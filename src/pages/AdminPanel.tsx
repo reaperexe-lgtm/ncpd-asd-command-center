@@ -418,6 +418,20 @@ const AdminPanel = () => {
                           <p className="text-xs text-muted-foreground">{u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role]}</p>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <Input
+                          value={editingInternalDn[u.id] ?? (u as any).internal_dienstnummer ?? ""}
+                          onChange={(e) => setEditingInternalDn({ ...editingInternalDn, [u.id]: e.target.value })}
+                          placeholder="Interne DN (z.B. ASD-01)"
+                          className="h-7 text-xs bg-background border-border flex-1"
+                        />
+                        {editingInternalDn[u.id] !== undefined && editingInternalDn[u.id] !== ((u as any).internal_dienstnummer ?? "") && (
+                          <Button size="sm" className="h-7 text-xs px-2" onClick={() => internalDnMutation.mutate({ userId: u.id, internalDn: editingInternalDn[u.id] })}>
+                            ✓
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
                           <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
