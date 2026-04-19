@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -459,6 +459,20 @@ const AdminPanel = () => {
                         <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
                       </div>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <Input
+                        value={editingInternalDn[u.id] ?? (u as any).internal_dienstnummer ?? ""}
+                        onChange={(e) => setEditingInternalDn({ ...editingInternalDn, [u.id]: e.target.value })}
+                        placeholder="Interne DN (z.B. ASD-01)"
+                        className="h-7 text-xs bg-background border-border flex-1"
+                      />
+                      {editingInternalDn[u.id] !== undefined && editingInternalDn[u.id] !== ((u as any).internal_dienstnummer ?? "") && (
+                        <Button size="sm" className="h-7 text-xs px-2" onClick={() => internalDnMutation.mutate({ userId: u.id, internalDn: editingInternalDn[u.id] })}>
+                          ✓
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageCircle className="w-3.5 h-3.5 text-[#5865F2] shrink-0" />
