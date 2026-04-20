@@ -79,8 +79,9 @@ const BAR_COLORS = [
 const RESET_TYPE_LABELS: Record<string, string> = {
   weekly: "Wochenstatistik",
   monthly: "Monatsstatistik",
-  pursuits: "10-80 Verfolgungen",
-  overview: "Übersicht",
+  pursuits: "10-80 Verfolgungen (Woche)",
+  pursuits_monthly: "10-80 Verfolgungen (Monat)",
+  overview: "Übersicht / Einsätze nach Raubart",
   all: "Alle Statistiken",
 };
 
