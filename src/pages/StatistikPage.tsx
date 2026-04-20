@@ -526,22 +526,41 @@ const StatistikPage = () => {
     </div>
   );
 
-  const OverviewSummary = ({ data }: { data: ReturnType<typeof buildOverview> }) => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {[
-        { label: "Einsätze", value: data.total, icon: BarChart3 },
-        { label: "Tatverdächtige", value: data.suspects, icon: TrendingUp },
-        { label: "Geiseln", value: data.hostages, icon: TrendingUp },
-        { label: "Raubarten", value: data.sorted.length, icon: Calendar },
-      ].map(({ label, value, icon: Icon }) => (
-        <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className="w-4 h-4 text-muted-foreground" />
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+  const OverviewSummary = ({ data, resetType, resetEntry, nextDate, countdown }: {
+    data: ReturnType<typeof buildOverview>;
+    resetType: string;
+    resetEntry?: any;
+    nextDate?: Date;
+    countdown?: string;
+  }) => (
+    <div className="bg-card border border-border rounded-lg p-5">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h2 className="font-semibold text-primary flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" /> Übersicht
+        </h2>
+        {(canReset || canResetDirect) && (
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset(resetType)}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        )}
+      </div>
+      <ResetInfoBlock entries={formatResetInfo(resetEntry, nextDate, countdown)} className="mb-3" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Einsätze", value: data.total, icon: BarChart3 },
+          { label: "Tatverdächtige", value: data.suspects, icon: TrendingUp },
+          { label: "Geiseln", value: data.hostages, icon: TrendingUp },
+          { label: "Raubarten", value: data.sorted.length, icon: Calendar },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon className="w-4 h-4 text-muted-foreground" />
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+            </div>
+            <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
           </div>
-          <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
