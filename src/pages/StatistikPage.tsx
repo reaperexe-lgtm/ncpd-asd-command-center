@@ -296,9 +296,9 @@ const StatistikPage = () => {
     ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
     : missions || [];
 
-  const effectivePursuitStart = lastPursuitReset ? new Date(lastPursuitReset) : null;
-  const filteredPursuits = effectivePursuitStart
-    ? pursuits?.filter((p) => new Date(p.created_at) >= effectivePursuitStart) || []
+  // Übersichts-Pursuits folgen ebenfalls dem overview-Reset
+  const filteredPursuits = overviewCutoff
+    ? pursuits?.filter((p) => new Date(p.created_at) >= overviewCutoff) || []
     : pursuits || [];
 
   const locationCounts: Record<string, number> = {};
