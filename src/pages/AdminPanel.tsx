@@ -529,13 +529,15 @@ const AdminPanel = () => {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
+                      <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
                         <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                        <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                       </Select>
-                      <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
-                        <Ban className="w-3 h-3" /> Sperren
-                      </Button>
+                      {canEditUser(currentUserRole, u.role) && (
+                        <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                          <Ban className="w-3 h-3" /> Sperren
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -594,15 +596,19 @@ const AdminPanel = () => {
                           <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
                         </td>
                         <td className="px-4 py-3">
-                          <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
+                          <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
                             <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                            <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                            <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
-                            <Ban className="w-3 h-3" /> Sperren
-                          </Button>
+                          {canEditUser(currentUserRole, u.role) ? (
+                            <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                              <Ban className="w-3 h-3" /> Sperren
+                            </Button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground italic">Geschützt</span>
+                          )}
                         </td>
                       </tr>
                     ))}
