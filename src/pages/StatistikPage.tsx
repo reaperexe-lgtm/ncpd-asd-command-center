@@ -564,9 +564,24 @@ const StatistikPage = () => {
     </div>
   );
 
-  const DonutCard = ({ data, title }: { data: ReturnType<typeof buildOverview>, title: string }) => (
+  const DonutCard = ({ data, title, resetType, resetEntry, nextDate, countdown }: {
+    data: ReturnType<typeof buildOverview>;
+    title: string;
+    resetType: string;
+    resetEntry?: any;
+    nextDate?: Date;
+    countdown?: string;
+  }) => (
     <div className="bg-card border border-border rounded-lg p-5">
-      <h2 className="font-semibold text-primary mb-5">{title}</h2>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h2 className="font-semibold text-primary">{title}</h2>
+        {(canReset || canResetDirect) && (
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset(resetType)}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        )}
+      </div>
+      <ResetInfoBlock entries={formatResetInfo(resetEntry, nextDate, countdown)} className="mb-3" />
       {data.donutData.length === 0 ? (
         <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
       ) : (
