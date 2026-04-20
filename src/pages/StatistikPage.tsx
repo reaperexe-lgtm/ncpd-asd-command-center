@@ -162,6 +162,7 @@ const StatistikPage = () => {
           { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
           { reset_type: "pursuits_monthly", reset_by: user?.id, reset_at: now },
           { reset_type: "overview", reset_by: user?.id, reset_at: now },
+          { reset_type: "overview_monthly", reset_by: user?.id, reset_at: now },
         ] as any);
         if (error) throw error;
       } else {
