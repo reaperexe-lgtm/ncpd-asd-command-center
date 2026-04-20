@@ -510,7 +510,7 @@ const GamblingPage = () => {
                 variant="outline"
                 className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300"
               >
-                <Gift className="w-4 h-4" /> $1.000 Tagesgeschenk
+                <Gift className="w-4 h-4" /> $100.000 Tagesgeschenk
               </Button>
             ) : (
               <div className="px-4 py-2 rounded-lg border border-border bg-muted/30">
