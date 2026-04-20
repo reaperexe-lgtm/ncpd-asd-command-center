@@ -682,8 +682,21 @@ const StatistikPage = () => {
               countdown={weeklyCountdown}
             />
           </div>
-          <OverviewSummary data={overviewWeek} />
-          <DonutCard data={overviewWeek} title="Einsätze nach Raubart (Woche)" />
+          <OverviewSummary
+            data={overviewWeek}
+            resetType="overview"
+            resetEntry={lastOverviewResetEntry}
+            nextDate={weekEnd}
+            countdown={weeklyCountdown}
+          />
+          <DonutCard
+            data={overviewWeek}
+            title="Einsätze nach Raubart (Woche)"
+            resetType="overview"
+            resetEntry={lastOverviewResetEntry}
+            nextDate={weekEnd}
+            countdown={weeklyCountdown}
+          />
         </TabsContent>
 
         {/* ===== MONTH TAB ===== */}
@@ -709,8 +722,21 @@ const StatistikPage = () => {
               countdown={monthlyCountdown}
             />
           </div>
-          <OverviewSummary data={overviewMonth} />
-          <DonutCard data={overviewMonth} title="Einsätze nach Raubart (Monat)" />
+          <OverviewSummary
+            data={overviewMonth}
+            resetType="overview_monthly"
+            resetEntry={lastOverviewMonthlyResetEntry}
+            nextDate={monthEnd}
+            countdown={monthlyCountdown}
+          />
+          <DonutCard
+            data={overviewMonth}
+            title="Einsätze nach Raubart (Monat)"
+            resetType="overview_monthly"
+            resetEntry={lastOverviewMonthlyResetEntry}
+            nextDate={monthEnd}
+            countdown={monthlyCountdown}
+          />
 
           {monthlyEntries.length > 1 && (
             <div className="bg-card border border-border rounded-lg p-5">
