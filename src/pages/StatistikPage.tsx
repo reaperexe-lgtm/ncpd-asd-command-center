@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { logActivity } from "@/lib/activityLog";
-import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, X, ChevronRight, Clock } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, ChevronRight, Clock, CalendarDays, CalendarRange } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -291,7 +292,7 @@ const StatistikPage = () => {
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
-  // --- Location stats ---
+  // --- Location stats (gesamt / nach overview-Reset) ---
   const overviewCutoff = lastOverviewReset ? new Date(lastOverviewReset) : null;
   const filteredMissions = overviewCutoff
     ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
@@ -302,16 +303,33 @@ const StatistikPage = () => {
     ? pursuits?.filter((p) => new Date(p.created_at) >= overviewCutoff) || []
     : pursuits || [];
 
-  const locationCounts: Record<string, number> = {};
-  filteredMissions.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
-  const pursuitCount = filteredPursuits.length;
-  if (pursuitCount > 0) locationCounts["10-80 Verfolgung"] = pursuitCount;
-  const total = filteredMissions.length + pursuitCount;
-  const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
-  const donutData = sortedLocations.map(([name, value]) => ({ name, value }));
+  // Helper: Übersichts-Daten für einen beliebigen Bereich berechnen
+  const buildOverview = (ms: typeof filteredMissions, ps: typeof filteredPursuits) => {
+    const counts: Record<string, number> = {};
+    ms.forEach((m) => { counts[m.location_type] = (counts[m.location_type] || 0) + 1; });
+    const pCount = ps.length;
+    if (pCount > 0) counts["10-80 Verfolgung"] = pCount;
+    const t = ms.length + pCount;
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return {
+      sorted,
+      donutData: sorted.map(([name, value]) => ({ name, value })),
+      total: t,
+      suspects: ms.reduce((s, m) => s + m.suspects_count, 0),
+      hostages: ms.reduce((s, m) => s + m.hostages_count, 0),
+    };
+  };
 
-  const totalSuspects = filteredMissions.reduce((s, m) => s + m.suspects_count, 0);
-  const totalHostages = filteredMissions.reduce((s, m) => s + m.hostages_count, 0);
+  const overviewAll = buildOverview(filteredMissions, filteredPursuits);
+  const overviewWeek = buildOverview(weeklyMissions, weeklyPursuits);
+  const overviewMonth = buildOverview(monthlyMissions, monthlyPursuits);
+
+  // Backwards-compat aliases
+  const sortedLocations = overviewAll.sorted;
+  const donutData = overviewAll.donutData;
+  const total = overviewAll.total;
+  const totalSuspects = overviewAll.suspects;
+  const totalHostages = overviewAll.hostages;
 
   const monthly: Record<string, number> = {};
   filteredMissions.forEach((m) => {
@@ -362,13 +380,198 @@ const StatistikPage = () => {
     ) : null
   );
 
+  // ===== Reusable card renderers =====
+  type Scope = "weekly" | "monthly";
+
+  const TopWritersCard = ({
+    scope, ranking, max, resetType, resetEntry, nextDate, countdown,
+  }: {
+    scope: Scope;
+    ranking: [string, number][];
+    max: number;
+    resetType: string;
+    resetEntry: any;
+    nextDate?: Date;
+    countdown?: string;
+  }) => (
+    <div className="bg-card border border-border rounded-lg p-5 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-semibold text-primary flex items-center gap-2">
+          <Trophy className="w-5 h-5" />
+          Top-Protokollschreiber
+        </h2>
+        {(canReset || canResetDirect) && (
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset(resetType)}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        )}
+      </div>
+      <ResetInfoBlock entries={formatResetInfo(resetEntry, nextDate, countdown)} className="mb-3" />
+      {ranking.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Protokolle</p>
+      ) : (
+        <div className="space-y-3 flex-1">
+          {ranking.map(([id, count], i) => (
+            <div key={id} className="flex items-center justify-between group">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                <button
+                  className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
+                  style={{
+                    width: `${Math.max((count / max) * 100, 20)}%`,
+                    backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
+                  }}
+                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: scope === "weekly" ? "missions" : "all", scope })}
+                >
+                  <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
+                </button>
+              </div>
+              <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const PursuitsCard = ({
+    scope, ranking, max, total: pTotal, resetType, resetEntry, nextDate, countdown,
+  }: {
+    scope: Scope;
+    ranking: [string, number][];
+    max: number;
+    total: number;
+    resetType: string;
+    resetEntry: any;
+    nextDate?: Date;
+    countdown?: string;
+  }) => (
+    <div className="bg-card border border-border rounded-lg p-5 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-semibold text-primary flex items-center gap-2">
+          <Car className="w-5 h-5" />
+          10-80 Verfolgungen
+        </h2>
+        <div className="flex items-center gap-2">
+          {(canReset || canResetDirect) && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset(resetType)}>
+              <RotateCw className="w-3 h-3" /> Reset
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+            Gesamt: {pTotal}
+          </span>
+        </div>
+      </div>
+      <ResetInfoBlock entries={formatResetInfo(resetEntry, nextDate, countdown)} className="mb-3" />
+      {ranking.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine 10-80 Verfolgungen</p>
+      ) : (
+        <div className="space-y-3 flex-1">
+          {ranking.map(([id, count], i) => (
+            <div key={id} className="flex items-center justify-between group">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                <button
+                  className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
+                  style={{
+                    width: `${Math.max((count / max) * 100, 20)}%`,
+                    backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
+                  }}
+                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope })}
+                >
+                  <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
+                </button>
+              </div>
+              <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const OverviewSummary = ({ data }: { data: ReturnType<typeof buildOverview> }) => (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {[
+        { label: "Einsätze", value: data.total, icon: BarChart3 },
+        { label: "Tatverdächtige", value: data.suspects, icon: TrendingUp },
+        { label: "Geiseln", value: data.hostages, icon: TrendingUp },
+        { label: "Raubarten", value: data.sorted.length, icon: Calendar },
+      ].map(({ label, value, icon: Icon }) => (
+        <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon className="w-4 h-4 text-muted-foreground" />
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+          </div>
+          <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  const DonutCard = ({ data, title }: { data: ReturnType<typeof buildOverview>, title: string }) => (
+    <div className="bg-card border border-border rounded-lg p-5">
+      <h2 className="font-semibold text-primary mb-5">{title}</h2>
+      {data.donutData.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
+      ) : (
+        <div className="flex flex-col lg:flex-row items-center gap-8">
+          <div className="w-64 h-64 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.donutData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={85}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={({ cx, cy, midAngle, outerRadius: or, percent }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = or + 18;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={700}>
+                        {`${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    );
+                  }}
+                  labelLine={false}
+                >
+                  {data.donutData.map((_, i) => (
+                    <Cell key={i} fill={LOCATION_COLORS[data.donutData[i].name] || PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number, _name, props) => [`${value} (${((value / data.total) * 100).toFixed(1)}%)`, props.payload.name]} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex-1 space-y-2 w-full">
+            {data.sorted.map(([loc, count], i) => (
+              <div key={loc} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: LOCATION_COLORS[loc] || PIE_COLORS[i % PIE_COLORS.length] }} />
+                  <span>{loc}</span>
+                </div>
+                <span className="text-muted-foreground tabular-nums">{count} · {((count / data.total) * 100).toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <BarChart3 className="w-7 h-7 text-primary" />
-        <div className="flex-1">
+        <div className="flex-1 min-w-[180px]">
           <h1 className="text-2xl font-bold text-primary">Statistik</h1>
-          <p className="text-xs text-muted-foreground">Übersicht aller Einsätze</p>
+          <p className="text-xs text-muted-foreground">Übersicht aller Einsätze · Wechsel zwischen Woche & Monat</p>
         </div>
         {(canReset || canResetDirect) && (
           <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => handleReset("all")}>
@@ -377,282 +580,86 @@ const StatistikPage = () => {
         )}
       </div>
 
-      {/* Weekly Protokollschreiber */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-primary flex items-center gap-2">
-            <Trophy className="w-5 h-5" />
-            Top-Protokollschreiber (aktuelle ASD-Woche)
-          </h2>
-          <div className="flex items-center gap-2">
-            {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("weekly")}>
-                <RotateCw className="w-3 h-3" /> Reset
-              </Button>
-            )}
-            <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Protokolle</span>
-          </div>
-        </div>
-        <ResetInfoBlock entries={formatResetInfo(lastWeeklyResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
-        {weeklyRanking.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle diese Woche</p>
-        ) : (
-          <div className="space-y-2">
-            {weeklyRanking.map(([id, count], i) => (
-              <div key={id} className="flex items-center justify-between py-1.5 group">
-                <button
-                  className="flex items-center gap-2 hover:underline text-left"
-                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: "missions", scope: "weekly" })}
-                >
-                  <span className="text-base">{MEDAL[i] || ""}</span>
-                  <span className="text-sm font-medium text-primary group-hover:text-accent-foreground transition-colors">{profileName(id)}</span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-                <span className="text-sm font-bold text-primary tabular-nums">{count}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <Tabs defaultValue="weekly" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="weekly" className="gap-2">
+            <CalendarDays className="w-4 h-4" /> ASD-Woche
+          </TabsTrigger>
+          <TabsTrigger value="monthly" className="gap-2">
+            <CalendarRange className="w-4 h-4" /> Monat
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Monthly Protokollschreiber */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="font-semibold text-primary flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Top-Protokollschreiber – Gesamt (Monat)
-          </h2>
-          {(canReset || canResetDirect) && (
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
-              <RotateCw className="w-3 h-3" /> Reset
-            </Button>
-          )}
-        </div>
-        <ResetInfoBlock entries={formatResetInfo(lastMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-4" />
-        {allTimeRanking.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Noch keine Protokolle</p>
-        ) : (
-          <div className="space-y-3">
-            {allTimeRanking.map(([id, count], i) => (
-              <div key={id} className="flex items-center justify-between group">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
-                  <button
-                    className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
-                    style={{
-                      width: `${Math.max((count / maxAllTime) * 100, 20)}%`,
-                      backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
-                    }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "all", scope: "monthly" })}
-                  >
-                    <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
-                  </button>
-                </div>
-                <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
-              </div>
-            ))}
+        {/* ===== WEEK TAB ===== */}
+        <TabsContent value="weekly" className="space-y-6 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TopWritersCard
+              scope="weekly"
+              ranking={weeklyRanking}
+              max={weeklyRanking[0]?.[1] || 1}
+              resetType="weekly"
+              resetEntry={lastWeeklyResetEntry}
+              nextDate={weekEnd}
+              countdown={weeklyCountdown}
+            />
+            <PursuitsCard
+              scope="weekly"
+              ranking={pursuitRanking}
+              max={maxPursuit}
+              total={weeklyPursuitTotal}
+              resetType="pursuits"
+              resetEntry={lastPursuitResetEntry}
+              nextDate={weekEnd}
+              countdown={weeklyCountdown}
+            />
           </div>
-        )}
-      </div>
+          <OverviewSummary data={overviewWeek} />
+          <DonutCard data={overviewWeek} title="Einsätze nach Raubart (Woche)" />
+        </TabsContent>
 
-      {/* 10-80 Verfolgungen (wöchentlich) */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-primary flex items-center gap-2">
-            <Car className="w-5 h-5" />
-            10-80 Verfolgungen (aktuelle ASD-Woche)
-          </h2>
-          <div className="flex items-center gap-2">
-            {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits")}>
-                <RotateCw className="w-3 h-3" /> Reset
-              </Button>
-            )}
-            <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-              Gesamt: {weeklyPursuitTotal}
-            </span>
+        {/* ===== MONTH TAB ===== */}
+        <TabsContent value="monthly" className="space-y-6 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TopWritersCard
+              scope="monthly"
+              ranking={allTimeRanking}
+              max={maxAllTime}
+              resetType="monthly"
+              resetEntry={lastMonthlyResetEntry}
+              nextDate={monthEnd}
+              countdown={monthlyCountdown}
+            />
+            <PursuitsCard
+              scope="monthly"
+              ranking={monthlyPursuitRanking}
+              max={maxMonthlyPursuit}
+              total={monthlyPursuitTotal}
+              resetType="pursuits_monthly"
+              resetEntry={lastPursuitMonthlyResetEntry}
+              nextDate={monthEnd}
+              countdown={monthlyCountdown}
+            />
           </div>
-        </div>
-        <ResetInfoBlock entries={formatResetInfo(lastPursuitResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
-        {pursuitRanking.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diese Woche</p>
-        ) : (
-          <div className="space-y-3">
-            {pursuitRanking.map(([id, count], i) => (
-              <div key={id} className="flex items-center justify-between group">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
-                  <button
-                    className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
-                    style={{
-                      width: `${Math.max((count / maxPursuit) * 100, 20)}%`,
-                      backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
-                    }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope: "weekly" })}
-                  >
-                    <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
-                  </button>
-                </div>
-                <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+          <OverviewSummary data={overviewMonth} />
+          <DonutCard data={overviewMonth} title="Einsätze nach Raubart (Monat)" />
 
-      {/* 10-80 Verfolgungen – Gesamt (Monat) */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-primary flex items-center gap-2">
-            <Car className="w-5 h-5" />
-            10-80 Verfolgungen – Gesamt (Monat)
-          </h2>
-          <div className="flex items-center gap-2">
-            {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits_monthly")}>
-                <RotateCw className="w-3 h-3" /> Reset
-              </Button>
-            )}
-            <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-              Gesamt: {monthlyPursuitTotal}
-            </span>
-          </div>
-        </div>
-        <ResetInfoBlock entries={formatResetInfo(lastPursuitMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-3" />
-        {monthlyPursuitRanking.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diesen Monat</p>
-        ) : (
-          <div className="space-y-3">
-            {monthlyPursuitRanking.map(([id, count], i) => (
-              <div key={id} className="flex items-center justify-between group">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
-                  <button
-                    className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
-                    style={{
-                      width: `${Math.max((count / maxMonthlyPursuit) * 100, 20)}%`,
-                      backgroundColor: `hsl(0, 65%, ${50 + i * 5}%)`,
-                    }}
-                    onClick={() => setSelectedWriter({ id, name: profileName(id), type: "pursuits", scope: "monthly" })}
-                  >
-                    <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
-                  </button>
-                </div>
-                <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Summary cards */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-primary flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Übersicht
-          </h2>
-          {(canReset || canResetDirect) && (
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
-              <RotateCw className="w-3 h-3" /> Reset
-            </Button>
-          )}
-        </div>
-        <ResetInfoBlock entries={formatResetInfo(lastOverviewResetEntry)} className="mb-3" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: "Einsätze", value: total, icon: BarChart3 },
-            { label: "Tatverdächtige", value: totalSuspects, icon: TrendingUp },
-            { label: "Geiseln", value: totalHostages, icon: TrendingUp },
-            { label: "Raubarten", value: sortedLocations.length, icon: Calendar },
-          ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className="w-4 h-4 text-muted-foreground" />
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-              </div>
-              <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Donut chart */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-semibold text-primary">Einsätze nach Raubart</h2>
-          {(canReset || canResetDirect) && (
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("overview")}>
-              <RotateCw className="w-3 h-3" /> Reset
-            </Button>
-          )}
-        </div>
-        {donutData.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
-        ) : (
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="w-80 h-80 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donutData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={95}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={({ cx, cy, midAngle, outerRadius: or, percent }) => {
-                      const RADIAN = Math.PI / 180;
-                      const radius = or + 22;
-                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                      return (
-                        <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor="middle" dominantBaseline="central" fontSize={13} fontWeight={700}>
-                          {`${(percent * 100).toFixed(0)}%`}
-                        </text>
-                      );
-                    }}
-                    labelLine={false}
-                  >
-                    {donutData.map((_, i) => (
-                      <Cell key={i} fill={LOCATION_COLORS[donutData[i].name] || PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number, _name, props) => [`${value} (${((value / total) * 100).toFixed(1)}%)`, props.payload.name]} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-2">
-              {sortedLocations.map(([loc, count], i) => (
-                <div key={loc} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: LOCATION_COLORS[loc] || PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span>{loc}</span>
+          {monthlyEntries.length > 1 && (
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h2 className="font-semibold text-primary mb-5">Monatliche Entwicklung</h2>
+              <div className="flex items-end gap-2 h-32">
+                {monthlyEntries.map(([month, count]) => (
+                  <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-xs text-primary font-bold tabular-nums">{count}</span>
+                    <div className="w-full rounded-t-md bg-primary/80 transition-all duration-500" style={{ height: `${(count / maxMonthly) * 100}%`, minHeight: 4 }} />
+                    <span className="text-[9px] text-muted-foreground">{month}</span>
                   </div>
-                  <span className="text-muted-foreground tabular-nums">{count} · {((count / total) * 100).toFixed(1)}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Monthly mini chart */}
-      {monthlyEntries.length > 1 && (
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h2 className="font-semibold text-primary mb-5">Monatliche Entwicklung</h2>
-          <div className="flex items-end gap-2 h-32">
-            {monthlyEntries.map(([month, count]) => (
-              <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs text-primary font-bold tabular-nums">{count}</span>
-                <div className="w-full rounded-t-md bg-primary/80 transition-all duration-500" style={{ height: `${(count / maxMonthly) * 100}%`, minHeight: 4 }} />
-                <span className="text-[9px] text-muted-foreground">{month}</span>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
 
       {/* Dialog: Protokolle eines Schreibers (nur aktuelle Woche) */}
       <Dialog open={!!selectedWriter} onOpenChange={(open) => !open && setSelectedWriter(null)}>
