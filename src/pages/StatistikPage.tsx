@@ -463,7 +463,7 @@ const StatistikPage = () => {
           </h2>
           <div className="flex items-center gap-2">
             {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("weekly")}>
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits")}>
                 <RotateCw className="w-3 h-3" /> Reset
               </Button>
             )}
@@ -472,7 +472,7 @@ const StatistikPage = () => {
             </span>
           </div>
         </div>
-        <ResetInfoBlock entries={formatResetInfo(lastWeeklyResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
+        <ResetInfoBlock entries={formatResetInfo(lastPursuitResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
         {pursuitRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diese Woche</p>
         ) : (
@@ -508,7 +508,7 @@ const StatistikPage = () => {
           </h2>
           <div className="flex items-center gap-2">
             {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits_monthly")}>
                 <RotateCw className="w-3 h-3" /> Reset
               </Button>
             )}
@@ -517,7 +517,7 @@ const StatistikPage = () => {
             </span>
           </div>
         </div>
-        <ResetInfoBlock entries={formatResetInfo(lastMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-3" />
+        <ResetInfoBlock entries={formatResetInfo(lastPursuitMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-3" />
         {monthlyPursuitRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diesen Monat</p>
         ) : (
