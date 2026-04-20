@@ -18,6 +18,44 @@ const ROLE_LABELS: Record<string, string> = {
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
 };
 
+// Hierarchie: niedrigerer Index = höherer Rang
+const ROLE_HIERARCHY: Record<string, number> = {
+  admin: 0, director: 1, co_director: 2, supervisor: 3,
+  ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7,
+};
+
+/**
+ * Liefert die Rollen, die ein User mit `currentRole` neu zuweisen darf.
+ * Director/Co-Director dürfen nur Rollen unter dem eigenen Rang.
+ * Co-Director darf seinen eigenen Rang nicht vergeben.
+ */
+function getAssignableRoles(currentRole: string | null): readonly string[] {
+  if (!currentRole) return [];
+  if (currentRole === "admin") return ROLES;
+  const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
+  return ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
+}
+
+function canEditUser(currentRole: string | null, targetRole: string): boolean {
+  if (!currentRole) return false;
+  if (currentRole === "admin") return true;
+  const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
+  const targetLevel = ROLE_HIERARCHY[targetRole] ?? 999;
+  return targetLevel > myLevel;
+}
+
+/** Sortiert Mitglieder nach Rang-Hierarchie, dann nach interner DN (numerisch). */
+function sortByRankAndDn<T extends { role: string; internal_dienstnummer?: string | null; name?: string }>(arr: T[]): T[] {
+  return [...arr].sort((a, b) => {
+    const rankDiff = (ROLE_HIERARCHY[a.role] ?? 999) - (ROLE_HIERARCHY[b.role] ?? 999);
+    if (rankDiff !== 0) return rankDiff;
+    const aNum = parseInt(((a.internal_dienstnummer || "").match(/\d+/)?.[0]) || "9999", 10);
+    const bNum = parseInt(((b.internal_dienstnummer || "").match(/\d+/)?.[0]) || "9999", 10);
+    if (aNum !== bNum) return aNum - bNum;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   all: "Alle",
   casino: "Casino",
@@ -44,13 +82,15 @@ const CATEGORY_COLORS: Record<string, string> = {
 const RESET_TYPE_LABELS: Record<string, string> = {
   weekly: "Wochenstatistik",
   monthly: "Monatsstatistik",
-  pursuits: "10-80 Verfolgungen",
-  overview: "Übersicht",
+  pursuits: "10-80 Verfolgungen (Woche)",
+  pursuits_monthly: "10-80 Verfolgungen (Monat)",
+  overview: "Übersicht / Einsätze nach Raubart",
   all: "Alle Statistiken",
 };
 
 const AdminPanel = () => {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, role: currentUserRole } = useAuth();
+  const assignableRoles = getAssignableRoles(currentUserRole);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
