@@ -263,6 +263,19 @@ const StatistikPage = () => {
     return d >= effectiveWeeklyPursuitStart && d < weekEnd;
   }) || [];
 
+  // Weekly overview cutoff (separat vom Top-Schreiber)
+  const effectiveWeekOverviewStart = lastOverviewReset && new Date(lastOverviewReset) > weekStart
+    ? new Date(lastOverviewReset)
+    : weekStart;
+  const weeklyOverviewMissions = missions?.filter((m) => {
+    const d = new Date(m.created_at);
+    return d >= effectiveWeekOverviewStart && d < weekEnd;
+  }) || [];
+  const weeklyOverviewPursuits = pursuits?.filter((p) => {
+    const d = new Date(p.created_at);
+    return d >= effectiveWeekOverviewStart && d < weekEnd;
+  }) || [];
+
   const weeklyCounts: Record<string, number> = {};
   weeklyMissions.forEach((m) => {
     if (m.protokollschreiber) weeklyCounts[m.protokollschreiber] = (weeklyCounts[m.protokollschreiber] || 0) + 1;
@@ -286,6 +299,20 @@ const StatistikPage = () => {
     const d = new Date(p.created_at);
     return d >= effectiveMonthlyPursuitStart && d < monthEnd;
   }) || [];
+
+  // Monthly overview cutoff (separat)
+  const effectiveMonthOverviewStart = lastOverviewMonthlyReset && new Date(lastOverviewMonthlyReset) > monthStart
+    ? new Date(lastOverviewMonthlyReset)
+    : monthStart;
+  const monthlyOverviewMissions = missions?.filter((m) => {
+    const d = new Date(m.created_at);
+    return d >= effectiveMonthOverviewStart && d < monthEnd;
+  }) || [];
+  const monthlyOverviewPursuits = pursuits?.filter((p) => {
+    const d = new Date(p.created_at);
+    return d >= effectiveMonthOverviewStart && d < monthEnd;
+  }) || [];
+
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
     if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
