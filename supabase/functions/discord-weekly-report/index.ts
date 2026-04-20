@@ -33,19 +33,26 @@ async function getTopProtokollschreiber(supabaseAdmin: any, startDate: Date, now
   }
 
   const userIds = Object.keys(counts);
-  let profileMap: Record<string, string> = {};
+  let profileMap: Record<string, { name: string; discord_id: string | null }> = {};
   if (userIds.length > 0) {
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("id, name")
+      .select("id, name, discord_id")
       .in("id", userIds);
     for (const p of profiles || []) {
-      profileMap[p.id] = p.name;
+      profileMap[p.id] = { name: p.name, discord_id: p.discord_id };
     }
   }
 
   const sorted = Object.entries(counts)
-    .map(([userId, c]) => ({ userId, name: profileMap[userId] || "Unbekannt", total: c.missions + c.pursuits, missions: c.missions, pursuits: c.pursuits }))
+    .map(([userId, c]) => ({
+      userId,
+      name: profileMap[userId]?.name || "Unbekannt",
+      discord_id: profileMap[userId]?.discord_id || null,
+      total: c.missions + c.pursuits,
+      missions: c.missions,
+      pursuits: c.pursuits,
+    }))
     .sort((a, b) => b.total - a.total);
 
   return { sorted, totalMissions: missions?.length || 0, totalPursuits: pursuits?.length || 0 };
@@ -85,7 +92,8 @@ Deno.serve(async (req) => {
     let leaderboard = "";
     sorted.slice(0, 15).forEach((entry, idx) => {
       const prefix = idx < 3 ? medals[idx] : `**${idx + 1}.**`;
-      leaderboard += `${prefix} **${entry.name}** — ${entry.total} Protokoll${entry.total !== 1 ? "e" : ""} (📋 ${entry.missions} + 🚔 ${entry.pursuits})\n`;
+      const displayName = entry.discord_id ? `<@${entry.discord_id}>` : `**${entry.name}**`;
+      leaderboard += `${prefix} ${displayName} — ${entry.total} Protokoll${entry.total !== 1 ? "e" : ""} (📋 ${entry.missions} + 🚔 ${entry.pursuits})\n`;
     });
 
     if (!leaderboard) leaderboard = "Keine Protokolle in diesem Zeitraum.\n";
