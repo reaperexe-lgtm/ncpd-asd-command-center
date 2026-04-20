@@ -1,9 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Tag } from "lucide-react";
 
 const Changelog = () => {
+  const queryClient = useQueryClient();
+
   const { data: changelogs = [], isLoading } = useQuery({
     queryKey: ["changelogs"],
     queryFn: async () => {
@@ -14,6 +17,23 @@ const Changelog = () => {
       return data || [];
     },
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("changelogs-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "changelogs" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["changelogs"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   if (isLoading) {
     return (
