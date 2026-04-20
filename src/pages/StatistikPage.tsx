@@ -352,8 +352,8 @@ const StatistikPage = () => {
   };
 
   const overviewAll = buildOverview(filteredMissions, filteredPursuits);
-  const overviewWeek = buildOverview(weeklyMissions, weeklyPursuits);
-  const overviewMonth = buildOverview(monthlyMissions, monthlyPursuits);
+  const overviewWeek = buildOverview(weeklyOverviewMissions, weeklyOverviewPursuits);
+  const overviewMonth = buildOverview(monthlyOverviewMissions, monthlyOverviewPursuits);
 
   // Backwards-compat aliases
   const sortedLocations = overviewAll.sorted;
@@ -445,7 +445,9 @@ const StatistikPage = () => {
           {ranking.map(([id, count], i) => (
             <div key={id} className="flex items-center justify-between group">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                  {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                </span>
                 <button
                   className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
                   style={{
@@ -502,7 +504,9 @@ const StatistikPage = () => {
           {ranking.map(([id, count], i) => (
             <div key={id} className="flex items-center justify-between group">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                  {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                </span>
                 <button
                   className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
                   style={{
