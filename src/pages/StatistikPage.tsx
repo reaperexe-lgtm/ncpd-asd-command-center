@@ -213,10 +213,12 @@ const StatistikPage = () => {
   const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
   const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
   const lastPursuitResetEntry = resets?.find((r: any) => r.reset_type === "pursuits");
+  const lastPursuitMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "pursuits_monthly");
   const lastOverviewResetEntry = resets?.find((r: any) => r.reset_type === "overview");
   const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
   const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
   const lastPursuitReset = lastPursuitResetEntry?.reset_at;
+  const lastPursuitMonthlyReset = lastPursuitMonthlyResetEntry?.reset_at;
   const lastOverviewReset = lastOverviewResetEntry?.reset_at;
 
   // Compute next auto-reset dates
