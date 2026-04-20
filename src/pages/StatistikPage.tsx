@@ -249,9 +249,12 @@ const StatistikPage = () => {
     const d = new Date(m.created_at);
     return d >= effectiveWeekStart && d < weekEnd;
   }) || [];
+  const effectiveWeeklyPursuitStart = lastPursuitReset && new Date(lastPursuitReset) > effectiveWeekStart
+    ? new Date(lastPursuitReset)
+    : effectiveWeekStart;
   const weeklyPursuits = pursuits?.filter((p) => {
     const d = new Date(p.created_at);
-    return d >= effectiveWeekStart && d < weekEnd;
+    return d >= effectiveWeeklyPursuitStart && d < weekEnd;
   }) || [];
 
   const weeklyCounts: Record<string, number> = {};
@@ -270,9 +273,12 @@ const StatistikPage = () => {
     const d = new Date(m.created_at);
     return d >= effectiveMonthStart && d < monthEnd;
   }) || [];
+  const effectiveMonthlyPursuitStart = lastPursuitMonthlyReset && new Date(lastPursuitMonthlyReset) > effectiveMonthStart
+    ? new Date(lastPursuitMonthlyReset)
+    : effectiveMonthStart;
   const monthlyPursuits = pursuits?.filter((p) => {
     const d = new Date(p.created_at);
-    return d >= effectiveMonthStart && d < monthEnd;
+    return d >= effectiveMonthlyPursuitStart && d < monthEnd;
   }) || [];
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
