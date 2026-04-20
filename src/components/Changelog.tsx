@@ -20,7 +20,7 @@ const Changelog = () => {
 
   useEffect(() => {
     const channel = supabase
-      .channel("changelogs-realtime")
+      .channel(`changelogs-realtime-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "changelogs" },
