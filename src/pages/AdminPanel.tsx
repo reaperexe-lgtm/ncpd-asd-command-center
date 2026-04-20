@@ -18,6 +18,44 @@ const ROLE_LABELS: Record<string, string> = {
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
 };
 
+// Hierarchie: niedrigerer Index = höherer Rang
+const ROLE_HIERARCHY: Record<string, number> = {
+  admin: 0, director: 1, co_director: 2, supervisor: 3,
+  ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7,
+};
+
+/**
+ * Liefert die Rollen, die ein User mit `currentRole` neu zuweisen darf.
+ * Director/Co-Director dürfen nur Rollen unter dem eigenen Rang.
+ * Co-Director darf seinen eigenen Rang nicht vergeben.
+ */
+function getAssignableRoles(currentRole: string | null): readonly string[] {
+  if (!currentRole) return [];
+  if (currentRole === "admin") return ROLES;
+  const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
+  return ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
+}
+
+function canEditUser(currentRole: string | null, targetRole: string): boolean {
+  if (!currentRole) return false;
+  if (currentRole === "admin") return true;
+  const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
+  const targetLevel = ROLE_HIERARCHY[targetRole] ?? 999;
+  return targetLevel > myLevel;
+}
+
+/** Sortiert Mitglieder nach Rang-Hierarchie, dann nach interner DN (numerisch). */
+function sortByRankAndDn<T extends { role: string; internal_dienstnummer?: string | null; name?: string }>(arr: T[]): T[] {
+  return [...arr].sort((a, b) => {
+    const rankDiff = (ROLE_HIERARCHY[a.role] ?? 999) - (ROLE_HIERARCHY[b.role] ?? 999);
+    if (rankDiff !== 0) return rankDiff;
+    const aNum = parseInt(((a.internal_dienstnummer || "").match(/\d+/)?.[0]) || "9999", 10);
+    const bNum = parseInt(((b.internal_dienstnummer || "").match(/\d+/)?.[0]) || "9999", 10);
+    if (aNum !== bNum) return aNum - bNum;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   all: "Alle",
   casino: "Casino",
@@ -44,13 +82,15 @@ const CATEGORY_COLORS: Record<string, string> = {
 const RESET_TYPE_LABELS: Record<string, string> = {
   weekly: "Wochenstatistik",
   monthly: "Monatsstatistik",
-  pursuits: "10-80 Verfolgungen",
-  overview: "Übersicht",
+  pursuits: "10-80 Verfolgungen (Woche)",
+  pursuits_monthly: "10-80 Verfolgungen (Monat)",
+  overview: "Übersicht / Einsätze nach Raubart",
   all: "Alle Statistiken",
 };
 
 const AdminPanel = () => {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, role: currentUserRole } = useAuth();
+  const assignableRoles = getAssignableRoles(currentUserRole);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
@@ -296,6 +336,7 @@ const AdminPanel = () => {
             { reset_type: "weekly", reset_by: request.requested_by, reset_at: now },
             { reset_type: "monthly", reset_by: request.requested_by, reset_at: now },
             { reset_type: "pursuits", reset_by: request.requested_by, reset_at: now },
+            { reset_type: "pursuits_monthly", reset_by: request.requested_by, reset_at: now },
             { reset_type: "overview", reset_by: request.requested_by, reset_at: now },
           ] as any);
         } else {
@@ -328,7 +369,7 @@ const AdminPanel = () => {
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
   const pending = users?.filter((u) => !u.is_approved && !(u as any).is_blocked) || [];
-  const approved = users?.filter((u) => u.is_approved && !(u as any).is_blocked) || [];
+  const approved = sortByRankAndDn(users?.filter((u) => u.is_approved && !(u as any).is_blocked) || []);
   const blocked = users?.filter((u) => (u as any).is_blocked) || [];
 
   const formatDate = (iso: string) => {
@@ -433,9 +474,9 @@ const AdminPanel = () => {
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
+                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
                           <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                          <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                          <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                         </Select>
                         <Button size="sm" onClick={() => approveMutation.mutate({ userId: u.id, approve: true })} className="gap-1.5 h-8 text-xs">
                           <UserCheck className="w-3.5 h-3.5" /> Freischalten
@@ -489,13 +530,15 @@ const AdminPanel = () => {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
+                      <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
                         <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                        <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                       </Select>
-                      <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
-                        <Ban className="w-3 h-3" /> Sperren
-                      </Button>
+                      {canEditUser(currentUserRole, u.role) && (
+                        <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                          <Ban className="w-3 h-3" /> Sperren
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -554,15 +597,19 @@ const AdminPanel = () => {
                           <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
                         </td>
                         <td className="px-4 py-3">
-                          <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
+                          <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
                             <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                            <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                            <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
-                            <Ban className="w-3 h-3" /> Sperren
-                          </Button>
+                          {canEditUser(currentUserRole, u.role) ? (
+                            <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                              <Ban className="w-3 h-3" /> Sperren
+                            </Button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground italic">Geschützt</span>
+                          )}
                         </td>
                       </tr>
                     ))}

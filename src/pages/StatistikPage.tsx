@@ -79,8 +79,9 @@ const BAR_COLORS = [
 const RESET_TYPE_LABELS: Record<string, string> = {
   weekly: "Wochenstatistik",
   monthly: "Monatsstatistik",
-  pursuits: "10-80 Verfolgungen",
-  overview: "Übersicht",
+  pursuits: "10-80 Verfolgungen (Woche)",
+  pursuits_monthly: "10-80 Verfolgungen (Monat)",
+  overview: "Übersicht / Einsätze nach Raubart",
   all: "Alle Statistiken",
 };
 
@@ -157,6 +158,7 @@ const StatistikPage = () => {
           { reset_type: "weekly", reset_by: user?.id, reset_at: now },
           { reset_type: "monthly", reset_by: user?.id, reset_at: now },
           { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
+          { reset_type: "pursuits_monthly", reset_by: user?.id, reset_at: now },
           { reset_type: "overview", reset_by: user?.id, reset_at: now },
         ] as any);
         if (error) throw error;
@@ -212,10 +214,12 @@ const StatistikPage = () => {
   const lastWeeklyResetEntry = resets?.find((r: any) => r.reset_type === "weekly");
   const lastMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "monthly");
   const lastPursuitResetEntry = resets?.find((r: any) => r.reset_type === "pursuits");
+  const lastPursuitMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "pursuits_monthly");
   const lastOverviewResetEntry = resets?.find((r: any) => r.reset_type === "overview");
   const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
   const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
   const lastPursuitReset = lastPursuitResetEntry?.reset_at;
+  const lastPursuitMonthlyReset = lastPursuitMonthlyResetEntry?.reset_at;
   const lastOverviewReset = lastOverviewResetEntry?.reset_at;
 
   // Compute next auto-reset dates
@@ -246,9 +250,12 @@ const StatistikPage = () => {
     const d = new Date(m.created_at);
     return d >= effectiveWeekStart && d < weekEnd;
   }) || [];
+  const effectiveWeeklyPursuitStart = lastPursuitReset && new Date(lastPursuitReset) > effectiveWeekStart
+    ? new Date(lastPursuitReset)
+    : effectiveWeekStart;
   const weeklyPursuits = pursuits?.filter((p) => {
     const d = new Date(p.created_at);
-    return d >= effectiveWeekStart && d < weekEnd;
+    return d >= effectiveWeeklyPursuitStart && d < weekEnd;
   }) || [];
 
   const weeklyCounts: Record<string, number> = {};
@@ -267,9 +274,12 @@ const StatistikPage = () => {
     const d = new Date(m.created_at);
     return d >= effectiveMonthStart && d < monthEnd;
   }) || [];
+  const effectiveMonthlyPursuitStart = lastPursuitMonthlyReset && new Date(lastPursuitMonthlyReset) > effectiveMonthStart
+    ? new Date(lastPursuitMonthlyReset)
+    : effectiveMonthStart;
   const monthlyPursuits = pursuits?.filter((p) => {
     const d = new Date(p.created_at);
-    return d >= effectiveMonthStart && d < monthEnd;
+    return d >= effectiveMonthlyPursuitStart && d < monthEnd;
   }) || [];
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
@@ -287,9 +297,9 @@ const StatistikPage = () => {
     ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
     : missions || [];
 
-  const effectivePursuitStart = lastPursuitReset ? new Date(lastPursuitReset) : null;
-  const filteredPursuits = effectivePursuitStart
-    ? pursuits?.filter((p) => new Date(p.created_at) >= effectivePursuitStart) || []
+  // Übersichts-Pursuits folgen ebenfalls dem overview-Reset
+  const filteredPursuits = overviewCutoff
+    ? pursuits?.filter((p) => new Date(p.created_at) >= overviewCutoff) || []
     : pursuits || [];
 
   const locationCounts: Record<string, number> = {};
@@ -454,7 +464,7 @@ const StatistikPage = () => {
           </h2>
           <div className="flex items-center gap-2">
             {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("weekly")}>
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits")}>
                 <RotateCw className="w-3 h-3" /> Reset
               </Button>
             )}
@@ -463,7 +473,7 @@ const StatistikPage = () => {
             </span>
           </div>
         </div>
-        <ResetInfoBlock entries={formatResetInfo(lastWeeklyResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
+        <ResetInfoBlock entries={formatResetInfo(lastPursuitResetEntry, weekEnd, weeklyCountdown)} className="mb-3" />
         {pursuitRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diese Woche</p>
         ) : (
@@ -499,7 +509,7 @@ const StatistikPage = () => {
           </h2>
           <div className="flex items-center gap-2">
             {(canReset || canResetDirect) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("monthly")}>
+              <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset("pursuits_monthly")}>
                 <RotateCw className="w-3 h-3" /> Reset
               </Button>
             )}
@@ -508,7 +518,7 @@ const StatistikPage = () => {
             </span>
           </div>
         </div>
-        <ResetInfoBlock entries={formatResetInfo(lastMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-3" />
+        <ResetInfoBlock entries={formatResetInfo(lastPursuitMonthlyResetEntry, monthEnd, monthlyCountdown)} className="mb-3" />
         {monthlyPursuitRanking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Noch keine 10-80 Verfolgungen diesen Monat</p>
         ) : (
