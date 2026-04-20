@@ -292,7 +292,7 @@ const StatistikPage = () => {
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
 
-  // --- Location stats ---
+  // --- Location stats (gesamt / nach overview-Reset) ---
   const overviewCutoff = lastOverviewReset ? new Date(lastOverviewReset) : null;
   const filteredMissions = overviewCutoff
     ? missions?.filter((m) => new Date(m.created_at) >= overviewCutoff) || []
@@ -303,16 +303,33 @@ const StatistikPage = () => {
     ? pursuits?.filter((p) => new Date(p.created_at) >= overviewCutoff) || []
     : pursuits || [];
 
-  const locationCounts: Record<string, number> = {};
-  filteredMissions.forEach((m) => { locationCounts[m.location_type] = (locationCounts[m.location_type] || 0) + 1; });
-  const pursuitCount = filteredPursuits.length;
-  if (pursuitCount > 0) locationCounts["10-80 Verfolgung"] = pursuitCount;
-  const total = filteredMissions.length + pursuitCount;
-  const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
-  const donutData = sortedLocations.map(([name, value]) => ({ name, value }));
+  // Helper: Übersichts-Daten für einen beliebigen Bereich berechnen
+  const buildOverview = (ms: typeof filteredMissions, ps: typeof filteredPursuits) => {
+    const counts: Record<string, number> = {};
+    ms.forEach((m) => { counts[m.location_type] = (counts[m.location_type] || 0) + 1; });
+    const pCount = ps.length;
+    if (pCount > 0) counts["10-80 Verfolgung"] = pCount;
+    const t = ms.length + pCount;
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return {
+      sorted,
+      donutData: sorted.map(([name, value]) => ({ name, value })),
+      total: t,
+      suspects: ms.reduce((s, m) => s + m.suspects_count, 0),
+      hostages: ms.reduce((s, m) => s + m.hostages_count, 0),
+    };
+  };
 
-  const totalSuspects = filteredMissions.reduce((s, m) => s + m.suspects_count, 0);
-  const totalHostages = filteredMissions.reduce((s, m) => s + m.hostages_count, 0);
+  const overviewAll = buildOverview(filteredMissions, filteredPursuits);
+  const overviewWeek = buildOverview(weeklyMissions, weeklyPursuits);
+  const overviewMonth = buildOverview(monthlyMissions, monthlyPursuits);
+
+  // Backwards-compat aliases
+  const sortedLocations = overviewAll.sorted;
+  const donutData = overviewAll.donutData;
+  const total = overviewAll.total;
+  const totalSuspects = overviewAll.suspects;
+  const totalHostages = overviewAll.hostages;
 
   const monthly: Record<string, number> = {};
   filteredMissions.forEach((m) => {
