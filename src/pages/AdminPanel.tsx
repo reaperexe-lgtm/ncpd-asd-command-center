@@ -336,6 +336,7 @@ const AdminPanel = () => {
             { reset_type: "weekly", reset_by: request.requested_by, reset_at: now },
             { reset_type: "monthly", reset_by: request.requested_by, reset_at: now },
             { reset_type: "pursuits", reset_by: request.requested_by, reset_at: now },
+            { reset_type: "pursuits_monthly", reset_by: request.requested_by, reset_at: now },
             { reset_type: "overview", reset_by: request.requested_by, reset_at: now },
           ] as any);
         } else {
