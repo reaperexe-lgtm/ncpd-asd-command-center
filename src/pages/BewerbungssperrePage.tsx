@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Ban } from "lucide-react";
+import { Plus, Trash2, Ban, ChevronDown, ChevronRight } from "lucide-react";
 
 const BewerbungssperrePage = () => {
   const { isAdmin } = useAuth();
@@ -18,6 +19,9 @@ const BewerbungssperrePage = () => {
   const [to, setTo] = useState("");
   const [reason, setReason] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
+
+  const toggle = (id: string) => setOpenIds((p) => ({ ...p, [id]: !p[id] }));
 
   const { data: bans, isLoading } = useQuery({
     queryKey: ["application-bans"],
@@ -84,89 +88,72 @@ const BewerbungssperrePage = () => {
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade...</div></div>
       ) : (
-        <>
-          {/* Mobile cards view */}
-          <div className="md:hidden space-y-3">
-            {bans?.map((b) => {
-              const active = isActive(b.to_date);
-              return (
-                <div key={b.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{b.name}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      active ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"
-                    }`}>
-                      {active ? "Aktiv" : "Abgelaufen"}
-                    </span>
-                  </div>
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span>Von: {new Date(b.from_date).toLocaleDateString("de-DE")}</span>
-                    <span>Bis: {new Date(b.to_date).toLocaleDateString("de-DE")}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">Grund:</span> {b.reason || "–"}
-                  </p>
-                  {isAdmin && (
-                    <div className="flex justify-end pt-1">
-                      <button onClick={() => deleteBan.mutate(b.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {bans?.length === 0 && (
-              <p className="text-center text-muted-foreground py-12">Keine Sperren vorhanden</p>
-            )}
-          </div>
-
-          {/* Desktop table view */}
-          <div className="hidden md:block bg-card border border-border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-background/50">
-                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Von</th>
-                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Bis</th>
-                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Grund</th>
-                  {isAdmin && <th className="px-4 py-3 w-16" />}
-                </tr>
-              </thead>
-              <tbody>
-                {bans?.map((b) => {
-                  const active = isActive(b.to_date);
-                  return (
-                    <tr key={b.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
-                      <td className="px-4 py-3 font-medium">{b.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(b.from_date).toLocaleDateString("de-DE")}</td>
-                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{new Date(b.to_date).toLocaleDateString("de-DE")}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          active ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"
+        <div className="space-y-3">
+          {bans?.map((b) => {
+            const active = isActive(b.to_date);
+            const isOpen = !!openIds[b.id];
+            const hasReason = !!b.reason && b.reason.trim().length > 0;
+            return (
+              <Collapsible key={b.id} open={isOpen} onOpenChange={() => toggle(b.id)}>
+                <div className={`bg-card border rounded-lg overflow-hidden transition-colors ${
+                  active ? "border-destructive/30" : "border-border"
+                }`}>
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full p-4 flex items-center gap-3 hover:bg-primary/[0.03] transition-colors text-left">
+                      <div className="shrink-0">
+                        {isOpen ? (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:gap-4 items-center">
+                        <p className="font-semibold text-foreground truncate">{b.name}</p>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {new Date(b.from_date).toLocaleDateString("de-DE")} → {new Date(b.to_date).toLocaleDateString("de-DE")}
+                        </span>
+                        <span className={`justify-self-start md:justify-self-auto text-xs px-2 py-0.5 rounded-full font-medium ${
+                          active ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"
                         }`}>
                           {active ? "Aktiv" : "Abgelaufen"}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 max-w-[200px] truncate text-muted-foreground">{b.reason || "–"}</td>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {hasReason ? (isOpen ? "Grund einklappen" : "Grund anzeigen") : "Kein Grund"}
+                        </span>
+                      </div>
                       {isAdmin && (
-                        <td className="px-4 py-3">
-                          <button onClick={() => deleteBan.mutate(b.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteBan.mutate(b.id); }}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded shrink-0"
+                          aria-label="Löschen"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
-                    </tr>
-                  );
-                })}
-                {bans?.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Keine Sperren vorhanden</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-4 pb-4 pt-1 border-t border-border/50 ml-7">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
+                        Grund der Sperre
+                      </p>
+                      {hasReason ? (
+                        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-background/50 border border-border/50 rounded-md p-3">
+                          {b.reason}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Kein Grund hinterlegt.</p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            );
+          })}
+          {bans?.length === 0 && (
+            <p className="text-center text-muted-foreground py-12">Keine Sperren vorhanden</p>
+          )}
+        </div>
       )}
     </div>
   );

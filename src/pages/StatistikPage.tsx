@@ -78,11 +78,12 @@ const BAR_COLORS = [
 ];
 
 const RESET_TYPE_LABELS: Record<string, string> = {
-  weekly: "Wochenstatistik",
-  monthly: "Monatsstatistik",
+  weekly: "Top-Protokollschreiber (Woche)",
+  monthly: "Top-Protokollschreiber (Monat)",
   pursuits: "10-80 Verfolgungen (Woche)",
   pursuits_monthly: "10-80 Verfolgungen (Monat)",
-  overview: "Übersicht / Einsätze nach Raubart",
+  overview: "Übersicht & Raubart (Woche)",
+  overview_monthly: "Übersicht & Raubart (Monat)",
   all: "Alle Statistiken",
 };
 
@@ -161,6 +162,7 @@ const StatistikPage = () => {
           { reset_type: "pursuits", reset_by: user?.id, reset_at: now },
           { reset_type: "pursuits_monthly", reset_by: user?.id, reset_at: now },
           { reset_type: "overview", reset_by: user?.id, reset_at: now },
+          { reset_type: "overview_monthly", reset_by: user?.id, reset_at: now },
         ] as any);
         if (error) throw error;
       } else {
@@ -217,11 +219,13 @@ const StatistikPage = () => {
   const lastPursuitResetEntry = resets?.find((r: any) => r.reset_type === "pursuits");
   const lastPursuitMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "pursuits_monthly");
   const lastOverviewResetEntry = resets?.find((r: any) => r.reset_type === "overview");
+  const lastOverviewMonthlyResetEntry = resets?.find((r: any) => r.reset_type === "overview_monthly");
   const lastWeeklyReset = lastWeeklyResetEntry?.reset_at;
   const lastMonthlyReset = lastMonthlyResetEntry?.reset_at;
   const lastPursuitReset = lastPursuitResetEntry?.reset_at;
   const lastPursuitMonthlyReset = lastPursuitMonthlyResetEntry?.reset_at;
   const lastOverviewReset = lastOverviewResetEntry?.reset_at;
+  const lastOverviewMonthlyReset = lastOverviewMonthlyResetEntry?.reset_at;
 
   // Compute next auto-reset dates
   const { end: weekEnd } = getASDWeekRange();
@@ -259,6 +263,19 @@ const StatistikPage = () => {
     return d >= effectiveWeeklyPursuitStart && d < weekEnd;
   }) || [];
 
+  // Weekly overview cutoff (separat vom Top-Schreiber)
+  const effectiveWeekOverviewStart = lastOverviewReset && new Date(lastOverviewReset) > weekStart
+    ? new Date(lastOverviewReset)
+    : weekStart;
+  const weeklyOverviewMissions = missions?.filter((m) => {
+    const d = new Date(m.created_at);
+    return d >= effectiveWeekOverviewStart && d < weekEnd;
+  }) || [];
+  const weeklyOverviewPursuits = pursuits?.filter((p) => {
+    const d = new Date(p.created_at);
+    return d >= effectiveWeekOverviewStart && d < weekEnd;
+  }) || [];
+
   const weeklyCounts: Record<string, number> = {};
   weeklyMissions.forEach((m) => {
     if (m.protokollschreiber) weeklyCounts[m.protokollschreiber] = (weeklyCounts[m.protokollschreiber] || 0) + 1;
@@ -282,6 +299,20 @@ const StatistikPage = () => {
     const d = new Date(p.created_at);
     return d >= effectiveMonthlyPursuitStart && d < monthEnd;
   }) || [];
+
+  // Monthly overview cutoff (separat)
+  const effectiveMonthOverviewStart = lastOverviewMonthlyReset && new Date(lastOverviewMonthlyReset) > monthStart
+    ? new Date(lastOverviewMonthlyReset)
+    : monthStart;
+  const monthlyOverviewMissions = missions?.filter((m) => {
+    const d = new Date(m.created_at);
+    return d >= effectiveMonthOverviewStart && d < monthEnd;
+  }) || [];
+  const monthlyOverviewPursuits = pursuits?.filter((p) => {
+    const d = new Date(p.created_at);
+    return d >= effectiveMonthOverviewStart && d < monthEnd;
+  }) || [];
+
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
     if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
@@ -321,8 +352,8 @@ const StatistikPage = () => {
   };
 
   const overviewAll = buildOverview(filteredMissions, filteredPursuits);
-  const overviewWeek = buildOverview(weeklyMissions, weeklyPursuits);
-  const overviewMonth = buildOverview(monthlyMissions, monthlyPursuits);
+  const overviewWeek = buildOverview(weeklyOverviewMissions, weeklyOverviewPursuits);
+  const overviewMonth = buildOverview(monthlyOverviewMissions, monthlyOverviewPursuits);
 
   // Backwards-compat aliases
   const sortedLocations = overviewAll.sorted;
@@ -414,7 +445,9 @@ const StatistikPage = () => {
           {ranking.map(([id, count], i) => (
             <div key={id} className="flex items-center justify-between group">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                  {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                </span>
                 <button
                   className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
                   style={{
@@ -471,7 +504,9 @@ const StatistikPage = () => {
           {ranking.map(([id, count], i) => (
             <div key={id} className="flex items-center justify-between group">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-base w-6 text-center shrink-0">{MEDAL[i] || ""}</span>
+                <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                  {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                </span>
                 <button
                   className="h-9 rounded-md flex items-center px-3 transition-all duration-500 cursor-pointer hover:brightness-110 min-w-0"
                   style={{
@@ -491,28 +526,62 @@ const StatistikPage = () => {
     </div>
   );
 
-  const OverviewSummary = ({ data }: { data: ReturnType<typeof buildOverview> }) => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {[
-        { label: "Einsätze", value: data.total, icon: BarChart3 },
-        { label: "Tatverdächtige", value: data.suspects, icon: TrendingUp },
-        { label: "Geiseln", value: data.hostages, icon: TrendingUp },
-        { label: "Raubarten", value: data.sorted.length, icon: Calendar },
-      ].map(({ label, value, icon: Icon }) => (
-        <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className="w-4 h-4 text-muted-foreground" />
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+  const OverviewSummary = ({ data, resetType, resetEntry, nextDate, countdown }: {
+    data: ReturnType<typeof buildOverview>;
+    resetType: string;
+    resetEntry?: any;
+    nextDate?: Date;
+    countdown?: string;
+  }) => (
+    <div className="bg-card border border-border rounded-lg p-5">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h2 className="font-semibold text-primary flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" /> Übersicht
+        </h2>
+        {(canReset || canResetDirect) && (
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset(resetType)}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        )}
+      </div>
+      <ResetInfoBlock entries={formatResetInfo(resetEntry, nextDate, countdown)} className="mb-3" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Einsätze", value: data.total, icon: BarChart3 },
+          { label: "Tatverdächtige", value: data.suspects, icon: TrendingUp },
+          { label: "Geiseln", value: data.hostages, icon: TrendingUp },
+          { label: "Raubarten", value: data.sorted.length, icon: Calendar },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-secondary/50 border border-border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon className="w-4 h-4 text-muted-foreground" />
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+            </div>
+            <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
           </div>
-          <p className="text-3xl font-bold text-primary tabular-nums">{value}</p>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
-  const DonutCard = ({ data, title }: { data: ReturnType<typeof buildOverview>, title: string }) => (
+  const DonutCard = ({ data, title, resetType, resetEntry, nextDate, countdown }: {
+    data: ReturnType<typeof buildOverview>;
+    title: string;
+    resetType: string;
+    resetEntry?: any;
+    nextDate?: Date;
+    countdown?: string;
+  }) => (
     <div className="bg-card border border-border rounded-lg p-5">
-      <h2 className="font-semibold text-primary mb-5">{title}</h2>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h2 className="font-semibold text-primary">{title}</h2>
+        {(canReset || canResetDirect) && (
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => handleReset(resetType)}>
+            <RotateCw className="w-3 h-3" /> Reset
+          </Button>
+        )}
+      </div>
+      <ResetInfoBlock entries={formatResetInfo(resetEntry, nextDate, countdown)} className="mb-3" />
       {data.donutData.length === 0 ? (
         <p className="text-muted-foreground text-sm text-center py-8">Noch keine Einsätze vorhanden</p>
       ) : (
@@ -613,8 +682,21 @@ const StatistikPage = () => {
               countdown={weeklyCountdown}
             />
           </div>
-          <OverviewSummary data={overviewWeek} />
-          <DonutCard data={overviewWeek} title="Einsätze nach Raubart (Woche)" />
+          <OverviewSummary
+            data={overviewWeek}
+            resetType="overview"
+            resetEntry={lastOverviewResetEntry}
+            nextDate={weekEnd}
+            countdown={weeklyCountdown}
+          />
+          <DonutCard
+            data={overviewWeek}
+            title="Einsätze nach Raubart (Woche)"
+            resetType="overview"
+            resetEntry={lastOverviewResetEntry}
+            nextDate={weekEnd}
+            countdown={weeklyCountdown}
+          />
         </TabsContent>
 
         {/* ===== MONTH TAB ===== */}
@@ -640,8 +722,21 @@ const StatistikPage = () => {
               countdown={monthlyCountdown}
             />
           </div>
-          <OverviewSummary data={overviewMonth} />
-          <DonutCard data={overviewMonth} title="Einsätze nach Raubart (Monat)" />
+          <OverviewSummary
+            data={overviewMonth}
+            resetType="overview_monthly"
+            resetEntry={lastOverviewMonthlyResetEntry}
+            nextDate={monthEnd}
+            countdown={monthlyCountdown}
+          />
+          <DonutCard
+            data={overviewMonth}
+            title="Einsätze nach Raubart (Monat)"
+            resetType="overview_monthly"
+            resetEntry={lastOverviewMonthlyResetEntry}
+            nextDate={monthEnd}
+            countdown={monthlyCountdown}
+          />
 
           {monthlyEntries.length > 1 && (
             <div className="bg-card border border-border rounded-lg p-5">

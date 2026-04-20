@@ -205,9 +205,14 @@ const MemberPage = () => {
                     <h3 className={`font-bold text-sm ${ROLE_TEXT[role]}`}>{m.name}</h3>
                     <p className="text-[10px] text-muted-foreground mt-0.5">{ROLE_LABELS[role]}</p>
                     {(m as any).internal_dienstnummer && (
-                      <p className="text-[10px] text-primary font-mono font-semibold">{(m as any).internal_dienstnummer}</p>
+                      <div className="mt-2 inline-flex items-center gap-1 bg-primary/15 border border-primary/40 rounded-md px-2 py-0.5">
+                        <span className="text-[9px] uppercase tracking-wider text-primary/70 font-semibold">ASD</span>
+                        <span className="text-xs font-mono font-bold text-primary">{(m as any).internal_dienstnummer}</span>
+                      </div>
                     )}
-                    {m.dienstnummer && <p className="text-[10px] text-muted-foreground font-mono">{m.dienstnummer}</p>}
+                    {m.dienstnummer && (
+                      <p className="text-[10px] text-muted-foreground font-mono mt-1">PD · {m.dienstnummer}</p>
+                    )}
                   </button>
                 ))}
               </div>
