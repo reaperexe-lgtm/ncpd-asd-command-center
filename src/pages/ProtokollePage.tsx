@@ -294,10 +294,27 @@ const ProtokollePage = () => {
                         <div className={`w-10 h-10 rounded-lg bg-background/30 flex items-center justify-center ${style.text}`}>
                           <Shield className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">Protokollschreiber</p>
                           <p className={`text-base font-bold ${style.text}`}>{getProfileName(m.protokollschreiber)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Erstellt von: <span className="text-foreground/80 font-semibold">{getProfileName(m.created_by)}</span>
+                          </p>
                         </div>
+                        {canEdit && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 h-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditMissionId(m.id);
+                              setEditProtokollschreiber(m.protokollschreiber || "");
+                            }}
+                          >
+                            <Pencil className="w-3.5 h-3.5" /> Bearbeiten
+                          </Button>
+                        )}
                       </div>
 
                       {/* Location type as section title */}
