@@ -8,9 +8,8 @@ import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield,
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, UserPlus } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
