@@ -703,10 +703,6 @@ const AdminPanel = () => {
           <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
         </TabsContent>
 
-
-        <TabsContent value="logs">
-        </TabsContent>
-
         <TabsContent value="licenses">
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
