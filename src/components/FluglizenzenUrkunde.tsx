@@ -122,12 +122,12 @@ const FluglizenzenUrkunde = () => {
             {/* Name */}
             <div className="text-center w-full max-w-[70%]">
               <p
-                className="text-[clamp(1.5rem,4.5vw,3.2rem)] leading-tight text-[#1a1a1a]"
+                className="text-[clamp(1.5rem,4.5vw,3.2rem)] leading-[1.1] text-[#1a1a1a] pb-1"
                 style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
               >
                 {candidateName || "Name eingeben"}
               </p>
-              <div className="w-full h-[1px] bg-[#c9b06b]/60 mt-1" />
+              <div className="w-full h-[1px] bg-[#c9b06b]/60 mt-3" />
             </div>
 
             {/* Time text */}
@@ -141,7 +141,7 @@ const FluglizenzenUrkunde = () => {
             <div className="w-full flex justify-between items-end px-[5%]">
               <div className="text-center">
                 <p
-                  className="text-[clamp(1rem,2.5vw,1.8rem)] text-[#1a1a1a]"
+                  className="text-[clamp(1rem,2.5vw,1.8rem)] leading-[1.1] text-[#1a1a1a] pb-1"
                   style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
                 >
                   {directorName}
@@ -154,7 +154,7 @@ const FluglizenzenUrkunde = () => {
               </div>
               <div className="text-center">
                 <p
-                  className="text-[clamp(1rem,2.5vw,1.8rem)] text-[#1a1a1a]"
+                  className="text-[clamp(1rem,2.5vw,1.8rem)] leading-[1.1] text-[#1a1a1a] pb-1"
                   style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
                 >
                   {coDirectorName}

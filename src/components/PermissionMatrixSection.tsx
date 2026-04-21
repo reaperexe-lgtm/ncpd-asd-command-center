@@ -11,20 +11,10 @@ const ROLE_LABELS: Record<string, string> = {
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
 };
 
-const DEFAULT_PERMISSIONS: { key: string; label: string; description: string; defaultRoles: string[] }[] = [
-  { key: "admin_access", label: "Admin-Bereich", description: "Zugriff auf den Admin-Bereich", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "approve_users", label: "Benutzer freischalten", description: "Neue Registrierungen genehmigen/ablehnen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "change_roles", label: "Rollen ändern", description: "Benutzerrollen zuweisen und ändern", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "delete_users", label: "Benutzer löschen", description: "Benutzerkonten endgültig entfernen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "manage_licenses", label: "Fluglizenzen verwalten", description: "Fluglizenzen erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"] },
-  { key: "review_exams", label: "Prüfungen bewerten", description: "Theorie- und Praxisprüfungen bewerten", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"] },
-  { key: "delete_protocols", label: "Protokolle löschen", description: "Einsatz- und Verfolgungsprotokolle löschen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "reset_stats", label: "Statistik zurücksetzen", description: "Statistiken zurücksetzen (mit Antrag)", defaultRoles: ["admin", "director", "co_director", "ausbilder"] },
-  { key: "manage_gangs", label: "Familien/Gangs verwalten", description: "Familien und Gangs erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "edit_questions", label: "Fragen bearbeiten", description: "Theorie-Prüfungsfragen erstellen und bearbeiten", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "create_missions", label: "Einsätze erstellen", description: "Neue Einsatzprotokolle anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] },
-  { key: "create_pursuits", label: "Verfolgungen erstellen", description: "Neue 10-80 Verfolgungen anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] },
-];
+import { DEFAULT_PERMISSIONS } from "@/hooks/usePermissions";
+
+// Rollen die NICHT in der Matrix entziehbar sind (Schutz für Director / Admin)
+const PROTECTED_ROLES = new Set(["admin", "director"]);
 
 interface PermissionMatrixSectionProps {
   approved: { id: string; name: string; dienstnummer: string | null; role: string }[];
@@ -115,12 +105,20 @@ const PermissionMatrixSection = ({ approved, roleMutation }: PermissionMatrixSec
                     </td>
                     {ROLES.map(r => {
                       const isAllowed = effectiveRoles.includes(r);
+                      const isProtected = PROTECTED_ROLES.has(r);
                       return (
                         <td key={r} className="px-2 py-2 text-center">
                           <button
-                            onClick={() => togglePermission.mutate({ permKey: perm.key, role: r, currentlyAllowed: isAllowed })}
-                            className="p-1 rounded hover:bg-primary/10 transition-colors mx-auto block"
+                            onClick={() => {
+                              if (isProtected) {
+                                toast.info("Director & Admin behalten immer alle Rechte");
+                                return;
+                              }
+                              togglePermission.mutate({ permKey: perm.key, role: r, currentlyAllowed: isAllowed });
+                            }}
+                            className={`p-1 rounded mx-auto block transition-colors ${isProtected ? "cursor-not-allowed opacity-70" : "hover:bg-primary/10"}`}
                             disabled={togglePermission.isPending}
+                            title={isProtected ? "Geschützte Rolle – immer alle Rechte" : undefined}
                           >
                             {isAllowed ? (
                               <Check className="w-4 h-4 text-green-400" />

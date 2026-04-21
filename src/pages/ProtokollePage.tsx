@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useLocation } from "react-router-dom";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Pencil } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
   Staatsbank: { bg: "from-emerald-600/30 to-emerald-800/10", text: "text-emerald-300", border: "border-emerald-500/40", glow: "shadow-emerald-500/10" },
@@ -26,12 +29,16 @@ const DEFAULT_STYLE = { bg: "from-primary/20 to-primary/5", text: "text-primary"
 
 const ProtokollePage = () => {
   const { isAdmin, role } = useAuth();
-  const canDelete = isAdmin || role === "supervisor";
+  const { can } = usePermissions();
+  const canDelete = can("delete_protocols");
+  const canEdit = can("edit_protocols");
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [editMissionId, setEditMissionId] = useState<string | null>(null);
+  const [editProtokollschreiber, setEditProtokollschreiber] = useState<string>("");
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
     const t = searchParams.get("type");
     return t === "mission" || t === "pursuit" ? t : "all";
@@ -105,6 +112,21 @@ const ProtokollePage = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["pursuits"] }); toast.success("Verfolgung gelöscht"); logActivity("Verfolgung gelöscht", "verfolgung", { pursuit_id: id }); },
+  });
+
+  // Update Protokollschreiber einer Mission
+  const updateMissionWriter = useMutation({
+    mutationFn: async ({ missionId, newWriter }: { missionId: string; newWriter: string }) => {
+      const { error } = await supabase.from("missions").update({ protokollschreiber: newWriter || null }).eq("id", missionId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["missions"] });
+      toast.success("Protokollschreiber aktualisiert");
+      logActivity("Protokoll bearbeitet", "einsatz", { field: "protokollschreiber" });
+      setEditMissionId(null);
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const getProfileName = (id: string | null) => {
@@ -272,10 +294,27 @@ const ProtokollePage = () => {
                         <div className={`w-10 h-10 rounded-lg bg-background/30 flex items-center justify-center ${style.text}`}>
                           <Shield className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">Protokollschreiber</p>
                           <p className={`text-base font-bold ${style.text}`}>{getProfileName(m.protokollschreiber)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Erstellt von: <span className="text-foreground/80 font-semibold">{getProfileName(m.created_by)}</span>
+                          </p>
                         </div>
+                        {canEdit && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 h-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditMissionId(m.id);
+                              setEditProtokollschreiber(m.protokollschreiber || "");
+                            }}
+                          >
+                            <Pencil className="w-3.5 h-3.5" /> Bearbeiten
+                          </Button>
+                        )}
                       </div>
 
                       {/* Location type as section title */}
@@ -468,6 +507,12 @@ const ProtokollePage = () => {
                           <p className="text-sm leading-relaxed text-foreground/80">{p.description}</p>
                         </div>
                       )}
+                      <div className="mt-5 flex items-center gap-3 bg-background/40 rounded-lg p-3 border border-border/50">
+                        <Shield className="w-4 h-4 text-primary" />
+                        <p className="text-xs text-muted-foreground">
+                          Erstellt von: <span className="text-primary font-bold">{getProfileName(p.created_by)}</span>
+                        </p>
+                      </div>
                       <div className="grid grid-cols-2 gap-4 mt-5">
                         <div className="bg-gradient-to-br from-background/90 to-background/50 border border-border rounded-xl p-5 shadow-md shadow-black/5">
                           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">Fahrzeug</p>
@@ -539,6 +584,42 @@ const ProtokollePage = () => {
       <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
         <DialogContent className="max-w-4xl p-2 bg-background/95 border-border backdrop-blur-md shadow-2xl">
           {zoomedImage && <img src={zoomedImage} alt="Vergrößert" className="w-full h-auto max-h-[80vh] object-contain rounded-lg" />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Protokoll bearbeiten Dialog */}
+      <Dialog open={!!editMissionId} onOpenChange={(open) => !open && setEditMissionId(null)}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-primary flex items-center gap-2">
+              <Pencil className="w-4 h-4" /> Protokoll bearbeiten
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Protokollschreiber</label>
+              <Select value={editProtokollschreiber} onValueChange={setEditProtokollschreiber}>
+                <SelectTrigger className="mt-1.5 bg-background border-border">
+                  <SelectValue placeholder="Protokollschreiber auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.internal_dienstnummer ? ` [${p.internal_dienstnummer}]` : ""}
+                      {p.dienstnummer ? ` (${p.dienstnummer})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setEditMissionId(null)}>Abbrechen</Button>
+              <Button onClick={() => editMissionId && updateMissionWriter.mutate({ missionId: editMissionId, newWriter: editProtokollschreiber })} disabled={updateMissionWriter.isPending}>
+                Speichern
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

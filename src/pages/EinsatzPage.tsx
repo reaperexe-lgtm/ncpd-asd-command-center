@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Trash2, Car, FileText, Users, Shield } from "lucide-react";
+import { Plus, Trash2, Car, FileText, Users, Shield, Pencil } from "lucide-react";
 
 const LOCATIONS = ["Staatsbank","Juwelier","Human Labs","Geiselnahme","10-12 Laden","1000 Laden","Paleto Bank","Sandy Laden","Razzia","Panikbutton","Sonstiges"];
 const VEHICLE_TYPES = ["Fahrzeug","Motorrad","Helikopter","Boot"];
@@ -47,6 +47,7 @@ const EinsatzPage = () => {
   const [vehicles, setVehicles] = useState<VehicleForm[]>([]);
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<VehicleForm>({ ...emptyVehicle });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const { data: gangs } = useQuery({
     queryKey: ["gangs"],
@@ -119,16 +120,31 @@ const EinsatzPage = () => {
   };
 
   const addVehicle = () => {
-    setVehicles([...vehicles, { ...currentVehicle }]);
-    // Keep colors for next vehicle, reset everything else
-    setCurrentVehicle({
-      ...emptyVehicle,
-      primary_color: currentVehicle.primary_color,
-      secondary_color: currentVehicle.secondary_color,
-      pearl_color: currentVehicle.pearl_color,
-      neon_color: currentVehicle.neon_color,
-    });
+    if (editingIndex !== null) {
+      // Bestehendes Fahrzeug aktualisieren
+      const updated = [...vehicles];
+      updated[editingIndex] = { ...currentVehicle };
+      setVehicles(updated);
+      setEditingIndex(null);
+      setCurrentVehicle({ ...emptyVehicle });
+    } else {
+      setVehicles([...vehicles, { ...currentVehicle }]);
+      // Farben für nächstes Fahrzeug behalten
+      setCurrentVehicle({
+        ...emptyVehicle,
+        primary_color: currentVehicle.primary_color,
+        secondary_color: currentVehicle.secondary_color,
+        pearl_color: currentVehicle.pearl_color,
+        neon_color: currentVehicle.neon_color,
+      });
+    }
     setShowVehicleForm(false);
+  };
+
+  const startEditVehicle = (i: number) => {
+    setCurrentVehicle({ ...vehicles[i] });
+    setEditingIndex(i);
+    setShowVehicleForm(true);
   };
 
   return (
@@ -246,9 +262,14 @@ const EinsatzPage = () => {
                 <p className="text-xs text-muted-foreground">{v.license_plate || "Kein Kennzeichen"} {v.owner_info ? `· ${v.owner_info}` : ""}</p>
               </div>
             </div>
-            <button onClick={() => setVehicles(vehicles.filter((_, j) => j !== i))} className="text-destructive hover:text-destructive/80 transition-colors">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => startEditVehicle(i)} className="text-primary hover:text-primary/80 transition-colors p-1" title="Bearbeiten">
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button onClick={() => setVehicles(vehicles.filter((_, j) => j !== i))} className="text-destructive hover:text-destructive/80 transition-colors p-1" title="Löschen">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
 
@@ -327,8 +348,8 @@ const EinsatzPage = () => {
               )}
             </div>
             <div className="flex gap-2 justify-end pt-2">
-              <Button size="sm" onClick={addVehicle}>Fahrzeug übernehmen</Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowVehicleForm(false)}>Abbrechen</Button>
+              <Button size="sm" onClick={addVehicle}>{editingIndex !== null ? "Änderungen übernehmen" : "Fahrzeug übernehmen"}</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setShowVehicleForm(false); setEditingIndex(null); setCurrentVehicle({ ...emptyVehicle }); }}>Abbrechen</Button>
             </div>
           </div>
         )}

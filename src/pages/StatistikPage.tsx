@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "hsl(160, 60%, 45%)",
@@ -109,8 +110,11 @@ function useCountdown(targetDate: Date | null) {
 
 const StatistikPage = () => {
   const { isAdmin, role, user } = useAuth();
-  const canReset = ["director", "co_director", "supervisor"].includes(role || "");
-  const canResetDirect = isAdmin;
+  const { can } = usePermissions();
+  // canReset wird jetzt aus permission_settings gelesen (mit Director/Admin-Schutz im Hook)
+  const canReset = can("reset_stats");
+  // Direkt-Reset (ohne Antrag): nur Admin/Director (geschützt) ODER expliziter reset_stats + admin_access
+  const canResetDirect = isAdmin && can("reset_stats");
   const queryClient = useQueryClient();
   const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } | null>(null);
   const [resetDialog, setResetDialog] = useState<string | null>(null);
@@ -647,6 +651,30 @@ const StatistikPage = () => {
             <RotateCw className="w-4 h-4" /> Alles zurücksetzen
           </Button>
         )}
+      </div>
+
+      {/* Auto-Reset Infoleiste */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-lg p-3 flex items-center justify-between flex-wrap gap-3 text-xs">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock className="w-4 h-4 text-primary shrink-0" />
+          <span>
+            <span className="text-primary font-bold">{(resets || []).filter((r: any) => !r.reset_by).length}</span> automatische Resets gesamt
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="w-3.5 h-3.5 text-primary/70" />
+            <span className="text-muted-foreground">Nächster Wochen-Reset:</span>
+            <span className="text-primary font-bold tabular-nums">{weekEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} 18:20</span>
+            <span className="text-primary/60">({weeklyCountdown})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CalendarRange className="w-3.5 h-3.5 text-primary/70" />
+            <span className="text-muted-foreground">Nächster Monats-Reset:</span>
+            <span className="text-primary font-bold tabular-nums">{monthEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" })}</span>
+            <span className="text-primary/60">({monthlyCountdown})</span>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="weekly" className="w-full">
