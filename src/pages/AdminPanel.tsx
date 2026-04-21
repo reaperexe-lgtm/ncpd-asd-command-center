@@ -184,6 +184,45 @@ const AdminPanel = () => {
 
   const pendingRequestCount = resetRequests?.filter((r: any) => r.status === "pending").length || 0;
 
+  // Aktive Fluglizenzen + Match auf User-Accounts
+  const { data: licenseHolders, isLoading: licenseLoading } = useQuery({
+    queryKey: ["admin-license-holders"],
+    queryFn: async () => {
+      const { data: licenses } = await supabase
+        .from("flight_licenses")
+        .select("*")
+        .order("license_date", { ascending: false });
+      if (!licenses?.length) return [];
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved");
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+
+      const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase();
+      return licenses.map((lic: any) => {
+        const match = profiles?.find(
+          (p) => norm(p.name) === norm(lic.name) || (p.dienstnummer && norm(p.dienstnummer) === norm(lic.name))
+        );
+        const role = match ? roles?.find((r) => r.user_id === match.id)?.role : null;
+        const expiry = new Date(lic.license_date);
+        expiry.setMonth(expiry.getMonth() + 4);
+        const now = new Date();
+        const isExpired = expiry <= now;
+        const isExpiringSoon = !isExpired && expiry <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return {
+          ...lic,
+          matched: !!match,
+          profile: match || null,
+          role,
+          expiry_date: expiry.toISOString(),
+          status_calc: isExpired ? "expired" : isExpiringSoon ? "expiring_soon" : "active",
+        };
+      });
+    },
+    enabled: isAdmin && activeTab === "licenses",
+  });
+
   // Realtime: activity logs
   useEffect(() => {
     if (activeTab !== "logs" || !isAdmin) return;
@@ -411,7 +450,7 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-7 w-full max-w-3xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
           </TabsTrigger>
@@ -425,6 +464,9 @@ const AdminPanel = () => {
           </TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5 text-xs">
             <Lock className="w-3.5 h-3.5" /> Rechte
+          </TabsTrigger>
+          <TabsTrigger value="licenses" className="gap-1.5 text-xs">
+            <Plane className="w-3.5 h-3.5" /> Lizenzen
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-1.5 text-xs">
             <ScrollText className="w-3.5 h-3.5" /> Aktivität
