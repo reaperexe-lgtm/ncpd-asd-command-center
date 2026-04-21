@@ -507,6 +507,12 @@ const ProtokollePage = () => {
                           <p className="text-sm leading-relaxed text-foreground/80">{p.description}</p>
                         </div>
                       )}
+                      <div className="mt-5 flex items-center gap-3 bg-background/40 rounded-lg p-3 border border-border/50">
+                        <Shield className="w-4 h-4 text-primary" />
+                        <p className="text-xs text-muted-foreground">
+                          Erstellt von: <span className="text-primary font-bold">{getProfileName(p.created_by)}</span>
+                        </p>
+                      </div>
                       <div className="grid grid-cols-2 gap-4 mt-5">
                         <div className="bg-gradient-to-br from-background/90 to-background/50 border border-border rounded-xl p-5 shadow-md shadow-black/5">
                           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">Fahrzeug</p>
@@ -578,6 +584,42 @@ const ProtokollePage = () => {
       <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
         <DialogContent className="max-w-4xl p-2 bg-background/95 border-border backdrop-blur-md shadow-2xl">
           {zoomedImage && <img src={zoomedImage} alt="Vergrößert" className="w-full h-auto max-h-[80vh] object-contain rounded-lg" />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Protokoll bearbeiten Dialog */}
+      <Dialog open={!!editMissionId} onOpenChange={(open) => !open && setEditMissionId(null)}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-primary flex items-center gap-2">
+              <Pencil className="w-4 h-4" /> Protokoll bearbeiten
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Protokollschreiber</label>
+              <Select value={editProtokollschreiber} onValueChange={setEditProtokollschreiber}>
+                <SelectTrigger className="mt-1.5 bg-background border-border">
+                  <SelectValue placeholder="Protokollschreiber auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.internal_dienstnummer ? ` [${p.internal_dienstnummer}]` : ""}
+                      {p.dienstnummer ? ` (${p.dienstnummer})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setEditMissionId(null)}>Abbrechen</Button>
+              <Button onClick={() => editMissionId && updateMissionWriter.mutate({ missionId: editMissionId, newWriter: editProtokollschreiber })} disabled={updateMissionWriter.isPending}>
+                Speichern
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
