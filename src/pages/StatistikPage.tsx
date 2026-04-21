@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "hsl(160, 60%, 45%)",
@@ -109,8 +110,11 @@ function useCountdown(targetDate: Date | null) {
 
 const StatistikPage = () => {
   const { isAdmin, role, user } = useAuth();
-  const canReset = ["director", "co_director", "supervisor"].includes(role || "");
-  const canResetDirect = isAdmin;
+  const { can } = usePermissions();
+  // canReset wird jetzt aus permission_settings gelesen (mit Director/Admin-Schutz im Hook)
+  const canReset = can("reset_stats");
+  // Direkt-Reset (ohne Antrag): nur Admin/Director (geschützt) ODER expliziter reset_stats + admin_access
+  const canResetDirect = isAdmin && can("reset_stats");
   const queryClient = useQueryClient();
   const [selectedWriter, setSelectedWriter] = useState<{ id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" } | null>(null);
   const [resetDialog, setResetDialog] = useState<string | null>(null);
