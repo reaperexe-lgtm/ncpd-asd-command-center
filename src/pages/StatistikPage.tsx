@@ -653,6 +653,30 @@ const StatistikPage = () => {
         )}
       </div>
 
+      {/* Auto-Reset Infoleiste */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-lg p-3 flex items-center justify-between flex-wrap gap-3 text-xs">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock className="w-4 h-4 text-primary shrink-0" />
+          <span>
+            <span className="text-primary font-bold">{(resets || []).filter((r: any) => !r.reset_by).length}</span> automatische Resets gesamt
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="w-3.5 h-3.5 text-primary/70" />
+            <span className="text-muted-foreground">Nächster Wochen-Reset:</span>
+            <span className="text-primary font-bold tabular-nums">{weekEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} 18:20</span>
+            <span className="text-primary/60">({weeklyCountdown})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CalendarRange className="w-3.5 h-3.5 text-primary/70" />
+            <span className="text-muted-foreground">Nächster Monats-Reset:</span>
+            <span className="text-primary font-bold tabular-nums">{monthEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" })}</span>
+            <span className="text-primary/60">({monthlyCountdown})</span>
+          </div>
+        </div>
+      </div>
+
       <Tabs defaultValue="weekly" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="weekly" className="gap-2">
