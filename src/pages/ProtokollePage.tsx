@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useLocation } from "react-router-dom";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Pencil, UserPlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
   Staatsbank: { bg: "from-emerald-600/30 to-emerald-800/10", text: "text-emerald-300", border: "border-emerald-500/40", glow: "shadow-emerald-500/10" },
@@ -26,12 +30,16 @@ const DEFAULT_STYLE = { bg: "from-primary/20 to-primary/5", text: "text-primary"
 
 const ProtokollePage = () => {
   const { isAdmin, role } = useAuth();
-  const canDelete = isAdmin || role === "supervisor";
+  const { can } = usePermissions();
+  const canDelete = can("delete_protocols");
+  const canEdit = can("edit_protocols");
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [editMissionId, setEditMissionId] = useState<string | null>(null);
+  const [editProtokollschreiber, setEditProtokollschreiber] = useState<string>("");
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
     const t = searchParams.get("type");
     return t === "mission" || t === "pursuit" ? t : "all";
@@ -105,6 +113,21 @@ const ProtokollePage = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["pursuits"] }); toast.success("Verfolgung gelöscht"); logActivity("Verfolgung gelöscht", "verfolgung", { pursuit_id: id }); },
+  });
+
+  // Update Protokollschreiber einer Mission
+  const updateMissionWriter = useMutation({
+    mutationFn: async ({ missionId, newWriter }: { missionId: string; newWriter: string }) => {
+      const { error } = await supabase.from("missions").update({ protokollschreiber: newWriter || null }).eq("id", missionId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["missions"] });
+      toast.success("Protokollschreiber aktualisiert");
+      logActivity("Protokoll bearbeitet", "einsatz", { field: "protokollschreiber" });
+      setEditMissionId(null);
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const getProfileName = (id: string | null) => {
