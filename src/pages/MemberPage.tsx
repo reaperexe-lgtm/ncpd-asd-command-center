@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, FileText, Siren, Plane, Upload, Trash2, Plus } from "lucide-react";
+import { Users, FileText, Siren, Plane, Upload, Trash2, Plus, Search, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ const MemberPage = () => {
   const queryClient = useQueryClient();
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [search, setSearch] = useState("");
 
   const canManageLicenses = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
@@ -162,10 +163,21 @@ const MemberPage = () => {
 
   // Group by role
   const grouped: Record<string, typeof members> = {};
-  members?.forEach((m) => {
+  const filtered = members?.filter((m) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase().trim();
+    return (
+      (m.internal_dienstnummer || "").toLowerCase().includes(q) ||
+      (m.dienstnummer || "").toLowerCase().includes(q) ||
+      m.name?.toLowerCase().includes(q)
+    );
+  });
+  filtered?.forEach((m) => {
     if (!grouped[m.role]) grouped[m.role] = [];
     grouped[m.role]!.push(m);
   });
+
+  const missingAsdCount = members?.filter((m) => !m.internal_dienstnummer && !["trial_member"].includes(m.role)).length || 0;
 
   return (
     <div className="space-y-6">
@@ -175,6 +187,25 @@ const MemberPage = () => {
           <h1 className="text-2xl font-bold text-primary">Member</h1>
           <p className="text-xs text-muted-foreground">{members?.length || 0} aktive Mitglieder</p>
         </div>
+      </div>
+
+      {/* Suchleiste + Hinweis */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Nach interner ASD-DN, PD-DN oder Name suchen..."
+            className="pl-9 bg-background border-border"
+          />
+        </div>
+        {missingAsdCount > 0 && (
+          <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300">
+            <AlertCircle className="w-3.5 h-3.5" />
+            {missingAsdCount} Mitglied{missingAsdCount === 1 ? "" : "er"} ohne ASD-DN
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -208,6 +239,12 @@ const MemberPage = () => {
                       <div className="mt-2 inline-flex items-center gap-1 bg-primary/15 border border-primary/40 rounded-md px-2 py-0.5">
                         <span className="text-[9px] uppercase tracking-wider text-primary/70 font-semibold">ASD</span>
                         <span className="text-xs font-mono font-bold text-primary">{(m as any).internal_dienstnummer}</span>
+                      </div>
+                    )}
+                    {!(m as any).internal_dienstnummer && role !== "trial_member" && (
+                      <div className="mt-2 inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 rounded-md px-2 py-0.5">
+                        <AlertCircle className="w-3 h-3 text-amber-300" />
+                        <span className="text-[9px] uppercase tracking-wider text-amber-300 font-semibold">Keine ASD-DN</span>
                       </div>
                     )}
                     {m.dienstnummer && (
