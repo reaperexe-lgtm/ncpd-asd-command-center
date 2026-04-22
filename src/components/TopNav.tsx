@@ -17,8 +17,15 @@ const navItems = [
   { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
 ];
 
-// Items, die für Fluglizenz-Inhaber ausgeblendet werden
-const FLIGHT_LICENSE_HIDDEN = new Set(["/aufstellungsprotokoll", "/bewerbungssperre", "/fluglizenzen"]);
+// Items, die für Fluglizenz-Inhaber sichtbar sind (alle anderen werden ausgeblendet)
+const FLIGHT_LICENSE_VISIBLE = new Set([
+  "/",
+  "/gambling",
+  "/verfolgung",
+  "/einsatz",
+  "/familien",
+  "/member",
+]);
 
 const TopNav = () => {
   const [time, setTime] = useState(new Date());
@@ -27,7 +34,7 @@ const TopNav = () => {
   const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
   const isFlightLicense = role === "flight_license";
   const visibleNavItems = isFlightLicense
-    ? navItems.filter((i) => !FLIGHT_LICENSE_HIDDEN.has(i.to))
+    ? navItems.filter((i) => FLIGHT_LICENSE_VISIBLE.has(i.to))
     : navItems;
 
   useEffect(() => {
