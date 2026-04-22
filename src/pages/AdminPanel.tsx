@@ -185,41 +185,28 @@ const AdminPanel = () => {
 
   const pendingRequestCount = resetRequests?.filter((r: any) => r.status === "pending").length || 0;
 
-  // Aktive Fluglizenzen + Match auf User-Accounts
+  // User-Accounts mit der Rolle "Fluglizenz"
   const { data: licenseHolders, isLoading: licenseLoading } = useQuery({
     queryKey: ["admin-license-holders"],
     queryFn: async () => {
-      const { data: licenses } = await supabase
-        .from("flight_licenses")
-        .select("*")
-        .order("license_date", { ascending: false });
-      if (!licenses?.length) return [];
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .eq("role", "flight_license");
+      if (!roles?.length) return [];
 
+      const userIds = roles.map((r: any) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved");
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+        .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved, created_at")
+        .in("id", userIds);
 
-      const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase();
-      return licenses.map((lic: any) => {
-        const match = profiles?.find(
-          (p) => norm(p.name) === norm(lic.name) || (p.dienstnummer && norm(p.dienstnummer) === norm(lic.name))
-        );
-        const role = match ? roles?.find((r) => r.user_id === match.id)?.role : null;
-        const expiry = new Date(lic.license_date);
-        expiry.setMonth(expiry.getMonth() + 4);
-        const now = new Date();
-        const isExpired = expiry <= now;
-        const isExpiringSoon = !isExpired && expiry <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        return {
-          ...lic,
-          matched: !!match,
-          profile: match || null,
-          role,
-          expiry_date: expiry.toISOString(),
-          status_calc: isExpired ? "expired" : isExpiringSoon ? "expiring_soon" : "active",
-        };
-      });
+      return (profiles || []).map((p: any) => ({
+        id: p.id,
+        profile: p,
+        role: "flight_license",
+        created_at: p.created_at,
+      }));
     },
     enabled: isAdmin && activeTab === "licenses",
   });
@@ -710,23 +697,15 @@ const AdminPanel = () => {
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                 <Plane className="w-4 h-4" /> Fluglizenz-Inhaber
               </h2>
-              <div className="flex gap-3 text-[10px]">
-                <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">
-                  Aktiv: {licenseHolders?.filter((l: any) => l.status_calc === "active").length || 0}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 font-medium">
-                  Läuft ab: {licenseHolders?.filter((l: any) => l.status_calc === "expiring_soon").length || 0}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">
-                  Abgelaufen: {licenseHolders?.filter((l: any) => l.status_calc === "expired").length || 0}
-                </span>
-              </div>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 font-medium text-[10px]">
+                Gesamt: {licenseHolders?.length || 0}
+              </span>
             </div>
             {licenseLoading ? (
               <div className="flex justify-center py-8"><div className="text-primary animate-pulse text-sm">Lade...</div></div>
             ) : !licenseHolders?.length ? (
               <div className="text-center py-12 text-sm text-muted-foreground bg-card border border-border rounded-lg">
-                Keine Fluglizenzen vorhanden
+                Keine User mit der Rolle "Fluglizenz" vorhanden
               </div>
             ) : (
               <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -734,61 +713,37 @@ const AdminPanel = () => {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border bg-background/50">
-                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Name (Lizenz)</th>
-                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">User-Account</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">User</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Interne DN</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
-                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Team / Einheit</th>
-                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Ausgestellt</th>
-                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Läuft ab</th>
-                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Registriert</th>
                       </tr>
                     </thead>
                     <tbody>
                       {licenseHolders.map((lic: any) => (
                         <tr key={lic.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
-                          <td className="px-4 py-3 font-medium">{lic.name}</td>
                           <td className="px-4 py-3">
-                            {lic.matched ? (
-                              <div className="flex items-center gap-2">
-                                {lic.profile?.image_url && (
-                                  <img src={lic.profile.image_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                                )}
-                                <div>
-                                  <p className="text-xs font-medium">{lic.profile.name}</p>
-                                  <p className="text-[10px] text-muted-foreground font-mono">{lic.profile.dienstnummer || "–"}</p>
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 italic">
-                                Kein Account verknüpft
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {lic.profile?.image_url && (
+                                <img src={lic.profile.image_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                              )}
+                              <span className="font-medium text-xs">{lic.profile?.name || "–"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs">
+                            {lic.profile?.dienstnummer || <span className="text-muted-foreground">–</span>}
                           </td>
                           <td className="px-4 py-3 font-mono text-xs">
                             {lic.profile?.internal_dienstnummer || <span className="text-muted-foreground">–</span>}
                           </td>
                           <td className="px-4 py-3 text-xs">
-                            {lic.role ? ROLE_LABELS[lic.role] || lic.role : <span className="text-muted-foreground">–</span>}
-                          </td>
-                          <td className="px-4 py-3 text-xs">
-                            <div>{lic.team}</div>
-                            <div className="text-[10px] text-muted-foreground">{lic.unit || "–"}</div>
-                          </td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
-                            {new Date(lic.license_date).toLocaleDateString("de-DE")}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
-                            {new Date(lic.expiry_date).toLocaleDateString("de-DE")}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              lic.status_calc === "active" ? "bg-green-500/10 text-green-400" :
-                              lic.status_calc === "expiring_soon" ? "bg-yellow-500/10 text-yellow-400" :
-                              "bg-destructive/10 text-destructive"
-                            }`}>
-                              {lic.status_calc === "active" ? "Aktiv" : lic.status_calc === "expiring_soon" ? "Läuft bald ab" : "Abgelaufen"}
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 font-medium">
+                              {ROLE_LABELS[lic.role] || lic.role}
                             </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
+                            {lic.created_at ? new Date(lic.created_at).toLocaleDateString("de-DE") : "–"}
                           </td>
                         </tr>
                       ))}
