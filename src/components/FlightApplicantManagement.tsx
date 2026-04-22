@@ -121,12 +121,12 @@ const FlightApplicantManagement = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Approve: change role flight_applicant → trial_member, create flight_licenses entry
+  // Approve: change role flight_applicant → flight_license, create flight_licenses entry
   const approveMutation = useMutation({
     mutationFn: async (applicant: any) => {
       const { error: roleError } = await supabase
         .from("user_roles")
-        .update({ role: "trial_member" })
+        .update({ role: "flight_license" })
         .eq("user_id", applicant.id);
       if (roleError) throw roleError;
 
