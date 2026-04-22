@@ -201,11 +201,21 @@ const AdminPanel = () => {
         .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved, created_at")
         .in("id", userIds);
 
+      const { data: validity } = await supabase
+        .from("flight_license_validity")
+        .select("user_id, valid_until")
+        .in("user_id", userIds);
+
+      const validityMap = new Map<string, string>(
+        (validity || []).map((v: any) => [v.user_id, v.valid_until]),
+      );
+
       return (profiles || []).map((p: any) => ({
         id: p.id,
         profile: p,
         role: "flight_license",
         created_at: p.created_at,
+        valid_until: validityMap.get(p.id) || null,
       }));
     },
     enabled: isAdmin && activeTab === "licenses",
