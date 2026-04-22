@@ -22,6 +22,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AusbilderPage from "./pages/AusbilderPage";
 import AufstellungsprotokollPage from "./pages/AufstellungsprotokollPage";
 import ASDApplicantDashboard from "./pages/ASDApplicantDashboard";
+import FlightApplicantDashboard from "./pages/FlightApplicantDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const ProtectedRoutes = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
   if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
+  if (role === "flight_applicant") return <Navigate to="/flight-dashboard" replace />;
   if (!isApproved) return <WaitingApproval />;
 
   return (
@@ -72,6 +74,14 @@ const ASDDashboardRoute = () => {
   return <ASDApplicantDashboard />;
 };
 
+const FlightDashboardRoute = () => {
+  const { user, role, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="text-primary animate-pulse">Laden...</div></div>;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (role !== "flight_applicant") return <Navigate to="/" replace />;
+  return <FlightApplicantDashboard />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -82,6 +92,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/asd-dashboard" element={<ASDDashboardRoute />} />
+            <Route path="/flight-dashboard" element={<FlightDashboardRoute />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </AuthProvider>
