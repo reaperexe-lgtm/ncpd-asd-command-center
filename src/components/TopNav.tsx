@@ -23,7 +23,9 @@ const FLIGHT_LICENSE_VISIBLE = new Set([
   "/gambling",
   "/verfolgung",
   "/einsatz",
+  "/protokolle",
   "/familien",
+  "/statistik",
   "/member",
 ]);
 
