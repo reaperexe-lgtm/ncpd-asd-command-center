@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plane, Search } from "lucide-react";
+import { Plane, Search, FileText, Siren, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const FluglizenzMemberPage = () => {
   const [search, setSearch] = useState("");
+  const [selectedMember, setSelectedMember] = useState<any>(null);
 
   const { data: members, isLoading } = useQuery({
     queryKey: ["flight-license-members"],
@@ -21,6 +23,37 @@ const FluglizenzMemberPage = () => {
         .select("*")
         .in("id", userIds);
       return profiles || [];
+    },
+  });
+
+  const { data: memberStats } = useQuery({
+    queryKey: ["flight-member-stats", selectedMember?.id],
+    enabled: !!selectedMember,
+    queryFn: async () => {
+      const uid = selectedMember.id;
+      const name = selectedMember.name;
+      const { count: missionsCreated } = await supabase.from("missions").select("*", { count: "exact", head: true }).eq("created_by", uid);
+      const { count: protokolle } = await supabase.from("missions").select("*", { count: "exact", head: true }).eq("protokollschreiber", uid);
+      const { count: pursuitsCreated } = await supabase.from("pursuits").select("*", { count: "exact", head: true }).eq("created_by", uid);
+      const { data: allMissions } = await supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner");
+      let missionsCrew = 0;
+      allMissions?.forEach((m) => {
+        if ([m.pilot, m.co_pilot, m.left_gunner, m.right_gunner].includes(name)) missionsCrew++;
+      });
+      const { data: allPursuits } = await supabase.from("pursuits").select("pilot, co_pilot, left_gunner, right_gunner");
+      let pursuitsCrew = 0;
+      allPursuits?.forEach((p) => {
+        if ([p.pilot, p.co_pilot, p.left_gunner, p.right_gunner].includes(name)) pursuitsCrew++;
+      });
+      const { count: flightLicenses } = await supabase.from("flight_licenses").select("*", { count: "exact", head: true }).eq("name", name);
+      return {
+        missionsCreated: missionsCreated || 0,
+        protokolle: protokolle || 0,
+        pursuitsCreated: pursuitsCreated || 0,
+        missionsCrew,
+        pursuitsCrew,
+        flightLicenses: flightLicenses || 0,
+      };
     },
   });
 
