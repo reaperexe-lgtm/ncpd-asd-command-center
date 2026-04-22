@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3, Phone } from "lucide-react";
+import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3, Phone, Plane } from "lucide-react";
 import TheoryExamResultsPage from "./TheoryExamResultsPage";
 import TrainingModules from "@/components/TrainingModules";
 import PracticalExam from "@/components/PracticalExam";
@@ -9,7 +9,6 @@ import ASDApplicantManagement from "@/components/ASDApplicantManagement";
 import FlightApplicantManagement from "@/components/FlightApplicantManagement";
 import AusbilderStatistik from "@/components/AusbilderStatistik";
 import AusbilderKontakte from "@/components/AusbilderKontakte";
-import { Plane } from "lucide-react";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
