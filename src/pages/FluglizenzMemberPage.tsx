@@ -103,9 +103,10 @@ const FluglizenzMemberPage = () => {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {filtered.map((m: any) => (
-            <div
+            <button
               key={m.id}
-              className="bg-gradient-to-b from-sky-500/20 to-sky-500/5 border border-sky-500/30 rounded-lg p-4"
+              onClick={() => setSelectedMember(m)}
+              className="bg-gradient-to-b from-sky-500/20 to-sky-500/5 border border-sky-500/30 rounded-lg p-4 hover:scale-[1.02] transition-transform duration-150 text-left"
             >
               <div className="aspect-square bg-background/50 rounded-md overflow-hidden border border-border/50 mb-3">
                 {m.image_url ? (
@@ -124,10 +125,55 @@ const FluglizenzMemberPage = () => {
               {m.dienstnummer && (
                 <p className="text-[10px] text-muted-foreground font-mono mt-2">PD · {m.dienstnummer}</p>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      <Dialog open={!!selectedMember} onOpenChange={(open) => { if (!open) setSelectedMember(null); }}>
+        <DialogContent className="sm:max-w-lg bg-card border-border max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sky-300 flex items-center gap-3">
+              {selectedMember?.image_url ? (
+                <img src={selectedMember.image_url} alt="" className="w-10 h-10 rounded-full object-cover border border-border" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-300 font-bold">
+                  {selectedMember?.name?.charAt(0)?.toUpperCase()}
+                </div>
+              )}
+              <div>
+                <span>{selectedMember?.name}</span>
+                <p className="text-xs text-muted-foreground font-normal flex items-center gap-1">
+                  <Plane className="w-3 h-3" /> Fluglizenz
+                  {selectedMember?.dienstnummer && ` · PD ${selectedMember.dienstnummer}`}
+                </p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Statistiken</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: FileText, label: "Einsätze erstellt", value: memberStats?.missionsCreated },
+                { icon: FileText, label: "Protokolle geschrieben", value: memberStats?.protokolle },
+                { icon: Siren, label: "10-80 erstellt", value: memberStats?.pursuitsCreated },
+                { icon: Users, label: "Einsatz-Besatzung", value: memberStats?.missionsCrew },
+                { icon: Siren, label: "10-80 Besatzung", value: memberStats?.pursuitsCrew },
+                { icon: Plane, label: "Fluglizenzen", value: memberStats?.flightLicenses },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="bg-background/50 border border-border/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon className="w-3.5 h-3.5 text-sky-400/60" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</span>
+                  </div>
+                  <p className="text-xl font-bold text-sky-300 tabular-nums">{value ?? "–"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
