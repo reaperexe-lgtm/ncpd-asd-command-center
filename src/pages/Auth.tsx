@@ -19,6 +19,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showFlugAnmeldung, setShowFlugAnmeldung] = useState(false);
   const [isASDSignup, setIsASDSignup] = useState(false);
+  const [isFlightSignup, setIsFlightSignup] = useState(false);
   const [dienstnummer, setDienstnummer] = useState("");
   const [password, setPassword] = useState("");
   const [vorname, setVorname] = useState("");
@@ -28,6 +29,7 @@ const Auth = () => {
   if (authLoading) return null;
   if (user) {
     if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
+    if (role === "flight_applicant") return <Navigate to="/flight-dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -54,18 +56,20 @@ const Auth = () => {
               name: fullName,
               dienstnummer,
               ...(isASDSignup ? { is_asd_applicant: true } : {}),
+              ...(isFlightSignup ? { is_flight_applicant: true } : {}),
             },
             emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
         toast.success(
-          isASDSignup
+          isASDSignup || isFlightSignup
             ? "Registrierung erfolgreich! Du kannst dich jetzt anmelden."
             : "Registrierung erfolgreich! Bitte warte auf die Freischaltung."
         );
-        if (isASDSignup) {
+        if (isASDSignup || isFlightSignup) {
           setIsASDSignup(false);
+          setIsFlightSignup(false);
           setIsLogin(true);
         }
       }
@@ -99,18 +103,20 @@ const Auth = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary tracking-tight">Air Support Division</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {isASDSignup
-                ? "Registriere dich als ASD-Bewerber"
-                : isLogin
-                  ? "Melde dich an, um fortzufahren"
-                  : "Erstelle deinen Zugang"}
+              {isFlightSignup
+                ? "Registriere dich als Fluglizenz-Bewerber"
+                : isASDSignup
+                  ? "Registriere dich als ASD-Bewerber"
+                  : isLogin
+                    ? "Melde dich an, um fortzufahren"
+                    : "Erstelle deinen Zugang"}
             </p>
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-lg shadow-primary/[0.03]">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {(!isLogin || isASDSignup) && (
+            {(!isLogin || isASDSignup || isFlightSignup) && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="vorname" className="text-xs">Vorname</Label>
@@ -146,7 +152,15 @@ const Auth = () => {
             </div>
 
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
-              {loading ? "Laden..." : isASDSignup ? "Als ASD-Bewerber registrieren" : isLogin ? "Anmelden" : "Registrieren"}
+              {loading
+                ? "Laden..."
+                : isFlightSignup
+                  ? "Als Fluglizenz-Bewerber registrieren"
+                  : isASDSignup
+                    ? "Als ASD-Bewerber registrieren"
+                    : isLogin
+                      ? "Anmelden"
+                      : "Registrieren"}
             </Button>
           </form>
         </div>
@@ -162,6 +176,7 @@ const Auth = () => {
           <button
             onClick={() => {
               setIsASDSignup(true);
+              setIsFlightSignup(false);
               setIsLogin(false);
             }}
             className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
@@ -169,11 +184,22 @@ const Auth = () => {
             <GraduationCap className="w-4 h-4" />
             ASD-Bewerber Registrierung
           </button>
+          <button
+            onClick={() => {
+              setIsFlightSignup(true);
+              setIsASDSignup(false);
+              setIsLogin(false);
+            }}
+            className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
+          >
+            <Plane className="w-4 h-4" />
+            Fluglizenz-Bewerber Registrierung
+          </button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          {isASDSignup ? (
-            <button onClick={() => { setIsASDSignup(false); setIsLogin(true); }} className="text-primary hover:underline font-medium">
+          {(isASDSignup || isFlightSignup) ? (
+            <button onClick={() => { setIsASDSignup(false); setIsFlightSignup(false); setIsLogin(true); }} className="text-primary hover:underline font-medium">
               Zurück zur Anmeldung
             </button>
           ) : (

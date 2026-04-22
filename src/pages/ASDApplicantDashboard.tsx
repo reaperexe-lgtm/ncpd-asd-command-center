@@ -392,7 +392,11 @@ const ASDApplicantDashboard = () => {
           </TabsContent>
 
           <TabsContent value="leitfaden" className="mt-6">
-            <LeitfadenContent />
+            <LeitfadenContent
+              hideVorabpruefung
+              onNavigateToTheorieausbildung={() => setActiveTab("theorie")}
+              onNavigateToTheoriepruefung={() => setActiveTab("pruefung")}
+            />
           </TabsContent>
 
           <TabsContent value="theorie" className="mt-6">
