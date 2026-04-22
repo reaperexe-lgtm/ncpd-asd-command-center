@@ -202,6 +202,30 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_license_validity: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
       flight_licenses: {
         Row: {
           created_at: string

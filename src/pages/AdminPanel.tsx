@@ -201,11 +201,21 @@ const AdminPanel = () => {
         .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved, created_at")
         .in("id", userIds);
 
+      const { data: validity } = await supabase
+        .from("flight_license_validity")
+        .select("user_id, valid_until")
+        .in("user_id", userIds);
+
+      const validityMap = new Map<string, string>(
+        (validity || []).map((v: any) => [v.user_id, v.valid_until]),
+      );
+
       return (profiles || []).map((p: any) => ({
         id: p.id,
         profile: p,
         role: "flight_license",
         created_at: p.created_at,
+        valid_until: validityMap.get(p.id) || null,
       }));
     },
     enabled: isAdmin && activeTab === "licenses",
@@ -308,6 +318,36 @@ const AdminPanel = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("Benutzer gelöscht");
       logActivity("Benutzer gelöscht", "admin", { target_user_id: userId });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const licenseValidityMutation = useMutation({
+    mutationFn: async ({ userId, validUntil }: { userId: string; validUntil: string | null }) => {
+      if (!validUntil) {
+        const { error } = await supabase
+          .from("flight_license_validity")
+          .delete()
+          .eq("user_id", userId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase
+        .from("flight_license_validity")
+        .upsert({ user_id: userId, valid_until: validUntil }, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-license-holders"] });
+      toast.success(vars.validUntil ? "Gültigkeit gespeichert" : "Gültigkeit entfernt");
+      const targetName = licenseHolders?.find((l: any) => l.id === vars.userId)?.profile?.name || "Unbekannt";
+      logActivity(
+        vars.validUntil
+          ? `Lizenz-Gültigkeit gesetzt: ${vars.validUntil}`
+          : `Lizenz-Gültigkeit entfernt`,
+        "admin",
+        { target_user_id: vars.userId, target_name: targetName, valid_until: vars.validUntil },
+      );
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -717,11 +757,33 @@ const AdminPanel = () => {
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Interne DN</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Gültig bis</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Registriert</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {licenseHolders.map((lic: any) => (
+                      {licenseHolders.map((lic: any) => {
+                        const validUntil: string | null = lic.valid_until || null;
+                        let statusLabel = "Nicht gesetzt";
+                        let statusClass = "bg-muted text-muted-foreground";
+                        if (validUntil) {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const expiry = new Date(validUntil);
+                          const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+                          if (diffDays < 0) {
+                            statusLabel = "Abgelaufen";
+                            statusClass = "bg-red-500/10 text-red-400";
+                          } else if (diffDays <= 14) {
+                            statusLabel = `Läuft bald ab (${diffDays}T)`;
+                            statusClass = "bg-yellow-500/10 text-yellow-400";
+                          } else {
+                            statusLabel = "Aktiv";
+                            statusClass = "bg-emerald-500/10 text-emerald-400";
+                          }
+                        }
+                        return (
                         <tr key={lic.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -742,11 +804,43 @@ const AdminPanel = () => {
                               {ROLE_LABELS[lic.role] || lic.role}
                             </span>
                           </td>
+                          <td className="px-4 py-3 text-xs">
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="date"
+                                defaultValue={validUntil || ""}
+                                onBlur={(e) => {
+                                  const newVal = e.target.value || null;
+                                  if ((newVal || null) !== (validUntil || null)) {
+                                    licenseValidityMutation.mutate({ userId: lic.id, validUntil: newVal });
+                                  }
+                                }}
+                                className="h-7 text-xs w-36 bg-background"
+                              />
+                              {validUntil && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => licenseValidityMutation.mutate({ userId: lic.id, validUntil: null })}
+                                  title="Gültigkeit entfernen"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
                             {lic.created_at ? new Date(lic.created_at).toLocaleDateString("de-DE") : "–"}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
