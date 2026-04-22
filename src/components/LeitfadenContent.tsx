@@ -10,7 +10,17 @@ import {
   BookOpen, MapPin, Crosshair, Navigation, Clock, Plane
 } from "lucide-react";
 
-const LeitfadenContent = ({ onNavigateToExam }: { onNavigateToExam?: (examType: "ASD1" | "ASD2") => void }) => {
+const LeitfadenContent = ({
+  onNavigateToExam,
+  hideVorabpruefung = false,
+  onNavigateToTheorieausbildung,
+  onNavigateToTheoriepruefung,
+}: {
+  onNavigateToExam?: (examType: "ASD1" | "ASD2") => void;
+  hideVorabpruefung?: boolean;
+  onNavigateToTheorieausbildung?: () => void;
+  onNavigateToTheoriepruefung?: () => void;
+}) => {
   return (
     <div className="space-y-8">
       {/* Cover */}
@@ -27,31 +37,33 @@ const LeitfadenContent = ({ onNavigateToExam }: { onNavigateToExam?: (examType: 
       </div>
 
       {/* Schritt 1 */}
-      <Section
-        step={1}
-        title="Vorabprüfung"
-        icon={<Crosshair className="w-5 h-5" />}
-      >
-        <p className="text-sm text-muted-foreground">
-          Wähle eine der beiden Prüfungsstrecken:
-        </p>
-        <div className="flex gap-3 mt-2">
-          <Badge 
-            variant="outline" 
-            className="text-sm px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-            onClick={() => onNavigateToExam?.("ASD1")}
-          >
-            Bewerbungsprüfung ASD 1
-          </Badge>
-          <Badge 
-            variant="outline" 
-            className="text-sm px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-            onClick={() => onNavigateToExam?.("ASD2")}
-          >
-            Bewerbungsprüfung ASD 2
-          </Badge>
-        </div>
-      </Section>
+      {!hideVorabpruefung && (
+        <Section
+          step={1}
+          title="Vorabprüfung"
+          icon={<Crosshair className="w-5 h-5" />}
+        >
+          <p className="text-sm text-muted-foreground">
+            Wähle eine der beiden Prüfungsstrecken:
+          </p>
+          <div className="flex gap-3 mt-2">
+            <Badge
+              variant="outline"
+              className="text-sm px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+              onClick={() => onNavigateToExam?.("ASD1")}
+            >
+              Bewerbungsprüfung ASD 1
+            </Badge>
+            <Badge
+              variant="outline"
+              className="text-sm px-3 py-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+              onClick={() => onNavigateToExam?.("ASD2")}
+            >
+              Bewerbungsprüfung ASD 2
+            </Badge>
+          </div>
+        </Section>
+      )}
 
       {/* Schritt 2 */}
       <Section
@@ -60,10 +72,16 @@ const LeitfadenContent = ({ onNavigateToExam }: { onNavigateToExam?: (examType: 
         icon={<BookOpen className="w-5 h-5" />}
       >
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-center gap-2">
+          <li
+            className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+            onClick={() => onNavigateToTheorieausbildung?.()}
+          >
             <span className="text-primary">➤</span> NCPD ASD | Theorieausbildung
           </li>
-          <li className="flex items-center gap-2">
+          <li
+            className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+            onClick={() => onNavigateToTheoriepruefung?.()}
+          >
             <span className="text-primary">➤</span> NCPD ASD | Theorieprüfung
           </li>
         </ul>
