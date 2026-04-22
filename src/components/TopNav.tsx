@@ -13,6 +13,7 @@ const navItems = [
   { to: "/statistik", label: "Statistik", emoji: "📊" },
   { to: "/member", label: "Member", emoji: "👤" },
   { to: "/fluglizenzen", label: "Fluglizenzen", emoji: "✈️" },
+  { to: "/fluglizenz-member", label: "Lizenz-Inhaber", emoji: "🛩️" },
   { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
   { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
 ];
@@ -27,6 +28,7 @@ const FLIGHT_LICENSE_VISIBLE = new Set([
   "/familien",
   "/statistik",
   "/member",
+  "/fluglizenz-member",
 ]);
 
 const TopNav = () => {

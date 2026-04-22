@@ -14,6 +14,7 @@ import ProtokollePage from "./pages/ProtokollePage";
 import FamilienPage from "./pages/FamilienPage";
 import StatistikPage from "./pages/StatistikPage";
 import FluglizenzenPage from "./pages/FluglizenzenPage";
+import FluglizenzMemberPage from "./pages/FluglizenzMemberPage";
 import BewerbungssperrePage from "./pages/BewerbungssperrePage";
 import GamblingPage from "./pages/GamblingPage";
 import VerfolgungPage from "./pages/VerfolgungPage";
@@ -55,6 +56,7 @@ const ProtectedRoutes = () => {
         <Route path="/statistik" element={<StatistikPage />} />
         <Route path="/member" element={<MemberPage />} />
         <Route path="/fluglizenzen" element={<FluglizenzenPage />} />
+        <Route path="/fluglizenz-member" element={<FluglizenzMemberPage />} />
         <Route path="/bewerbungssperre" element={<BewerbungssperrePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/profil" element={<ProfilePage />} />
