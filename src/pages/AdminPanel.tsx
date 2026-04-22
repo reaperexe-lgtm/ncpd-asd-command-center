@@ -322,6 +322,36 @@ const AdminPanel = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const licenseValidityMutation = useMutation({
+    mutationFn: async ({ userId, validUntil }: { userId: string; validUntil: string | null }) => {
+      if (!validUntil) {
+        const { error } = await supabase
+          .from("flight_license_validity")
+          .delete()
+          .eq("user_id", userId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase
+        .from("flight_license_validity")
+        .upsert({ user_id: userId, valid_until: validUntil }, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-license-holders"] });
+      toast.success(vars.validUntil ? "Gültigkeit gespeichert" : "Gültigkeit entfernt");
+      const targetName = licenseHolders?.find((l: any) => l.id === vars.userId)?.profile?.name || "Unbekannt";
+      logActivity(
+        vars.validUntil
+          ? `Lizenz-Gültigkeit gesetzt: ${vars.validUntil}`
+          : `Lizenz-Gültigkeit entfernt`,
+        "admin",
+        { target_user_id: vars.userId, target_name: targetName, valid_until: vars.validUntil },
+      );
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const discordMutation = useMutation({
     mutationFn: async ({ userId, discordId }: { userId: string; discordId: string }) => {
       const { error } = await supabase.from("profiles").update({ discord_id: discordId.trim() || null } as any).eq("id", userId);
