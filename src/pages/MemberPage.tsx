@@ -177,6 +177,22 @@ const MemberPage = () => {
     grouped[m.role]!.push(m);
   });
 
+  // Sortiere innerhalb jeder Rolle nach interner ASD-DN (numerisch aufsteigend);
+  // Mitglieder ohne ASD-DN ans Ende, dann nach Name.
+  const extractAsdNumber = (dn?: string | null): number => {
+    if (!dn) return Number.POSITIVE_INFINITY;
+    const digits = dn.replace(/\D/g, "");
+    return digits ? parseInt(digits, 10) : Number.POSITIVE_INFINITY;
+  };
+  Object.keys(grouped).forEach((r) => {
+    grouped[r] = grouped[r]!.slice().sort((a: any, b: any) => {
+      const na = extractAsdNumber(a.internal_dienstnummer);
+      const nb = extractAsdNumber(b.internal_dienstnummer);
+      if (na !== nb) return na - nb;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  });
+
   const missingAsdCount = members?.filter((m) => !m.internal_dienstnummer && !["trial_member"].includes(m.role)).length || 0;
 
   return (
