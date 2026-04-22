@@ -37,8 +37,8 @@ export const DEFAULT_PERMISSIONS: { key: PermissionKey; label: string; descripti
   { key: "reset_stats", label: "Statistik zurücksetzen", description: "Statistiken zurücksetzen (mit Antrag)", defaultRoles: ["admin", "director", "co_director", "ausbilder"] },
   { key: "manage_gangs", label: "Familien/Gangs verwalten", description: "Familien und Gangs erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
   { key: "edit_questions", label: "Fragen bearbeiten", description: "Theorie-Prüfungsfragen erstellen und bearbeiten", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "create_missions", label: "Einsätze erstellen", description: "Neue Einsatzprotokolle anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] },
-  { key: "create_pursuits", label: "Verfolgungen erstellen", description: "Neue 10-80 Verfolgungen anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] },
+  { key: "create_missions", label: "Einsätze erstellen", description: "Neue Einsatzprotokolle anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] },
+  { key: "create_pursuits", label: "Verfolgungen erstellen", description: "Neue 10-80 Verfolgungen anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] },
 ];
 
 // Rechte die NIEMAND einem Director / Admin entziehen kann

@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { Lock, Shield, Check, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
+const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
+  flight_license: "Fluglizenz",
 };
 
 import { DEFAULT_PERMISSIONS } from "@/hooks/usePermissions";

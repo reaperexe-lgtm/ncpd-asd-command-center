@@ -12,16 +12,17 @@ import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCir
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
-const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"] as const;
+const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
+  flight_license: "Fluglizenz",
 };
 
 // Hierarchie: niedrigerer Index = höherer Rang
 const ROLE_HIERARCHY: Record<string, number> = {
   admin: 0, director: 1, co_director: 2, supervisor: 3,
-  ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7,
+  ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7, flight_license: 7,
 };
 
 /**

@@ -17,11 +17,18 @@ const navItems = [
   { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
 ];
 
+// Items, die für Fluglizenz-Inhaber ausgeblendet werden
+const FLIGHT_LICENSE_HIDDEN = new Set(["/aufstellungsprotokoll", "/bewerbungssperre", "/fluglizenzen"]);
+
 const TopNav = () => {
   const [time, setTime] = useState(new Date());
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin, signOut, profile, role } = useAuth();
   const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const isFlightLicense = role === "flight_license";
+  const visibleNavItems = isFlightLicense
+    ? navItems.filter((i) => !FLIGHT_LICENSE_HIDDEN.has(i.to))
+    : navItems;
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -36,7 +43,7 @@ const TopNav = () => {
       {/* Desktop nav */}
       <nav className="sticky top-0 z-50 hidden md:flex items-center justify-center gap-1 px-4 py-3 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-1 flex-wrap justify-center">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -118,7 +125,7 @@ const TopNav = () => {
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={closeMobile} />
           <div className="relative bg-background/95 backdrop-blur-md border-b border-border shadow-lg max-h-[70vh] overflow-y-auto">
             <div className="grid grid-cols-3 gap-1 p-3">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
