@@ -185,41 +185,28 @@ const AdminPanel = () => {
 
   const pendingRequestCount = resetRequests?.filter((r: any) => r.status === "pending").length || 0;
 
-  // Aktive Fluglizenzen + Match auf User-Accounts
+  // User-Accounts mit der Rolle "Fluglizenz"
   const { data: licenseHolders, isLoading: licenseLoading } = useQuery({
     queryKey: ["admin-license-holders"],
     queryFn: async () => {
-      const { data: licenses } = await supabase
-        .from("flight_licenses")
-        .select("*")
-        .order("license_date", { ascending: false });
-      if (!licenses?.length) return [];
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .eq("role", "flight_license");
+      if (!roles?.length) return [];
 
+      const userIds = roles.map((r: any) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved");
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+        .select("id, name, dienstnummer, internal_dienstnummer, image_url, is_approved, created_at")
+        .in("id", userIds);
 
-      const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase();
-      return licenses.map((lic: any) => {
-        const match = profiles?.find(
-          (p) => norm(p.name) === norm(lic.name) || (p.dienstnummer && norm(p.dienstnummer) === norm(lic.name))
-        );
-        const role = match ? roles?.find((r) => r.user_id === match.id)?.role : null;
-        const expiry = new Date(lic.license_date);
-        expiry.setMonth(expiry.getMonth() + 4);
-        const now = new Date();
-        const isExpired = expiry <= now;
-        const isExpiringSoon = !isExpired && expiry <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        return {
-          ...lic,
-          matched: !!match,
-          profile: match || null,
-          role,
-          expiry_date: expiry.toISOString(),
-          status_calc: isExpired ? "expired" : isExpiringSoon ? "expiring_soon" : "active",
-        };
-      });
+      return (profiles || []).map((p: any) => ({
+        id: p.id,
+        profile: p,
+        role: "flight_license",
+        created_at: p.created_at,
+      }));
     },
     enabled: isAdmin && activeTab === "licenses",
   });
