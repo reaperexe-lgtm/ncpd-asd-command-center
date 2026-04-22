@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plane, Search, AlertCircle } from "lucide-react";
+import { Plane, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
@@ -24,28 +24,16 @@ const FluglizenzMemberPage = () => {
     },
   });
 
-  const extractAsdNumber = (dn?: string | null): number => {
-    if (!dn) return Number.POSITIVE_INFINITY;
-    const digits = dn.replace(/\D/g, "");
-    return digits ? parseInt(digits, 10) : Number.POSITIVE_INFINITY;
-  };
-
   const filtered = (members || [])
     .filter((m: any) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase().trim();
       return (
-        (m.internal_dienstnummer || "").toLowerCase().includes(q) ||
         (m.dienstnummer || "").toLowerCase().includes(q) ||
         (m.name || "").toLowerCase().includes(q)
       );
     })
-    .sort((a: any, b: any) => {
-      const na = extractAsdNumber(a.internal_dienstnummer);
-      const nb = extractAsdNumber(b.internal_dienstnummer);
-      if (na !== nb) return na - nb;
-      return (a.name || "").localeCompare(b.name || "");
-    });
+    .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""));
 
   return (
     <div className="space-y-6">
@@ -65,7 +53,7 @@ const FluglizenzMemberPage = () => {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Nach interner ASD-DN, PD-DN oder Name suchen..."
+            placeholder="Nach PD-DN oder Name suchen..."
             className="pl-9 bg-background border-border"
           />
         </div>
@@ -100,20 +88,8 @@ const FluglizenzMemberPage = () => {
                 <Plane className="w-3 h-3" />
                 Fluglizenz
               </p>
-              {m.internal_dienstnummer && (
-                <div className="mt-2 inline-flex items-center gap-1 bg-primary/15 border border-primary/40 rounded-md px-2 py-0.5">
-                  <span className="text-[9px] uppercase tracking-wider text-primary/70 font-semibold">ASD</span>
-                  <span className="text-xs font-mono font-bold text-primary">{m.internal_dienstnummer}</span>
-                </div>
-              )}
-              {!m.internal_dienstnummer && (
-                <div className="mt-2 inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 rounded-md px-2 py-0.5">
-                  <AlertCircle className="w-3 h-3 text-amber-300" />
-                  <span className="text-[9px] uppercase tracking-wider text-amber-300 font-semibold">Keine ASD-DN</span>
-                </div>
-              )}
               {m.dienstnummer && (
-                <p className="text-[10px] text-muted-foreground font-mono mt-1">PD · {m.dienstnummer}</p>
+                <p className="text-[10px] text-muted-foreground font-mono mt-2">PD · {m.dienstnummer}</p>
               )}
             </div>
           ))}
