@@ -27,7 +27,7 @@ const ROLE_TEXT: Record<string, string> = {
   ausbilder: "text-amber-300", trial_ausbilder: "text-lime-400", member: "text-primary", trial_member: "text-purple-400",
 };
 const ROLE_ORDER = ["director","co_director","supervisor","ausbilder","trial_ausbilder","member","trial_member"];
-const HIDDEN_ROLES = ["admin", "asd_applicant"];
+const HIDDEN_ROLES = ["admin", "asd_applicant", "flight_applicant", "flight_license"];
 
 const MemberPage = () => {
   const { role } = useAuth();
