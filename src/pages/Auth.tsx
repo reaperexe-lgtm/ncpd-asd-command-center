@@ -166,15 +166,6 @@ const Auth = () => {
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {isFlightSignup && (
-            <button
-              onClick={() => setShowFlugAnmeldung(true)}
-              className="inline-flex items-center gap-2 text-sm text-primary/80 hover:text-primary transition-colors border border-primary/20 hover:border-primary/40 rounded-lg px-4 py-2 bg-card/50 backdrop-blur-sm"
-            >
-              <Plane className="w-4 h-4" />
-              Fluglizenzen Theorieprüfung starten
-            </button>
-          )}
           <button
             onClick={() => {
               setIsASDSignup(true);
