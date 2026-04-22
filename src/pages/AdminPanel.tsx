@@ -757,11 +757,33 @@ const AdminPanel = () => {
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Interne DN</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Gültig bis</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Registriert</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {licenseHolders.map((lic: any) => (
+                      {licenseHolders.map((lic: any) => {
+                        const validUntil: string | null = lic.valid_until || null;
+                        let statusLabel = "Nicht gesetzt";
+                        let statusClass = "bg-muted text-muted-foreground";
+                        if (validUntil) {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const expiry = new Date(validUntil);
+                          const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+                          if (diffDays < 0) {
+                            statusLabel = "Abgelaufen";
+                            statusClass = "bg-red-500/10 text-red-400";
+                          } else if (diffDays <= 14) {
+                            statusLabel = `Läuft bald ab (${diffDays}T)`;
+                            statusClass = "bg-yellow-500/10 text-yellow-400";
+                          } else {
+                            statusLabel = "Aktiv";
+                            statusClass = "bg-emerald-500/10 text-emerald-400";
+                          }
+                        }
+                        return (
                         <tr key={lic.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -782,11 +804,43 @@ const AdminPanel = () => {
                               {ROLE_LABELS[lic.role] || lic.role}
                             </span>
                           </td>
+                          <td className="px-4 py-3 text-xs">
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="date"
+                                defaultValue={validUntil || ""}
+                                onBlur={(e) => {
+                                  const newVal = e.target.value || null;
+                                  if ((newVal || null) !== (validUntil || null)) {
+                                    licenseValidityMutation.mutate({ userId: lic.id, validUntil: newVal });
+                                  }
+                                }}
+                                className="h-7 text-xs w-36 bg-background"
+                              />
+                              {validUntil && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => licenseValidityMutation.mutate({ userId: lic.id, validUntil: null })}
+                                  title="Gültigkeit entfernen"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
                             {lic.created_at ? new Date(lic.created_at).toLocaleDateString("de-DE") : "–"}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
