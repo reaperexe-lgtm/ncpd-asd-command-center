@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Plus, ClipboardCheck, CheckCircle2, XCircle, ArrowLeft,
-  Trash2, MapPin, AlertTriangle, Trophy
+  Trash2, MapPin, AlertTriangle, Trophy, Eye, EyeOff
 } from "lucide-react";
 
 const ASD1_LOCATIONS = [
@@ -88,6 +88,7 @@ type ExamResult = {
   examiner_name: string | null;
   notes: string | null;
   created_at: string;
+  released_to_applicant?: boolean;
 };
 
 interface PracticalExamProps {
