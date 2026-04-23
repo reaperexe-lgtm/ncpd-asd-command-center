@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle, MapPin, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
 import TheoryExam from "@/components/TheoryExam";
+import { ASD1_LOCATIONS, ASD2_LOCATIONS } from "@/components/PracticalExam";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
@@ -107,7 +108,7 @@ const ASDApplicantDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("practical_exam_results")
-        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes, released_to_applicant")
+        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes, released_to_applicant, checked_locations")
         .eq("candidate_dienstnummer", profile!.dienstnummer!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -369,6 +370,27 @@ const ASDApplicantDashboard = () => {
               </div>
             )}
 
+            {/* Standorte Praxis ASD 1 */}
+            {asd1Released && asd1Latest && (
+              <div className="border border-border rounded-lg bg-card p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Standorte Praxis ASD 1 ({(asd1Latest.checked_locations as string[] | null)?.length || 0}/{ASD1_LOCATIONS.length})
+                </h4>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {ASD1_LOCATIONS.map((loc) => {
+                    const checked = ((asd1Latest.checked_locations as string[] | null) || []).includes(loc);
+                    return (
+                      <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
+                        {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                        <span className="truncate">{loc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Status Praxis ASD 2 (zweite Chance) */}
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd2Passed ? "border-green-500/30 bg-green-500/5"
@@ -403,6 +425,27 @@ const ASDApplicantDashboard = () => {
               <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
                 <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 2):</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd2Latest.notes}</p>
+              </div>
+            )}
+
+            {/* Standorte Praxis ASD 2 */}
+            {asd2Released && asd2Latest && (
+              <div className="border border-border rounded-lg bg-card p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Standorte Praxis ASD 2 ({(asd2Latest.checked_locations as string[] | null)?.length || 0}/{ASD2_LOCATIONS.length})
+                </h4>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {ASD2_LOCATIONS.map((loc) => {
+                    const checked = ((asd2Latest.checked_locations as string[] | null) || []).includes(loc);
+                    return (
+                      <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
+                        {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                        <span className="truncate">{loc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
