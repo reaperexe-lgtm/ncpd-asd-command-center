@@ -352,6 +352,14 @@ const ASDApplicantDashboard = () => {
               )}
             </div>
 
+            {/* Anmerkungen Praxis ASD 2 */}
+            {asd2Latest?.notes && (
+              <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
+                <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 2):</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd2Latest.notes}</p>
+              </div>
+            )}
+
             {practicalPassed ? (
               <div className="border border-green-500/30 bg-green-500/5 rounded-xl p-6 text-center space-y-3">
                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
