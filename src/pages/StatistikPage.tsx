@@ -677,9 +677,62 @@ const StatistikPage = () => {
     </div>
   );
 
+  const FlightLicenseCard = ({
+    scope, ranking, max, total: fTotal, countdown, nextDate,
+  }: {
+    scope: Scope;
+    ranking: [string, number][];
+    max: number;
+    total: number;
+    countdown?: string;
+    nextDate?: Date;
+  }) => (
+    <div className="bg-card border border-border rounded-lg p-5 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-semibold text-primary flex items-center gap-2">
+          <Plane className="w-5 h-5" />
+          Fluglizenz {scope === "weekly" ? "Woche" : "Monat"}
+        </h2>
+        <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+          Crew-Eins\u00e4tze: {fTotal}
+        </span>
+      </div>
+      {nextDate && countdown && (
+        <p className="text-[10px] text-muted-foreground mb-3 flex items-center gap-1">
+          <Clock className="w-3 h-3 text-primary shrink-0" />
+          N\u00e4chster Reset: {nextDate.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} (\u23f1\ufe0f {countdown})
+        </p>
+      )}
+      {ranking.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Crew-Eins\u00e4tze von Lizenz-Inhabern</p>
+      ) : (
+        <div className="space-y-3 flex-1">
+          {ranking.map(([name, count], i) => (
+            <div key={name} className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                  {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                </span>
+                <div
+                  className="h-9 rounded-md flex items-center px-3 transition-all duration-500 min-w-0"
+                  style={{
+                    width: `${Math.max((count / max) * 100, 20)}%`,
+                    backgroundColor: `hsl(200, 65%, ${50 + i * 4}%)`,
+                  }}
+                >
+                  <span className="text-xs font-bold text-white truncate drop-shadow-md">{name}</span>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      {/* placeholder anchor */}
       <div className="flex items-center gap-3 flex-wrap">
         <BarChart3 className="w-7 h-7 text-primary" />
         <div className="flex-1 min-w-[180px]">
