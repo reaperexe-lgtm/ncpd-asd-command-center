@@ -149,20 +149,23 @@ const StatistikPage = () => {
   });
 
   // License holders (role = flight_license) — used for Fluglizenz-Statistik
-  const { data: licenseHolderNames } = useQuery({
-    queryKey: ["flight-license-holder-names"],
+  const { data: licenseHolders } = useQuery({
+    queryKey: ["flight-license-holders"],
     queryFn: async () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "flight_license");
       const ids = (roles || []).map((r: any) => r.user_id);
-      if (ids.length === 0) return [] as string[];
+      if (ids.length === 0) return { ids: [] as string[], names: [] as string[] };
       const { data: profs } = await supabase
         .from("profiles")
-        .select("name")
+        .select("id, name")
         .in("id", ids);
-      return (profs || []).map((p: any) => p.name).filter(Boolean) as string[];
+      return {
+        ids: (profs || []).map((p: any) => p.id),
+        names: (profs || []).map((p: any) => p.name).filter(Boolean) as string[],
+      };
     },
   });
 
@@ -411,13 +414,16 @@ const StatistikPage = () => {
   const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
   const monthlyPursuitTotal = monthlyPursuits.length;
 
-  // --- Fluglizenz Crew Stats (Pilot/Co-Pilot/Schütze in Einsätzen + 10-80) ---
-  const licenseSet = new Set((licenseHolderNames || []).filter(Boolean));
+  // --- Fluglizenz Stats (gefilterte Daten der Lizenz-Inhaber) ---
+  const licenseNameSet = new Set((licenseHolders?.names || []).filter(Boolean));
+  const licenseIdSet = new Set(licenseHolders?.ids || []);
+
+  // Crew-Einsätze (Pilot/Co/Schütze) – als sekundärer Indikator (Cards)
   const computeCrewCounts = (ms: typeof weeklyMissions, ps: typeof weeklyPursuits) => {
     const counts: Record<string, number> = {};
     const bump = (n?: string | null) => {
       if (!n) return;
-      if (!licenseSet.has(n)) return;
+      if (!licenseNameSet.has(n)) return;
       counts[n] = (counts[n] || 0) + 1;
     };
     ms.forEach((m) => { bump(m.pilot); bump(m.co_pilot); bump(m.left_gunner); bump(m.right_gunner); });
@@ -430,6 +436,39 @@ const StatistikPage = () => {
   const flightMonthlyMax = flightMonthlyRanking[0]?.[1] || 1;
   const flightWeeklyTotal = flightWeeklyRanking.reduce((s, [, c]) => s + c, 0);
   const flightMonthlyTotal = flightMonthlyRanking.reduce((s, [, c]) => s + c, 0);
+
+  // Datensätze nur von Lizenz-Inhabern (Top-Schreiber & 10-80 Verfolgungen)
+  const flWeeklyMissions = weeklyMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flMonthlyMissions = monthlyMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flWeeklyPursuits = weeklyPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+  const flMonthlyPursuits = monthlyPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+
+  // Top-Schreiber (Lizenz-Inhaber): Missionen + Verfolgungen
+  const flWeeklyWriterCounts: Record<string, number> = {};
+  flWeeklyMissions.forEach((m: any) => { if (m.protokollschreiber) flWeeklyWriterCounts[m.protokollschreiber] = (flWeeklyWriterCounts[m.protokollschreiber] || 0) + 1; });
+  flWeeklyPursuits.forEach((p: any) => { flWeeklyWriterCounts[p.created_by] = (flWeeklyWriterCounts[p.created_by] || 0) + 1; });
+  const flWeeklyWriterRanking = Object.entries(flWeeklyWriterCounts).sort((a, b) => b[1] - a[1]);
+
+  const flMonthlyWriterCounts: Record<string, number> = {};
+  flMonthlyMissions.forEach((m: any) => { if (m.protokollschreiber) flMonthlyWriterCounts[m.protokollschreiber] = (flMonthlyWriterCounts[m.protokollschreiber] || 0) + 1; });
+  flMonthlyPursuits.forEach((p: any) => { flMonthlyWriterCounts[p.created_by] = (flMonthlyWriterCounts[p.created_by] || 0) + 1; });
+  const flMonthlyWriterRanking = Object.entries(flMonthlyWriterCounts).sort((a, b) => b[1] - a[1]);
+
+  // 10-80 Verfolgungen (nur Lizenz-Inhaber)
+  const flWeeklyPursuitCounts: Record<string, number> = {};
+  flWeeklyPursuits.forEach((p: any) => { flWeeklyPursuitCounts[p.created_by] = (flWeeklyPursuitCounts[p.created_by] || 0) + 1; });
+  const flWeeklyPursuitRanking = Object.entries(flWeeklyPursuitCounts).sort((a, b) => b[1] - a[1]);
+  const flMonthlyPursuitCounts: Record<string, number> = {};
+  flMonthlyPursuits.forEach((p: any) => { flMonthlyPursuitCounts[p.created_by] = (flMonthlyPursuitCounts[p.created_by] || 0) + 1; });
+  const flMonthlyPursuitRanking = Object.entries(flMonthlyPursuitCounts).sort((a, b) => b[1] - a[1]);
+
+  // Übersicht/Donut nur Lizenz-Inhaber (folgen overview-Reset)
+  const flWeeklyOverviewMissions = weeklyOverviewMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flWeeklyOverviewPursuits = weeklyOverviewPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+  const flMonthlyOverviewMissions = monthlyOverviewMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flMonthlyOverviewPursuits = monthlyOverviewPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+  const flOverviewWeek = buildOverview(flWeeklyOverviewMissions, flWeeklyOverviewPursuits);
+  const flOverviewMonth = buildOverview(flMonthlyOverviewMissions, flMonthlyOverviewPursuits);
 
   // Protocols for selected writer - filtered by type & scope
   const writerSourceMissions = selectedWriter?.scope === "monthly" ? monthlyMissions : weeklyMissions;
@@ -771,12 +810,15 @@ const StatistikPage = () => {
       </div>
 
       <Tabs defaultValue="weekly" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-xl grid-cols-3">
           <TabsTrigger value="weekly" className="gap-2">
             <CalendarDays className="w-4 h-4" /> ASD-Woche
           </TabsTrigger>
           <TabsTrigger value="monthly" className="gap-2">
             <CalendarRange className="w-4 h-4" /> Monat
+          </TabsTrigger>
+          <TabsTrigger value="fluglizenz" className="gap-2">
+            <Plane className="w-4 h-4" /> Fluglizenz
           </TabsTrigger>
         </TabsList>
 
@@ -815,14 +857,6 @@ const StatistikPage = () => {
             title="Einsätze nach Raubart (Woche)"
             resetType="overview"
             resetEntry={lastOverviewResetEntry}
-            nextDate={weekEnd}
-            countdown={weeklyCountdown}
-          />
-          <FlightLicenseCard
-            scope="weekly"
-            ranking={flightWeeklyRanking}
-            max={flightWeeklyMax}
-            total={flightWeeklyTotal}
             nextDate={weekEnd}
             countdown={weeklyCountdown}
           />
@@ -866,14 +900,6 @@ const StatistikPage = () => {
             nextDate={monthEnd}
             countdown={monthlyCountdown}
           />
-          <FlightLicenseCard
-            scope="monthly"
-            ranking={flightMonthlyRanking}
-            max={flightMonthlyMax}
-            total={flightMonthlyTotal}
-            nextDate={monthEnd}
-            countdown={monthlyCountdown}
-          />
 
           {monthlyEntries.length > 1 && (
             <div className="bg-card border border-border rounded-lg p-5">
@@ -889,6 +915,114 @@ const StatistikPage = () => {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* ===== FLUGLIZENZ TAB ===== */}
+        <TabsContent value="fluglizenz" className="space-y-6 mt-4">
+          <Tabs defaultValue="fl-weekly" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="fl-weekly" className="gap-2">
+                <CalendarDays className="w-4 h-4" /> Fluglizenz-Woche
+              </TabsTrigger>
+              <TabsTrigger value="fl-monthly" className="gap-2">
+                <CalendarRange className="w-4 h-4" /> Fluglizenz-Monat
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="fl-weekly" className="space-y-6 mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TopWritersCard
+                  scope="weekly"
+                  ranking={flWeeklyWriterRanking}
+                  max={flWeeklyWriterRanking[0]?.[1] || 1}
+                  resetType="weekly"
+                  resetEntry={lastWeeklyResetEntry}
+                  nextDate={weekEnd}
+                  countdown={weeklyCountdown}
+                />
+                <PursuitsCard
+                  scope="weekly"
+                  ranking={flWeeklyPursuitRanking}
+                  max={flWeeklyPursuitRanking[0]?.[1] || 1}
+                  total={flWeeklyPursuits.length}
+                  resetType="pursuits"
+                  resetEntry={lastPursuitResetEntry}
+                  nextDate={weekEnd}
+                  countdown={weeklyCountdown}
+                />
+              </div>
+              <OverviewSummary
+                data={flOverviewWeek}
+                resetType="overview"
+                resetEntry={lastOverviewResetEntry}
+                nextDate={weekEnd}
+                countdown={weeklyCountdown}
+              />
+              <DonutCard
+                data={flOverviewWeek}
+                title="Einsätze nach Raubart – Fluglizenz (Woche)"
+                resetType="overview"
+                resetEntry={lastOverviewResetEntry}
+                nextDate={weekEnd}
+                countdown={weeklyCountdown}
+              />
+              <FlightLicenseCard
+                scope="weekly"
+                ranking={flightWeeklyRanking}
+                max={flightWeeklyMax}
+                total={flightWeeklyTotal}
+                nextDate={weekEnd}
+                countdown={weeklyCountdown}
+              />
+            </TabsContent>
+
+            <TabsContent value="fl-monthly" className="space-y-6 mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TopWritersCard
+                  scope="monthly"
+                  ranking={flMonthlyWriterRanking}
+                  max={flMonthlyWriterRanking[0]?.[1] || 1}
+                  resetType="monthly"
+                  resetEntry={lastMonthlyResetEntry}
+                  nextDate={monthEnd}
+                  countdown={monthlyCountdown}
+                />
+                <PursuitsCard
+                  scope="monthly"
+                  ranking={flMonthlyPursuitRanking}
+                  max={flMonthlyPursuitRanking[0]?.[1] || 1}
+                  total={flMonthlyPursuits.length}
+                  resetType="pursuits_monthly"
+                  resetEntry={lastPursuitMonthlyResetEntry}
+                  nextDate={monthEnd}
+                  countdown={monthlyCountdown}
+                />
+              </div>
+              <OverviewSummary
+                data={flOverviewMonth}
+                resetType="overview_monthly"
+                resetEntry={lastOverviewMonthlyResetEntry}
+                nextDate={monthEnd}
+                countdown={monthlyCountdown}
+              />
+              <DonutCard
+                data={flOverviewMonth}
+                title="Einsätze nach Raubart – Fluglizenz (Monat)"
+                resetType="overview_monthly"
+                resetEntry={lastOverviewMonthlyResetEntry}
+                nextDate={monthEnd}
+                countdown={monthlyCountdown}
+              />
+              <FlightLicenseCard
+                scope="monthly"
+                ranking={flightMonthlyRanking}
+                max={flightMonthlyMax}
+                total={flightMonthlyTotal}
+                nextDate={monthEnd}
+                countdown={monthlyCountdown}
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
