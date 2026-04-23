@@ -338,16 +338,19 @@ const ASDApplicantDashboard = () => {
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd1Passed ? "border-green-500/30 bg-green-500/5"
               : asd1Failed ? "border-red-500/30 bg-red-500/5"
+              : asd1Latest && !asd1Released ? "border-yellow-500/30 bg-yellow-500/5"
               : "border-border bg-card"
             }`}>
               {asd1Passed ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
                 : asd1Failed ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : asd1Latest && !asd1Released ? <Clock className="w-5 h-5 text-yellow-500 shrink-0" />
                 : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Praxis ASD 1 (Erstversuch)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {asd1Passed && `Bestanden – ${asd1Latest?.total_score}/${asd1Latest?.max_score} Punkte`}
                   {asd1Failed && `Nicht bestanden – ${asd1Latest?.total_score}/${asd1Latest?.max_score} Punkte. Du hast eine zweite Chance mit Praxis ASD 2.`}
+                  {asd1Latest && !asd1Released && "Eingereicht – wartet auf Freigabe durch den Ausbilder."}
                   {!asd1Latest && "Noch nicht abgelegt – wende dich an einen Ausbilder."}
                 </p>
               </div>
@@ -359,7 +362,7 @@ const ASDApplicantDashboard = () => {
             </div>
 
             {/* Anmerkungen Praxis ASD 1 */}
-            {asd1Latest?.notes && (
+            {asd1Released && asd1Latest?.notes && (
               <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
                 <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 1):</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd1Latest.notes}</p>
@@ -369,18 +372,21 @@ const ASDApplicantDashboard = () => {
             {/* Status Praxis ASD 2 (zweite Chance) */}
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd2Passed ? "border-green-500/30 bg-green-500/5"
-              : asd2Latest?.status === "failed" ? "border-red-500/30 bg-red-500/5"
+              : asd2Released && asd2Latest?.status === "failed" ? "border-red-500/30 bg-red-500/5"
+              : asd2Latest && !asd2Released ? "border-yellow-500/30 bg-yellow-500/5"
               : asd1Failed ? "border-orange-500/30 bg-orange-500/5"
               : "border-border bg-card opacity-60"
             }`}>
               {asd2Passed ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
-                : asd2Latest?.status === "failed" ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : asd2Released && asd2Latest?.status === "failed" ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : asd2Latest && !asd2Released ? <Clock className="w-5 h-5 text-yellow-500 shrink-0" />
                 : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Praxis ASD 2 (Zweite Chance)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {asd2Passed && `Bestanden – ${asd2Latest?.total_score}/${asd2Latest?.max_score} Punkte`}
-                  {asd2Latest?.status === "failed" && `Nicht bestanden – ${asd2Latest.total_score}/${asd2Latest.max_score} Punkte`}
+                  {asd2Released && asd2Latest?.status === "failed" && `Nicht bestanden – ${asd2Latest.total_score}/${asd2Latest.max_score} Punkte`}
+                  {asd2Latest && !asd2Released && "Eingereicht – wartet auf Freigabe durch den Ausbilder."}
                   {!asd2Latest && asd1Failed && "Verfügbar – wende dich an einen Ausbilder für deine zweite Chance."}
                   {!asd2Latest && !asd1Failed && "Wird nur freigeschaltet, falls Praxis ASD 1 nicht bestanden wird."}
                 </p>
@@ -393,7 +399,7 @@ const ASDApplicantDashboard = () => {
             </div>
 
             {/* Anmerkungen Praxis ASD 2 */}
-            {asd2Latest?.notes && (
+            {asd2Released && asd2Latest?.notes && (
               <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
                 <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 2):</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd2Latest.notes}</p>
