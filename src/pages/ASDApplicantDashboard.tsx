@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
 import TheoryExam from "@/components/TheoryExam";
@@ -33,6 +33,7 @@ const ASDApplicantDashboard = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("vorab");
   const [examInProgress, setExamInProgress] = useState(false);
+  const practicalPassedRef = useRef(false);
 
   // Prevent leaving the page during exam
   useEffect(() => {
