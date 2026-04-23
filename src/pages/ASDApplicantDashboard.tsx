@@ -428,6 +428,27 @@ const ASDApplicantDashboard = () => {
               </div>
             )}
 
+            {/* Standorte Praxis ASD 2 */}
+            {asd2Released && asd2Latest && (
+              <div className="border border-border rounded-lg bg-card p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Standorte Praxis ASD 2 ({(asd2Latest.checked_locations as string[] | null)?.length || 0}/{ASD2_LOCATIONS.length})
+                </h4>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {ASD2_LOCATIONS.map((loc) => {
+                    const checked = ((asd2Latest.checked_locations as string[] | null) || []).includes(loc);
+                    return (
+                      <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
+                        {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                        <span className="truncate">{loc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {practicalPassed ? (
               <div className="border border-green-500/30 bg-green-500/5 rounded-xl p-6 text-center space-y-3">
                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
