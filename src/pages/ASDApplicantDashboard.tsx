@@ -318,6 +318,14 @@ const ASDApplicantDashboard = () => {
               )}
             </div>
 
+            {/* Anmerkungen Praxis ASD 1 */}
+            {asd1Latest?.notes && (
+              <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
+                <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 1):</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd1Latest.notes}</p>
+              </div>
+            )}
+
             {/* Status Praxis ASD 2 (zweite Chance) */}
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd2Passed ? "border-green-500/30 bg-green-500/5"
