@@ -107,7 +107,7 @@ const ASDApplicantDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("practical_exam_results")
-        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name")
+        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes")
         .eq("candidate_dienstnummer", profile!.dienstnummer!)
         .order("created_at", { ascending: false });
       if (error) throw error;
