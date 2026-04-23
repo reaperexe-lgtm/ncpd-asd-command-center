@@ -860,14 +860,6 @@ const StatistikPage = () => {
             nextDate={weekEnd}
             countdown={weeklyCountdown}
           />
-          <FlightLicenseCard
-            scope="weekly"
-            ranking={flightWeeklyRanking}
-            max={flightWeeklyMax}
-            total={flightWeeklyTotal}
-            nextDate={weekEnd}
-            countdown={weeklyCountdown}
-          />
         </TabsContent>
 
         {/* ===== MONTH TAB ===== */}
