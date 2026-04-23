@@ -520,6 +520,7 @@ export type Database = {
           location_score: number
           max_score: number
           notes: string | null
+          released_to_applicant: boolean
           status: string
           ten33_deduction: number
           total_score: number
@@ -538,6 +539,7 @@ export type Database = {
           location_score?: number
           max_score?: number
           notes?: string | null
+          released_to_applicant?: boolean
           status?: string
           ten33_deduction?: number
           total_score?: number
@@ -556,6 +558,7 @@ export type Database = {
           location_score?: number
           max_score?: number
           notes?: string | null
+          released_to_applicant?: boolean
           status?: string
           ten33_deduction?: number
           total_score?: number

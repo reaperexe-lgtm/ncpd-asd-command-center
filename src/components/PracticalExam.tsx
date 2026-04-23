@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Plus, ClipboardCheck, CheckCircle2, XCircle, ArrowLeft,
-  Trash2, MapPin, AlertTriangle, Trophy
+  Trash2, MapPin, AlertTriangle, Trophy, Eye, EyeOff
 } from "lucide-react";
 
 const ASD1_LOCATIONS = [
@@ -88,6 +88,7 @@ type ExamResult = {
   examiner_name: string | null;
   notes: string | null;
   created_at: string;
+  released_to_applicant?: boolean;
 };
 
 interface PracticalExamProps {
@@ -172,6 +173,23 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
       setView("list");
       setSelectedExam(null);
     },
+  });
+
+  const releaseMutation = useMutation({
+    mutationFn: async ({ id, release }: { id: string; release: boolean }) => {
+      const { error } = await supabase
+        .from("practical_exam_results")
+        .update({ released_to_applicant: release } as any)
+        .eq("id", id);
+      if (error) throw error;
+      return { id, release };
+    },
+    onSuccess: ({ id, release }) => {
+      queryClient.invalidateQueries({ queryKey: ["practical-exams", examType] });
+      setSelectedExam((prev) => prev && prev.id === id ? { ...prev, released_to_applicant: release } : prev);
+      toast.success(release ? "Ergebnis für Bewerber freigegeben" : "Freigabe zurückgezogen");
+    },
+    onError: () => toast.error("Fehler beim Freigeben"),
   });
 
   const resetForm = () => {
@@ -465,6 +483,40 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </div>
         )}
 
+        {/* Freigabe für Bewerber */}
+        {canEdit && (
+          <div className={`border rounded-xl p-5 flex items-start gap-3 ${
+            exam.released_to_applicant
+              ? "border-green-500/30 bg-green-500/5"
+              : "border-yellow-500/30 bg-yellow-500/5"
+          }`}>
+            {exam.released_to_applicant
+              ? <Eye className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              : <EyeOff className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />}
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${exam.released_to_applicant ? "text-green-500" : "text-yellow-500"}`}>
+                {exam.released_to_applicant
+                  ? "Ergebnis für Bewerber freigegeben"
+                  : "Ergebnis noch nicht freigegeben"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {exam.released_to_applicant
+                  ? "Der Bewerber sieht Punkte, Status und Anmerkungen live in seinem Dashboard."
+                  : "Der Bewerber sieht aktuell nur, dass die Prüfung eingereicht wurde."}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant={exam.released_to_applicant ? "secondary" : "default"}
+              disabled={releaseMutation.isPending}
+              onClick={() => releaseMutation.mutate({ id: exam.id, release: !exam.released_to_applicant })}
+              className="gap-2 shrink-0"
+            >
+              {exam.released_to_applicant ? <><EyeOff className="w-4 h-4" /> Zurückziehen</> : <><Eye className="w-4 h-4" /> Freigeben</>}
+            </Button>
+          </div>
+        )}
+
         {["admin", "director", "co_director"].includes(role || "") && (
           <Button
             variant="destructive"
@@ -524,6 +576,11 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-foreground">{exam.candidate_name}</span>
                     <Badge variant="outline" className="text-xs">{exam.candidate_dienstnummer}</Badge>
+                    {exam.released_to_applicant && (
+                      <Badge variant="outline" className="text-xs gap-1 border-green-500/40 text-green-400">
+                        <Eye className="w-3 h-3" /> Freigegeben
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {new Date(exam.created_at).toLocaleDateString("de-DE")} · Prüfer: {exam.examiner_name || "Unbekannt"}

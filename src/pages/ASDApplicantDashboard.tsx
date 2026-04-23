@@ -107,7 +107,7 @@ const ASDApplicantDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("practical_exam_results")
-        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes")
+        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes, released_to_applicant")
         .eq("candidate_dienstnummer", profile!.dienstnummer!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -116,11 +116,51 @@ const ASDApplicantDashboard = () => {
     enabled: !!profile?.dienstnummer,
   });
 
+  // Realtime: live updates for this applicant's practical exams
+  useEffect(() => {
+    if (!profile?.dienstnummer) return;
+    const dn = profile.dienstnummer;
+    const channel = supabase
+      .channel(`practical-exams-${dn}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "practical_exam_results", filter: `candidate_dienstnummer=eq.${dn}` },
+        (payload: any) => {
+          const ex = payload.new;
+          const label = ex.exam_type === "ASD2" ? "Praxis ASD 2" : "Praxis ASD 1";
+          toast.success(`${label} wurde abgesendet`, {
+            description: "Dein Ausbilder hat die Prüfung eingereicht. Das Ergebnis wird sichtbar, sobald es freigegeben ist.",
+          });
+          queryClient.invalidateQueries({ queryKey: ["applicant-practical-exams", dn] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "practical_exam_results", filter: `candidate_dienstnummer=eq.${dn}` },
+        (payload: any) => {
+          const ex = payload.new;
+          const old = payload.old || {};
+          const label = ex.exam_type === "ASD2" ? "Praxis ASD 2" : "Praxis ASD 1";
+          if (!old.released_to_applicant && ex.released_to_applicant) {
+            toast.success(`${label}: Ergebnis freigegeben`, {
+              description: ex.status === "passed" ? "Bestanden – die Theorieprüfung ist nun freigeschaltet." : "Bitte sieh dir die Anmerkungen deines Ausbilders an.",
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ["applicant-practical-exams", dn] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.dienstnummer, queryClient]);
+
+  // Only consider released results for status/unlock logic
   const asd1Latest = practicalExams?.find((e) => e.exam_type === "ASD1");
   const asd2Latest = practicalExams?.find((e) => e.exam_type === "ASD2");
-  const asd1Passed = asd1Latest?.status === "passed";
-  const asd2Passed = asd2Latest?.status === "passed";
-  const asd1Failed = asd1Latest?.status === "failed";
+  const asd1Released = !!asd1Latest?.released_to_applicant;
+  const asd2Released = !!asd2Latest?.released_to_applicant;
+  const asd1Passed = asd1Released && asd1Latest?.status === "passed";
+  const asd2Passed = asd2Released && asd2Latest?.status === "passed";
+  const asd1Failed = asd1Released && asd1Latest?.status === "failed";
   const practicalPassed = asd1Passed || asd2Passed;
 
   const { data: trainerContacts } = useQuery({
@@ -298,16 +338,19 @@ const ASDApplicantDashboard = () => {
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd1Passed ? "border-green-500/30 bg-green-500/5"
               : asd1Failed ? "border-red-500/30 bg-red-500/5"
+              : asd1Latest && !asd1Released ? "border-yellow-500/30 bg-yellow-500/5"
               : "border-border bg-card"
             }`}>
               {asd1Passed ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
                 : asd1Failed ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : asd1Latest && !asd1Released ? <Clock className="w-5 h-5 text-yellow-500 shrink-0" />
                 : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Praxis ASD 1 (Erstversuch)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {asd1Passed && `Bestanden – ${asd1Latest?.total_score}/${asd1Latest?.max_score} Punkte`}
                   {asd1Failed && `Nicht bestanden – ${asd1Latest?.total_score}/${asd1Latest?.max_score} Punkte. Du hast eine zweite Chance mit Praxis ASD 2.`}
+                  {asd1Latest && !asd1Released && "Eingereicht – wartet auf Freigabe durch den Ausbilder."}
                   {!asd1Latest && "Noch nicht abgelegt – wende dich an einen Ausbilder."}
                 </p>
               </div>
@@ -319,7 +362,7 @@ const ASDApplicantDashboard = () => {
             </div>
 
             {/* Anmerkungen Praxis ASD 1 */}
-            {asd1Latest?.notes && (
+            {asd1Released && asd1Latest?.notes && (
               <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
                 <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 1):</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd1Latest.notes}</p>
@@ -329,18 +372,21 @@ const ASDApplicantDashboard = () => {
             {/* Status Praxis ASD 2 (zweite Chance) */}
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd2Passed ? "border-green-500/30 bg-green-500/5"
-              : asd2Latest?.status === "failed" ? "border-red-500/30 bg-red-500/5"
+              : asd2Released && asd2Latest?.status === "failed" ? "border-red-500/30 bg-red-500/5"
+              : asd2Latest && !asd2Released ? "border-yellow-500/30 bg-yellow-500/5"
               : asd1Failed ? "border-orange-500/30 bg-orange-500/5"
               : "border-border bg-card opacity-60"
             }`}>
               {asd2Passed ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
-                : asd2Latest?.status === "failed" ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : asd2Released && asd2Latest?.status === "failed" ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : asd2Latest && !asd2Released ? <Clock className="w-5 h-5 text-yellow-500 shrink-0" />
                 : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Praxis ASD 2 (Zweite Chance)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {asd2Passed && `Bestanden – ${asd2Latest?.total_score}/${asd2Latest?.max_score} Punkte`}
-                  {asd2Latest?.status === "failed" && `Nicht bestanden – ${asd2Latest.total_score}/${asd2Latest.max_score} Punkte`}
+                  {asd2Released && asd2Latest?.status === "failed" && `Nicht bestanden – ${asd2Latest.total_score}/${asd2Latest.max_score} Punkte`}
+                  {asd2Latest && !asd2Released && "Eingereicht – wartet auf Freigabe durch den Ausbilder."}
                   {!asd2Latest && asd1Failed && "Verfügbar – wende dich an einen Ausbilder für deine zweite Chance."}
                   {!asd2Latest && !asd1Failed && "Wird nur freigeschaltet, falls Praxis ASD 1 nicht bestanden wird."}
                 </p>
@@ -353,7 +399,7 @@ const ASDApplicantDashboard = () => {
             </div>
 
             {/* Anmerkungen Praxis ASD 2 */}
-            {asd2Latest?.notes && (
+            {asd2Released && asd2Latest?.notes && (
               <div className="border border-border rounded-lg bg-muted/30 p-3 space-y-1">
                 <p className="text-xs font-semibold text-foreground">Anmerkungen vom Ausbilder (Praxis ASD 2):</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{asd2Latest.notes}</p>
