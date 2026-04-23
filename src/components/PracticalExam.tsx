@@ -263,13 +263,13 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </p>
           <div className={`grid gap-4 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label className="text-xs">Himmelsrichtung (+1 bis +2)</Label>
+              <Label className="text-xs">Himmelsrichtung (+1 bis +5)</Label>
               <Input
                 type="number"
                 min={0}
-                max={2}
+                max={5}
                 value={himmelsrichtungDeduction}
-                onChange={e => setHimmelsrichtungDeduction(Math.max(0, parseInt(e.target.value) || 0))}
+                onChange={e => setHimmelsrichtungDeduction(Math.max(0, Math.min(5, parseInt(e.target.value) || 0)))}
               />
               <p className="text-xs text-muted-foreground">Keine Himmelsrichtung angesagt</p>
             </div>
