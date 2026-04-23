@@ -1,11 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle, MapPin, CheckCircle2 } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle, MapPin, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useEffect, useCallback } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
@@ -372,23 +373,28 @@ const ASDApplicantDashboard = () => {
 
             {/* Standorte Praxis ASD 1 */}
             {asd1Released && asd1Latest && (
-              <div className="border border-border rounded-lg bg-card p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  Standorte Praxis ASD 1 ({(asd1Latest.checked_locations as string[] | null)?.length || 0}/{ASD1_LOCATIONS.length})
-                </h4>
-                <div className="grid gap-1 sm:grid-cols-2">
-                  {ASD1_LOCATIONS.map((loc) => {
-                    const checked = ((asd1Latest.checked_locations as string[] | null) || []).includes(loc);
-                    return (
-                      <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
-                        {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
-                        <span className="truncate">{loc}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <Collapsible className="border border-border rounded-lg bg-card group">
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors rounded-lg">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Standorte Praxis ASD 1 ({(asd1Latest.checked_locations as string[] | null)?.length || 0}/{ASD1_LOCATIONS.length})
+                  </h4>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="grid gap-1 sm:grid-cols-2 px-4 pb-4">
+                    {ASD1_LOCATIONS.map((loc) => {
+                      const checked = ((asd1Latest.checked_locations as string[] | null) || []).includes(loc);
+                      return (
+                        <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
+                          {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                          <span className="truncate">{loc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             {/* Status Praxis ASD 2 (zweite Chance) */}
@@ -430,23 +436,28 @@ const ASDApplicantDashboard = () => {
 
             {/* Standorte Praxis ASD 2 */}
             {asd2Released && asd2Latest && (
-              <div className="border border-border rounded-lg bg-card p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  Standorte Praxis ASD 2 ({(asd2Latest.checked_locations as string[] | null)?.length || 0}/{ASD2_LOCATIONS.length})
-                </h4>
-                <div className="grid gap-1 sm:grid-cols-2">
-                  {ASD2_LOCATIONS.map((loc) => {
-                    const checked = ((asd2Latest.checked_locations as string[] | null) || []).includes(loc);
-                    return (
-                      <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
-                        {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
-                        <span className="truncate">{loc}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <Collapsible className="border border-border rounded-lg bg-card group">
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors rounded-lg">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Standorte Praxis ASD 2 ({(asd2Latest.checked_locations as string[] | null)?.length || 0}/{ASD2_LOCATIONS.length})
+                  </h4>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="grid gap-1 sm:grid-cols-2 px-4 pb-4">
+                    {ASD2_LOCATIONS.map((loc) => {
+                      const checked = ((asd2Latest.checked_locations as string[] | null) || []).includes(loc);
+                      return (
+                        <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
+                          {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                          <span className="truncate">{loc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             {practicalPassed ? (
