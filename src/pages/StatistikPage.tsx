@@ -900,14 +900,6 @@ const StatistikPage = () => {
             nextDate={monthEnd}
             countdown={monthlyCountdown}
           />
-          <FlightLicenseCard
-            scope="monthly"
-            ranking={flightMonthlyRanking}
-            max={flightMonthlyMax}
-            total={flightMonthlyTotal}
-            nextDate={monthEnd}
-            countdown={monthlyCountdown}
-          />
 
           {monthlyEntries.length > 1 && (
             <div className="bg-card border border-border rounded-lg p-5">
