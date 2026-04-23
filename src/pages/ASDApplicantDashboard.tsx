@@ -170,6 +170,15 @@ const ASDApplicantDashboard = () => {
   const asd1Failed = asd1Released && asd1Latest?.status === "failed";
   const practicalPassed = asd1Passed || asd2Passed;
 
+  // Keep ref in sync so handleTabChange can read latest value without re-creation
+  useEffect(() => {
+    practicalPassedRef.current = practicalPassed;
+    // If applicant is on the locked tab and loses access, push them back
+    if (!practicalPassed && activeTab === "pruefung") {
+      setActiveTab("vorab");
+    }
+  }, [practicalPassed, activeTab]);
+
   const { data: trainerContacts } = useQuery({
     queryKey: ["trainer-contacts-applicant"],
     queryFn: async () => {
