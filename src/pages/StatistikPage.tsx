@@ -694,17 +694,17 @@ const StatistikPage = () => {
           Fluglizenz {scope === "weekly" ? "Woche" : "Monat"}
         </h2>
         <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-          Crew-Eins\u00e4tze: {fTotal}
+          Crew-Einsätze: {fTotal}
         </span>
       </div>
       {nextDate && countdown && (
         <p className="text-[10px] text-muted-foreground mb-3 flex items-center gap-1">
           <Clock className="w-3 h-3 text-primary shrink-0" />
-          N\u00e4chster Reset: {nextDate.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} (\u23f1\ufe0f {countdown})
+          Nächster Reset: {nextDate.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} (⏱️ {countdown})
         </p>
       )}
       {ranking.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Crew-Eins\u00e4tze von Lizenz-Inhabern</p>
+        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Crew-Einsätze von Lizenz-Inhabern</p>
       ) : (
         <div className="space-y-3 flex-1">
           {ranking.map(([name, count], i) => (
