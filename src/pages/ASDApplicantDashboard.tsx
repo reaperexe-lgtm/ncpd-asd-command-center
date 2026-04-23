@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ const ROLE_BADGE_COLORS: Record<string, string> = {
 const ASDApplicantDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("pruefung");
+  const [activeTab, setActiveTab] = useState("vorab");
   const [examInProgress, setExamInProgress] = useState(false);
 
   // Prevent leaving the page during exam
@@ -100,6 +100,28 @@ const ASDApplicantDashboard = () => {
   const theoryPassed = theoryExamResult?.status === "passed";
   const theorySubmitted = theoryExamResult?.status === "submitted";
   const theoryFailed = theoryExamResult?.status === "failed";
+
+  // Practical pre-exam (Praxis ASD 1 / ASD 2) results for this applicant
+  const { data: practicalExams } = useQuery({
+    queryKey: ["applicant-practical-exams", profile?.dienstnummer],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("practical_exam_results")
+        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name")
+        .eq("candidate_dienstnummer", profile!.dienstnummer!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.dienstnummer,
+  });
+
+  const asd1Latest = practicalExams?.find((e) => e.exam_type === "ASD1");
+  const asd2Latest = practicalExams?.find((e) => e.exam_type === "ASD2");
+  const asd1Passed = asd1Latest?.status === "passed";
+  const asd2Passed = asd2Latest?.status === "passed";
+  const asd1Failed = asd1Latest?.status === "failed";
+  const practicalPassed = asd1Passed || asd2Passed;
 
   const { data: trainerContacts } = useQuery({
     queryKey: ["trainer-contacts-applicant"],
@@ -213,10 +235,19 @@ const ASDApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
-            <TabsTrigger value="pruefung" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+          <TabsList className="w-full grid grid-cols-6 bg-secondary/50 border border-border">
+            <TabsTrigger value="vorab" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+              <Plane className="w-4 h-4" />
+              Vorabprüfung
+            </TabsTrigger>
+            <TabsTrigger
+              value="pruefung"
+              disabled={!practicalPassed || examInProgress}
+              className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40"
+            >
               <ClipboardCheck className="w-4 h-4" />
               Theorieprüfung
+              {!practicalPassed && <Lock className="w-3 h-3" />}
             </TabsTrigger>
             <TabsTrigger value="fortschritt" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <GraduationCap className="w-4 h-4" />
@@ -239,6 +270,100 @@ const ASDApplicantDashboard = () => {
               {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="vorab" className="mt-6 space-y-4">
+            <div className="border border-primary/30 bg-primary/5 rounded-xl p-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <Plane className="w-6 h-6 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Vorabprüfung</h2>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Bevor du zur <span className="font-semibold text-foreground">Theorieprüfung</span> zugelassen wirst, musst du eine
+                <span className="font-semibold text-foreground"> Vorabprüfung im Helikopter</span> mit einem Ausbilder absolvieren.
+                Diese besteht aus einem <span className="font-semibold text-foreground">Flug</span> und der korrekten Durchführung von
+                <span className="font-semibold text-foreground"> 10-20 / Kreuzungen (Himmelsrichtungen)</span>.
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Die Vorabprüfung ist mit <span className="font-semibold text-foreground">Praxis ASD 1</span> verknüpft.
+                Solltest du diese nicht bestehen, hast du eine <span className="font-semibold text-foreground">zweite Chance</span> mit
+                <span className="font-semibold text-foreground"> Praxis ASD 2</span>. Erst nach bestandener Vorabprüfung wird die
+                Theorieprüfung freigeschaltet.
+              </p>
+              <p className="text-xs text-muted-foreground italic">
+                Vereinbare einen Termin mit einem Ausbilder über den Reiter „Mitarbeiter".
+              </p>
+            </div>
+
+            {/* Status Praxis ASD 1 */}
+            <div className={`flex items-center gap-3 p-4 rounded-lg border ${
+              asd1Passed ? "border-green-500/30 bg-green-500/5"
+              : asd1Failed ? "border-red-500/30 bg-red-500/5"
+              : "border-border bg-card"
+            }`}>
+              {asd1Passed ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                : asd1Failed ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Praxis ASD 1 (Erstversuch)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {asd1Passed && `Bestanden – ${asd1Latest?.total_score}/${asd1Latest?.max_score} Punkte`}
+                  {asd1Failed && `Nicht bestanden – ${asd1Latest?.total_score}/${asd1Latest?.max_score} Punkte. Du hast eine zweite Chance mit Praxis ASD 2.`}
+                  {!asd1Latest && "Noch nicht abgelegt – wende dich an einen Ausbilder."}
+                </p>
+              </div>
+              {asd1Latest && (
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {new Date(asd1Latest.created_at).toLocaleDateString("de-DE")}
+                </span>
+              )}
+            </div>
+
+            {/* Status Praxis ASD 2 (zweite Chance) */}
+            <div className={`flex items-center gap-3 p-4 rounded-lg border ${
+              asd2Passed ? "border-green-500/30 bg-green-500/5"
+              : asd2Latest?.status === "failed" ? "border-red-500/30 bg-red-500/5"
+              : asd1Failed ? "border-orange-500/30 bg-orange-500/5"
+              : "border-border bg-card opacity-60"
+            }`}>
+              {asd2Passed ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                : asd2Latest?.status === "failed" ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Praxis ASD 2 (Zweite Chance)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {asd2Passed && `Bestanden – ${asd2Latest?.total_score}/${asd2Latest?.max_score} Punkte`}
+                  {asd2Latest?.status === "failed" && `Nicht bestanden – ${asd2Latest.total_score}/${asd2Latest.max_score} Punkte`}
+                  {!asd2Latest && asd1Failed && "Verfügbar – wende dich an einen Ausbilder für deine zweite Chance."}
+                  {!asd2Latest && !asd1Failed && "Wird nur freigeschaltet, falls Praxis ASD 1 nicht bestanden wird."}
+                </p>
+              </div>
+              {asd2Latest && (
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {new Date(asd2Latest.created_at).toLocaleDateString("de-DE")}
+                </span>
+              )}
+            </div>
+
+            {practicalPassed ? (
+              <div className="border border-green-500/30 bg-green-500/5 rounded-xl p-6 text-center space-y-3">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+                <h3 className="text-lg font-semibold text-green-500">Vorabprüfung bestanden!</h3>
+                <p className="text-sm text-muted-foreground">
+                  Die Theorieprüfung ist jetzt für dich freigeschaltet.
+                </p>
+                <Button onClick={() => setActiveTab("pruefung")}>
+                  Zur Theorieprüfung
+                </Button>
+              </div>
+            ) : (
+              <div className="border border-orange-500/30 bg-orange-500/5 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-500">
+                  Die Theorieprüfung bleibt gesperrt, bis du Praxis ASD 1 oder Praxis ASD 2 bestanden hast.
+                </p>
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="pruefung" className="mt-6">
             {theoryPassed ? (
