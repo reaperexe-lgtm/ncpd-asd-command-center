@@ -411,6 +411,26 @@ const StatistikPage = () => {
   const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
   const monthlyPursuitTotal = monthlyPursuits.length;
 
+  // --- Fluglizenz Crew Stats (Pilot/Co-Pilot/Schütze in Einsätzen + 10-80) ---
+  const licenseSet = new Set((licenseHolderNames || []).filter(Boolean));
+  const computeCrewCounts = (ms: typeof weeklyMissions, ps: typeof weeklyPursuits) => {
+    const counts: Record<string, number> = {};
+    const bump = (n?: string | null) => {
+      if (!n) return;
+      if (!licenseSet.has(n)) return;
+      counts[n] = (counts[n] || 0) + 1;
+    };
+    ms.forEach((m) => { bump(m.pilot); bump(m.co_pilot); bump(m.left_gunner); bump(m.right_gunner); });
+    ps.forEach((p) => { bump(p.pilot); bump(p.co_pilot); bump(p.left_gunner); bump(p.right_gunner); });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  };
+  const flightWeeklyRanking = computeCrewCounts(weeklyMissions, weeklyPursuits);
+  const flightMonthlyRanking = computeCrewCounts(monthlyMissions, monthlyPursuits);
+  const flightWeeklyMax = flightWeeklyRanking[0]?.[1] || 1;
+  const flightMonthlyMax = flightMonthlyRanking[0]?.[1] || 1;
+  const flightWeeklyTotal = flightWeeklyRanking.reduce((s, [, c]) => s + c, 0);
+  const flightMonthlyTotal = flightMonthlyRanking.reduce((s, [, c]) => s + c, 0);
+
   // Protocols for selected writer - filtered by type & scope
   const writerSourceMissions = selectedWriter?.scope === "monthly" ? monthlyMissions : weeklyMissions;
   const writerSourcePursuits = selectedWriter?.scope === "monthly" ? monthlyPursuits : weeklyPursuits;
