@@ -679,6 +679,7 @@ const StatistikPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* placeholder anchor */}
       <div className="flex items-center gap-3 flex-wrap">
         <BarChart3 className="w-7 h-7 text-primary" />
         <div className="flex-1 min-w-[180px]">
