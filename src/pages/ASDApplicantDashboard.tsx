@@ -50,6 +50,10 @@ const ASDApplicantDashboard = () => {
       toast.error("Du kannst während der Prüfung nicht die Seite wechseln!");
       return;
     }
+    if (value === "pruefung" && !practicalPassedRef.current) {
+      toast.error("Du musst zuerst Praxis ASD 1 oder 2 bestehen, um die Theorieprüfung zu starten.");
+      return;
+    }
     setActiveTab(value);
   }, [examInProgress]);
 
