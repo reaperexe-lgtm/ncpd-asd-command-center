@@ -175,6 +175,23 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
     },
   });
 
+  const releaseMutation = useMutation({
+    mutationFn: async ({ id, release }: { id: string; release: boolean }) => {
+      const { error } = await supabase
+        .from("practical_exam_results")
+        .update({ released_to_applicant: release } as any)
+        .eq("id", id);
+      if (error) throw error;
+      return { id, release };
+    },
+    onSuccess: ({ id, release }) => {
+      queryClient.invalidateQueries({ queryKey: ["practical-exams", examType] });
+      setSelectedExam((prev) => prev && prev.id === id ? { ...prev, released_to_applicant: release } : prev);
+      toast.success(release ? "Ergebnis für Bewerber freigegeben" : "Freigabe zurückgezogen");
+    },
+    onError: () => toast.error("Fehler beim Freigeben"),
+  });
+
   const resetForm = () => {
     setCandidateName("");
     setCandidateDienstnummer("");
