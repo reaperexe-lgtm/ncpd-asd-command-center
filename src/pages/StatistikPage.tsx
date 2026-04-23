@@ -916,6 +916,114 @@ const StatistikPage = () => {
             </div>
           )}
         </TabsContent>
+
+        {/* ===== FLUGLIZENZ TAB ===== */}
+        <TabsContent value="fluglizenz" className="space-y-6 mt-4">
+          <Tabs defaultValue="fl-weekly" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="fl-weekly" className="gap-2">
+                <CalendarDays className="w-4 h-4" /> Fluglizenz-Woche
+              </TabsTrigger>
+              <TabsTrigger value="fl-monthly" className="gap-2">
+                <CalendarRange className="w-4 h-4" /> Fluglizenz-Monat
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="fl-weekly" className="space-y-6 mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TopWritersCard
+                  scope="weekly"
+                  ranking={flWeeklyWriterRanking}
+                  max={flWeeklyWriterRanking[0]?.[1] || 1}
+                  resetType="weekly"
+                  resetEntry={lastWeeklyResetEntry}
+                  nextDate={weekEnd}
+                  countdown={weeklyCountdown}
+                />
+                <PursuitsCard
+                  scope="weekly"
+                  ranking={flWeeklyPursuitRanking}
+                  max={flWeeklyPursuitRanking[0]?.[1] || 1}
+                  total={flWeeklyPursuits.length}
+                  resetType="pursuits"
+                  resetEntry={lastPursuitResetEntry}
+                  nextDate={weekEnd}
+                  countdown={weeklyCountdown}
+                />
+              </div>
+              <OverviewSummary
+                data={flOverviewWeek}
+                resetType="overview"
+                resetEntry={lastOverviewResetEntry}
+                nextDate={weekEnd}
+                countdown={weeklyCountdown}
+              />
+              <DonutCard
+                data={flOverviewWeek}
+                title="Einsätze nach Raubart – Fluglizenz (Woche)"
+                resetType="overview"
+                resetEntry={lastOverviewResetEntry}
+                nextDate={weekEnd}
+                countdown={weeklyCountdown}
+              />
+              <FlightLicenseCard
+                scope="weekly"
+                ranking={flightWeeklyRanking}
+                max={flightWeeklyMax}
+                total={flightWeeklyTotal}
+                nextDate={weekEnd}
+                countdown={weeklyCountdown}
+              />
+            </TabsContent>
+
+            <TabsContent value="fl-monthly" className="space-y-6 mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TopWritersCard
+                  scope="monthly"
+                  ranking={flMonthlyWriterRanking}
+                  max={flMonthlyWriterRanking[0]?.[1] || 1}
+                  resetType="monthly"
+                  resetEntry={lastMonthlyResetEntry}
+                  nextDate={monthEnd}
+                  countdown={monthlyCountdown}
+                />
+                <PursuitsCard
+                  scope="monthly"
+                  ranking={flMonthlyPursuitRanking}
+                  max={flMonthlyPursuitRanking[0]?.[1] || 1}
+                  total={flMonthlyPursuits.length}
+                  resetType="pursuits_monthly"
+                  resetEntry={lastPursuitMonthlyResetEntry}
+                  nextDate={monthEnd}
+                  countdown={monthlyCountdown}
+                />
+              </div>
+              <OverviewSummary
+                data={flOverviewMonth}
+                resetType="overview_monthly"
+                resetEntry={lastOverviewMonthlyResetEntry}
+                nextDate={monthEnd}
+                countdown={monthlyCountdown}
+              />
+              <DonutCard
+                data={flOverviewMonth}
+                title="Einsätze nach Raubart – Fluglizenz (Monat)"
+                resetType="overview_monthly"
+                resetEntry={lastOverviewMonthlyResetEntry}
+                nextDate={monthEnd}
+                countdown={monthlyCountdown}
+              />
+              <FlightLicenseCard
+                scope="monthly"
+                ranking={flightMonthlyRanking}
+                max={flightMonthlyMax}
+                total={flightMonthlyTotal}
+                nextDate={monthEnd}
+                countdown={monthlyCountdown}
+              />
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
       </Tabs>
 
 
