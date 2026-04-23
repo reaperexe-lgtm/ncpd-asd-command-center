@@ -217,6 +217,37 @@ const ASDApplicantDashboard = () => {
     return acc;
   }, {} as Record<string, typeof modules>);
 
+  // Lock screen: both practical exams failed → 2-week application ban
+  if (bothFailed) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-lg w-full border border-red-500/30 bg-card rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+          <div className="mx-auto w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <Lock className="w-10 h-10 text-red-500" />
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-2xl font-bold text-foreground">Bewerbungssperre</h1>
+            <p className="text-base text-muted-foreground leading-relaxed">
+              Du hast leider beide nicht geschafft.
+            </p>
+            <p className="text-base text-foreground font-semibold">
+              Jetzt hast du eine zweiwöchige Bewerbungssperre.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-3">
+              {profile?.name} • {profile?.dienstnummer}
+            </p>
+            <Button variant="outline" size="sm" onClick={signOut} className="gap-2">
+              <LogOut className="w-4 h-4" />
+              Abmelden
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
