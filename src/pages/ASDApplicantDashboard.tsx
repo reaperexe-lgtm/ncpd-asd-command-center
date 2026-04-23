@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle, MapPin, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
 import TheoryExam from "@/components/TheoryExam";
+import { ASD1_LOCATIONS, ASD2_LOCATIONS } from "@/components/PracticalExam";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
