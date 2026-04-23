@@ -101,6 +101,28 @@ const ASDApplicantDashboard = () => {
   const theorySubmitted = theoryExamResult?.status === "submitted";
   const theoryFailed = theoryExamResult?.status === "failed";
 
+  // Practical pre-exam (Praxis ASD 1 / ASD 2) results for this applicant
+  const { data: practicalExams } = useQuery({
+    queryKey: ["applicant-practical-exams", profile?.dienstnummer],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("practical_exam_results")
+        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name")
+        .eq("candidate_dienstnummer", profile!.dienstnummer!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.dienstnummer,
+  });
+
+  const asd1Latest = practicalExams?.find((e) => e.exam_type === "ASD1");
+  const asd2Latest = practicalExams?.find((e) => e.exam_type === "ASD2");
+  const asd1Passed = asd1Latest?.status === "passed";
+  const asd2Passed = asd2Latest?.status === "passed";
+  const asd1Failed = asd1Latest?.status === "failed";
+  const practicalPassed = asd1Passed || asd2Passed;
+
   const { data: trainerContacts } = useQuery({
     queryKey: ["trainer-contacts-applicant"],
     queryFn: async () => {
