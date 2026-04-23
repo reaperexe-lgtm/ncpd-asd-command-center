@@ -1,11 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle, MapPin, CheckCircle2 } from "lucide-react";
+import { CheckCircle, Circle, GraduationCap, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, Plane, XCircle, MapPin, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useEffect, useCallback } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
