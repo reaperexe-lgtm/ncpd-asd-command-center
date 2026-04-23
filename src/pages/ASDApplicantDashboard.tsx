@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
 import TheoryExam from "@/components/TheoryExam";
@@ -33,6 +33,7 @@ const ASDApplicantDashboard = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("vorab");
   const [examInProgress, setExamInProgress] = useState(false);
+  const practicalPassedRef = useRef(false);
 
   // Prevent leaving the page during exam
   useEffect(() => {
@@ -48,6 +49,10 @@ const ASDApplicantDashboard = () => {
   const handleTabChange = useCallback((value: string) => {
     if (examInProgress) {
       toast.error("Du kannst während der Prüfung nicht die Seite wechseln!");
+      return;
+    }
+    if (value === "pruefung" && !practicalPassedRef.current) {
+      toast.error("Du musst zuerst Praxis ASD 1 oder 2 bestehen, um die Theorieprüfung zu starten.");
       return;
     }
     setActiveTab(value);
@@ -164,6 +169,15 @@ const ASDApplicantDashboard = () => {
   const asd2Passed = asd2Released && asd2Latest?.status === "passed";
   const asd1Failed = asd1Released && asd1Latest?.status === "failed";
   const practicalPassed = asd1Passed || asd2Passed;
+
+  // Keep ref in sync so handleTabChange can read latest value without re-creation
+  useEffect(() => {
+    practicalPassedRef.current = practicalPassed;
+    // If applicant is on the locked tab and loses access, push them back
+    if (!practicalPassed && activeTab === "pruefung") {
+      setActiveTab("vorab");
+    }
+  }, [practicalPassed, activeTab]);
 
   const { data: trainerContacts } = useQuery({
     queryKey: ["trainer-contacts-applicant"],
