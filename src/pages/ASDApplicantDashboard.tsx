@@ -107,7 +107,7 @@ const ASDApplicantDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("practical_exam_results")
-        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes")
+        .select("id, exam_type, status, total_score, max_score, created_at, examiner_name, notes, released_to_applicant")
         .eq("candidate_dienstnummer", profile!.dienstnummer!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -116,11 +116,51 @@ const ASDApplicantDashboard = () => {
     enabled: !!profile?.dienstnummer,
   });
 
+  // Realtime: live updates for this applicant's practical exams
+  useEffect(() => {
+    if (!profile?.dienstnummer) return;
+    const dn = profile.dienstnummer;
+    const channel = supabase
+      .channel(`practical-exams-${dn}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "practical_exam_results", filter: `candidate_dienstnummer=eq.${dn}` },
+        (payload: any) => {
+          const ex = payload.new;
+          const label = ex.exam_type === "ASD2" ? "Praxis ASD 2" : "Praxis ASD 1";
+          toast.success(`${label} wurde abgesendet`, {
+            description: "Dein Ausbilder hat die Prüfung eingereicht. Das Ergebnis wird sichtbar, sobald es freigegeben ist.",
+          });
+          queryClient.invalidateQueries({ queryKey: ["applicant-practical-exams", dn] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "practical_exam_results", filter: `candidate_dienstnummer=eq.${dn}` },
+        (payload: any) => {
+          const ex = payload.new;
+          const old = payload.old || {};
+          const label = ex.exam_type === "ASD2" ? "Praxis ASD 2" : "Praxis ASD 1";
+          if (!old.released_to_applicant && ex.released_to_applicant) {
+            toast.success(`${label}: Ergebnis freigegeben`, {
+              description: ex.status === "passed" ? "Bestanden – die Theorieprüfung ist nun freigeschaltet." : "Bitte sieh dir die Anmerkungen deines Ausbilders an.",
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ["applicant-practical-exams", dn] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.dienstnummer, queryClient]);
+
+  // Only consider released results for status/unlock logic
   const asd1Latest = practicalExams?.find((e) => e.exam_type === "ASD1");
   const asd2Latest = practicalExams?.find((e) => e.exam_type === "ASD2");
-  const asd1Passed = asd1Latest?.status === "passed";
-  const asd2Passed = asd2Latest?.status === "passed";
-  const asd1Failed = asd1Latest?.status === "failed";
+  const asd1Released = !!asd1Latest?.released_to_applicant;
+  const asd2Released = !!asd2Latest?.released_to_applicant;
+  const asd1Passed = asd1Released && asd1Latest?.status === "passed";
+  const asd2Passed = asd2Released && asd2Latest?.status === "passed";
+  const asd1Failed = asd1Released && asd1Latest?.status === "failed";
   const practicalPassed = asd1Passed || asd2Passed;
 
   const { data: trainerContacts } = useQuery({
