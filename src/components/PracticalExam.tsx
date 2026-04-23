@@ -58,7 +58,7 @@ const EXAM_CONFIGS: Record<string, ExamConfig> = {
     maxScore: 35,
     passScore: 28,
     hasUturn: true,
-    max1033: 1,
+    max1033: 5,
   },
   ASD2: {
     type: "ASD2",
@@ -67,7 +67,7 @@ const EXAM_CONFIGS: Record<string, ExamConfig> = {
     maxScore: 38,
     passScore: 30,
     hasUturn: false,
-    max1033: 2,
+    max1033: 5,
   },
 };
 
