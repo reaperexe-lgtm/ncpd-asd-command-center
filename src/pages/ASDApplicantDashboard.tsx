@@ -235,10 +235,19 @@ const ASDApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
-            <TabsTrigger value="pruefung" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+          <TabsList className="w-full grid grid-cols-6 bg-secondary/50 border border-border">
+            <TabsTrigger value="vorab" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+              <Plane className="w-4 h-4" />
+              Vorabprüfung
+            </TabsTrigger>
+            <TabsTrigger
+              value="pruefung"
+              disabled={!practicalPassed || examInProgress}
+              className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40"
+            >
               <ClipboardCheck className="w-4 h-4" />
               Theorieprüfung
+              {!practicalPassed && <Lock className="w-3 h-3" />}
             </TabsTrigger>
             <TabsTrigger value="fortschritt" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <GraduationCap className="w-4 h-4" />
