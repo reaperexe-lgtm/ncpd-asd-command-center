@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { logActivity } from "@/lib/activityLog";
 import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, ChevronRight, Clock, CalendarDays, CalendarRange } from "lucide-react";
+import { Plane } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -145,6 +146,24 @@ const StatistikPage = () => {
   const { data: profiles } = useQuery({
     queryKey: ["profiles-map"],
     queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },
+  });
+
+  // License holders (role = flight_license) — used for Fluglizenz-Statistik
+  const { data: licenseHolderNames } = useQuery({
+    queryKey: ["flight-license-holder-names"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "flight_license");
+      const ids = (roles || []).map((r: any) => r.user_id);
+      if (ids.length === 0) return [] as string[];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("name")
+        .in("id", ids);
+      return (profs || []).map((p: any) => p.name).filter(Boolean) as string[];
+    },
   });
 
   const { data: resets } = useQuery({
@@ -392,6 +411,26 @@ const StatistikPage = () => {
   const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
   const monthlyPursuitTotal = monthlyPursuits.length;
 
+  // --- Fluglizenz Crew Stats (Pilot/Co-Pilot/Schütze in Einsätzen + 10-80) ---
+  const licenseSet = new Set((licenseHolderNames || []).filter(Boolean));
+  const computeCrewCounts = (ms: typeof weeklyMissions, ps: typeof weeklyPursuits) => {
+    const counts: Record<string, number> = {};
+    const bump = (n?: string | null) => {
+      if (!n) return;
+      if (!licenseSet.has(n)) return;
+      counts[n] = (counts[n] || 0) + 1;
+    };
+    ms.forEach((m) => { bump(m.pilot); bump(m.co_pilot); bump(m.left_gunner); bump(m.right_gunner); });
+    ps.forEach((p) => { bump(p.pilot); bump(p.co_pilot); bump(p.left_gunner); bump(p.right_gunner); });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  };
+  const flightWeeklyRanking = computeCrewCounts(weeklyMissions, weeklyPursuits);
+  const flightMonthlyRanking = computeCrewCounts(monthlyMissions, monthlyPursuits);
+  const flightWeeklyMax = flightWeeklyRanking[0]?.[1] || 1;
+  const flightMonthlyMax = flightMonthlyRanking[0]?.[1] || 1;
+  const flightWeeklyTotal = flightWeeklyRanking.reduce((s, [, c]) => s + c, 0);
+  const flightMonthlyTotal = flightMonthlyRanking.reduce((s, [, c]) => s + c, 0);
+
   // Protocols for selected writer - filtered by type & scope
   const writerSourceMissions = selectedWriter?.scope === "monthly" ? monthlyMissions : weeklyMissions;
   const writerSourcePursuits = selectedWriter?.scope === "monthly" ? monthlyPursuits : weeklyPursuits;
@@ -638,6 +677,60 @@ const StatistikPage = () => {
     </div>
   );
 
+  const FlightLicenseCard = ({
+    scope, ranking, max, total: fTotal, countdown, nextDate,
+  }: {
+    scope: Scope;
+    ranking: [string, number][];
+    max: number;
+    total: number;
+    countdown?: string;
+    nextDate?: Date;
+  }) => (
+    <div className="bg-card border border-border rounded-lg p-5 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-semibold text-primary flex items-center gap-2">
+          <Plane className="w-5 h-5" />
+          Fluglizenz {scope === "weekly" ? "Woche" : "Monat"}
+        </h2>
+        <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+          Crew-Einsätze: {fTotal}
+        </span>
+      </div>
+      {nextDate && countdown && (
+        <p className="text-[10px] text-muted-foreground mb-3 flex items-center gap-1">
+          <Clock className="w-3 h-3 text-primary shrink-0" />
+          Nächster Reset: {nextDate.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })} (⏱️ {countdown})
+        </p>
+      )}
+      {ranking.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Crew-Einsätze von Lizenz-Inhabern</p>
+      ) : (
+        <div className="space-y-3 flex-1">
+          {ranking.map(([name, count], i) => (
+            <div key={name} className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                  {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                </span>
+                <div
+                  className="h-9 rounded-md flex items-center px-3 transition-all duration-500 min-w-0"
+                  style={{
+                    width: `${Math.max((count / max) * 100, 20)}%`,
+                    backgroundColor: `hsl(200, 65%, ${50 + i * 4}%)`,
+                  }}
+                >
+                  <span className="text-xs font-bold text-white truncate drop-shadow-md">{name}</span>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
@@ -725,6 +818,14 @@ const StatistikPage = () => {
             nextDate={weekEnd}
             countdown={weeklyCountdown}
           />
+          <FlightLicenseCard
+            scope="weekly"
+            ranking={flightWeeklyRanking}
+            max={flightWeeklyMax}
+            total={flightWeeklyTotal}
+            nextDate={weekEnd}
+            countdown={weeklyCountdown}
+          />
         </TabsContent>
 
         {/* ===== MONTH TAB ===== */}
@@ -762,6 +863,14 @@ const StatistikPage = () => {
             title="Einsätze nach Raubart (Monat)"
             resetType="overview_monthly"
             resetEntry={lastOverviewMonthlyResetEntry}
+            nextDate={monthEnd}
+            countdown={monthlyCountdown}
+          />
+          <FlightLicenseCard
+            scope="monthly"
+            ranking={flightMonthlyRanking}
+            max={flightMonthlyMax}
+            total={flightMonthlyTotal}
             nextDate={monthEnd}
             countdown={monthlyCountdown}
           />
