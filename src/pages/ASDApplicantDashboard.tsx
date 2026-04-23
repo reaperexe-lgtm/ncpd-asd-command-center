@@ -370,6 +370,27 @@ const ASDApplicantDashboard = () => {
               </div>
             )}
 
+            {/* Standorte Praxis ASD 1 */}
+            {asd1Released && asd1Latest && (
+              <div className="border border-border rounded-lg bg-card p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Standorte Praxis ASD 1 ({(asd1Latest.checked_locations as string[] | null)?.length || 0}/{ASD1_LOCATIONS.length})
+                </h4>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {ASD1_LOCATIONS.map((loc) => {
+                    const checked = ((asd1Latest.checked_locations as string[] | null) || []).includes(loc);
+                    return (
+                      <div key={loc} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${checked ? "text-green-400" : "text-red-400/60"}`}>
+                        {checked ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                        <span className="truncate">{loc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Status Praxis ASD 2 (zweite Chance) */}
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${
               asd2Passed ? "border-green-500/30 bg-green-500/5"
