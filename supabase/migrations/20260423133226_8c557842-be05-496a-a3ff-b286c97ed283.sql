@@ -1,0 +1,2 @@
+DELETE FROM public.asd_applicant_progress WHERE module_id IN (SELECT id FROM public.asd_training_modules WHERE category = 'Fluglizenz');
+DELETE FROM public.asd_training_modules WHERE category = 'Fluglizenz';
