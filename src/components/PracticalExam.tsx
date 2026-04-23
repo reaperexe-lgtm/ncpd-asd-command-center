@@ -14,7 +14,7 @@ import {
   Trash2, MapPin, AlertTriangle, Trophy, Eye, EyeOff
 } from "lucide-react";
 
-const ASD1_LOCATIONS = [
+export const ASD1_LOCATIONS = [
   "V-PD (Start)", "Buntes Parkhaus", "Film Studios", "Tropical Club", "Museum",
   "Juwelier (Sternenkreuzung)", "R-PD", "Rockford Plaza", "UFO",
   "Staatsbank (Laden)", "Staatsbank (Tankstelle)", "Elektriker-Job",
@@ -27,7 +27,7 @@ const ASD1_LOCATIONS = [
   "Bubble Café", "Burger Shot", "V-PD (Ende)"
 ];
 
-const ASD2_LOCATIONS = [
+export const ASD2_LOCATIONS = [
   "V-PD", "Burgershot", "Westhighway", "Mr Taxi", "Lifeinvader",
   "Friedhof", "Yakuza Straße / Yakie Straße", "Universität", "Playboy Villa",
   "Golfplatz", "Richman Hotel", "Eclipse Tower", "Bing Chilling",
