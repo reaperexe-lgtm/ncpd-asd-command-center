@@ -168,6 +168,8 @@ const ASDApplicantDashboard = () => {
   const asd1Passed = asd1Released && asd1Latest?.status === "passed";
   const asd2Passed = asd2Released && asd2Latest?.status === "passed";
   const asd1Failed = asd1Released && asd1Latest?.status === "failed";
+  const asd2Failed = asd2Released && asd2Latest?.status === "failed";
+  const bothFailed = asd1Failed && asd2Failed;
   const practicalPassed = asd1Passed || asd2Passed;
 
   // Keep ref in sync so handleTabChange can read latest value without re-creation
