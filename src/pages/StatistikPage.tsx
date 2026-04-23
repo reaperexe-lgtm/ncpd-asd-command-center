@@ -148,6 +148,24 @@ const StatistikPage = () => {
     queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },
   });
 
+  // License holders (role = flight_license) — used for Fluglizenz-Statistik
+  const { data: licenseHolderNames } = useQuery({
+    queryKey: ["flight-license-holder-names"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "flight_license");
+      const ids = (roles || []).map((r: any) => r.user_id);
+      if (ids.length === 0) return [] as string[];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("name")
+        .in("id", ids);
+      return (profs || []).map((p: any) => p.name).filter(Boolean) as string[];
+    },
+  });
+
   const { data: resets } = useQuery({
     queryKey: ["stats-resets"],
     queryFn: async () => {
