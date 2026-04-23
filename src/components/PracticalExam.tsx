@@ -576,6 +576,11 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-foreground">{exam.candidate_name}</span>
                     <Badge variant="outline" className="text-xs">{exam.candidate_dienstnummer}</Badge>
+                    {exam.released_to_applicant && (
+                      <Badge variant="outline" className="text-xs gap-1 border-green-500/40 text-green-400">
+                        <Eye className="w-3 h-3" /> Freigegeben
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {new Date(exam.created_at).toLocaleDateString("de-DE")} · Prüfer: {exam.examiner_name || "Unbekannt"}
