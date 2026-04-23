@@ -414,13 +414,16 @@ const StatistikPage = () => {
   const maxMonthlyPursuit = monthlyPursuitRanking[0]?.[1] || 1;
   const monthlyPursuitTotal = monthlyPursuits.length;
 
-  // --- Fluglizenz Crew Stats (Pilot/Co-Pilot/Schütze in Einsätzen + 10-80) ---
-  const licenseSet = new Set((licenseHolderNames || []).filter(Boolean));
+  // --- Fluglizenz Stats (gefilterte Daten der Lizenz-Inhaber) ---
+  const licenseNameSet = new Set((licenseHolders?.names || []).filter(Boolean));
+  const licenseIdSet = new Set(licenseHolders?.ids || []);
+
+  // Crew-Einsätze (Pilot/Co/Schütze) – als sekundärer Indikator (Cards)
   const computeCrewCounts = (ms: typeof weeklyMissions, ps: typeof weeklyPursuits) => {
     const counts: Record<string, number> = {};
     const bump = (n?: string | null) => {
       if (!n) return;
-      if (!licenseSet.has(n)) return;
+      if (!licenseNameSet.has(n)) return;
       counts[n] = (counts[n] || 0) + 1;
     };
     ms.forEach((m) => { bump(m.pilot); bump(m.co_pilot); bump(m.left_gunner); bump(m.right_gunner); });
@@ -433,6 +436,39 @@ const StatistikPage = () => {
   const flightMonthlyMax = flightMonthlyRanking[0]?.[1] || 1;
   const flightWeeklyTotal = flightWeeklyRanking.reduce((s, [, c]) => s + c, 0);
   const flightMonthlyTotal = flightMonthlyRanking.reduce((s, [, c]) => s + c, 0);
+
+  // Datensätze nur von Lizenz-Inhabern (Top-Schreiber & 10-80 Verfolgungen)
+  const flWeeklyMissions = weeklyMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flMonthlyMissions = monthlyMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flWeeklyPursuits = weeklyPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+  const flMonthlyPursuits = monthlyPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+
+  // Top-Schreiber (Lizenz-Inhaber): Missionen + Verfolgungen
+  const flWeeklyWriterCounts: Record<string, number> = {};
+  flWeeklyMissions.forEach((m: any) => { if (m.protokollschreiber) flWeeklyWriterCounts[m.protokollschreiber] = (flWeeklyWriterCounts[m.protokollschreiber] || 0) + 1; });
+  flWeeklyPursuits.forEach((p: any) => { flWeeklyWriterCounts[p.created_by] = (flWeeklyWriterCounts[p.created_by] || 0) + 1; });
+  const flWeeklyWriterRanking = Object.entries(flWeeklyWriterCounts).sort((a, b) => b[1] - a[1]);
+
+  const flMonthlyWriterCounts: Record<string, number> = {};
+  flMonthlyMissions.forEach((m: any) => { if (m.protokollschreiber) flMonthlyWriterCounts[m.protokollschreiber] = (flMonthlyWriterCounts[m.protokollschreiber] || 0) + 1; });
+  flMonthlyPursuits.forEach((p: any) => { flMonthlyWriterCounts[p.created_by] = (flMonthlyWriterCounts[p.created_by] || 0) + 1; });
+  const flMonthlyWriterRanking = Object.entries(flMonthlyWriterCounts).sort((a, b) => b[1] - a[1]);
+
+  // 10-80 Verfolgungen (nur Lizenz-Inhaber)
+  const flWeeklyPursuitCounts: Record<string, number> = {};
+  flWeeklyPursuits.forEach((p: any) => { flWeeklyPursuitCounts[p.created_by] = (flWeeklyPursuitCounts[p.created_by] || 0) + 1; });
+  const flWeeklyPursuitRanking = Object.entries(flWeeklyPursuitCounts).sort((a, b) => b[1] - a[1]);
+  const flMonthlyPursuitCounts: Record<string, number> = {};
+  flMonthlyPursuits.forEach((p: any) => { flMonthlyPursuitCounts[p.created_by] = (flMonthlyPursuitCounts[p.created_by] || 0) + 1; });
+  const flMonthlyPursuitRanking = Object.entries(flMonthlyPursuitCounts).sort((a, b) => b[1] - a[1]);
+
+  // Übersicht/Donut nur Lizenz-Inhaber (folgen overview-Reset)
+  const flWeeklyOverviewMissions = weeklyOverviewMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flWeeklyOverviewPursuits = weeklyOverviewPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+  const flMonthlyOverviewMissions = monthlyOverviewMissions.filter((m: any) => m.protokollschreiber && licenseIdSet.has(m.protokollschreiber));
+  const flMonthlyOverviewPursuits = monthlyOverviewPursuits.filter((p: any) => licenseIdSet.has(p.created_by));
+  const flOverviewWeek = buildOverview(flWeeklyOverviewMissions, flWeeklyOverviewPursuits);
+  const flOverviewMonth = buildOverview(flMonthlyOverviewMissions, flMonthlyOverviewPursuits);
 
   // Protocols for selected writer - filtered by type & scope
   const writerSourceMissions = selectedWriter?.scope === "monthly" ? monthlyMissions : weeklyMissions;
