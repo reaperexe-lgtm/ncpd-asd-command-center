@@ -810,12 +810,15 @@ const StatistikPage = () => {
       </div>
 
       <Tabs defaultValue="weekly" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-xl grid-cols-3">
           <TabsTrigger value="weekly" className="gap-2">
             <CalendarDays className="w-4 h-4" /> ASD-Woche
           </TabsTrigger>
           <TabsTrigger value="monthly" className="gap-2">
             <CalendarRange className="w-4 h-4" /> Monat
+          </TabsTrigger>
+          <TabsTrigger value="fluglizenz" className="gap-2">
+            <Plane className="w-4 h-4" /> Fluglizenz
           </TabsTrigger>
         </TabsList>
 
