@@ -29,7 +29,7 @@ const ROLE_BADGE_COLORS: Record<string, string> = {
 const ASDApplicantDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("pruefung");
+  const [activeTab, setActiveTab] = useState("vorab");
   const [examInProgress, setExamInProgress] = useState(false);
 
   // Prevent leaving the page during exam
