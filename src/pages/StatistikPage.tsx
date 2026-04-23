@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { logActivity } from "@/lib/activityLog";
 import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, ChevronRight, Clock, CalendarDays, CalendarRange } from "lucide-react";
+import { Plane } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
