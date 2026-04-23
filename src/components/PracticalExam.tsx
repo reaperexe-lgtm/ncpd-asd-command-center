@@ -483,6 +483,40 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </div>
         )}
 
+        {/* Freigabe für Bewerber */}
+        {canEdit && (
+          <div className={`border rounded-xl p-5 flex items-start gap-3 ${
+            exam.released_to_applicant
+              ? "border-green-500/30 bg-green-500/5"
+              : "border-yellow-500/30 bg-yellow-500/5"
+          }`}>
+            {exam.released_to_applicant
+              ? <Eye className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              : <EyeOff className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />}
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${exam.released_to_applicant ? "text-green-500" : "text-yellow-500"}`}>
+                {exam.released_to_applicant
+                  ? "Ergebnis für Bewerber freigegeben"
+                  : "Ergebnis noch nicht freigegeben"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {exam.released_to_applicant
+                  ? "Der Bewerber sieht Punkte, Status und Anmerkungen live in seinem Dashboard."
+                  : "Der Bewerber sieht aktuell nur, dass die Prüfung eingereicht wurde."}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant={exam.released_to_applicant ? "secondary" : "default"}
+              disabled={releaseMutation.isPending}
+              onClick={() => releaseMutation.mutate({ id: exam.id, release: !exam.released_to_applicant })}
+              className="gap-2 shrink-0"
+            >
+              {exam.released_to_applicant ? <><EyeOff className="w-4 h-4" /> Zurückziehen</> : <><Eye className="w-4 h-4" /> Freigeben</>}
+            </Button>
+          </div>
+        )}
+
         {["admin", "director", "co_director"].includes(role || "") && (
           <Button
             variant="destructive"
