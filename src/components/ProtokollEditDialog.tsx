@@ -150,7 +150,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
     mutationFn: async () => {
       if (!data) return;
       const locValue = mLocation === "Sonstiges" ? mCustomLocation : mLocation;
-      const { error } = await supabase.from("missions").update({
+      const updatePayload = {
         description: mDesc || null,
         location_type: locValue,
         custom_location: mLocation === "Sonstiges" ? mCustomLocation : null,
@@ -164,10 +164,60 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
         co_pilot: mCoPilot && mCoPilot !== "none" ? mCoPilot : null,
         left_gunner: mLeftGunner && mLeftGunner !== "none" ? mLeftGunner : null,
         right_gunner: mRightGunner && mRightGunner !== "none" ? mRightGunner : null,
-      }).eq("id", data.id);
+      };
+      const { error } = await supabase.from("missions").update(updatePayload).eq("id", data.id);
       if (error) throw error;
 
+      // Field-level changes for activity log
+      const FIELD_LABELS: Record<string, string> = {
+        description: "Beschreibung",
+        location_type: "Raubart",
+        tatzeit: "Tatzeit",
+        suspects_count: "Tatverdächtige",
+        hostages_count: "Geiseln",
+        gang_id: "Familie/Bande",
+        gang_info: "Bande-Infos",
+        protokollschreiber: "Protokollschreiber",
+        pilot: "Pilot",
+        co_pilot: "Co-Pilot",
+        left_gunner: "Left Gunner",
+        right_gunner: "Right Gunner",
+      };
+      const norm = (v: any) => {
+        if (v === null || v === undefined || v === "") return null;
+        if (v instanceof Date) return v.toISOString();
+        return v;
+      };
+      const fieldChanges: Array<{ field: string; from: any; to: any }> = [];
+      for (const key of Object.keys(FIELD_LABELS)) {
+        const before = norm((data as any)[key]);
+        const after = norm((updatePayload as any)[key]);
+        if (key === "tatzeit") {
+          // Compare as ISO without ms differences
+          if (new Date(before as any).getTime() !== new Date(after as any).getTime()) {
+            fieldChanges.push({ field: FIELD_LABELS[key], from: before, to: after });
+          }
+          continue;
+        }
+        if (String(before ?? "") !== String(after ?? "")) {
+          fieldChanges.push({ field: FIELD_LABELS[key], from: before, to: after });
+        }
+      }
+
       // Vehicles diff
+      const vehicleChanges: Array<{ action: "added" | "updated" | "deleted"; label: string; fields?: string[] }> = [];
+      const VFIELD_LABELS: Record<string, string> = {
+        vehicle_type: "Art",
+        model: "Modell",
+        license_plate: "Kennzeichen",
+        owner_info: "Besitzer",
+        primary_color: "Farbe Primär",
+        secondary_color: "Farbe Sekundär",
+        pearl_color: "Pearl",
+        neon_color: "Neon",
+        xenon: "Xenon",
+      };
+      const originalVehicles = ((data.mission_vehicles || []) as any[]).reduce<Record<string, any>>((acc, v) => { acc[v.id] = v; return acc; }, {});
       for (const v of mVehicles) {
         const modelValue = v.model === "Sonstiges" ? v.custom_model : v.model;
         const payload = {
@@ -182,19 +232,55 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
           neon_color: v.neon_color,
           xenon: v.xenon,
         };
+        const labelOf = (mdl: string, plate?: string | null) => `${mdl}${plate ? ` (${plate})` : ""}`;
         if (v._deleted && v.id) {
           await supabase.from("mission_vehicles").delete().eq("id", v.id);
+          const orig = originalVehicles[v.id];
+          if (orig) vehicleChanges.push({ action: "deleted", label: labelOf(orig.model, orig.license_plate) });
         } else if (v._isNew) {
           await supabase.from("mission_vehicles").insert({ mission_id: data.id, ...payload });
+          vehicleChanges.push({ action: "added", label: labelOf(modelValue, payload.license_plate) });
         } else if (v.id) {
           await supabase.from("mission_vehicles").update(payload).eq("id", v.id);
+          const orig = originalVehicles[v.id];
+          if (orig) {
+            const changedFields: string[] = [];
+            for (const k of Object.keys(VFIELD_LABELS)) {
+              const a = (orig as any)[k];
+              const b = (payload as any)[k];
+              if (String(a ?? "") !== String(b ?? "")) changedFields.push(VFIELD_LABELS[k]);
+            }
+            if (changedFields.length > 0) {
+              vehicleChanges.push({ action: "updated", label: labelOf(modelValue, payload.license_plate), fields: changedFields });
+            }
+          }
         }
       }
+
+      return { fieldChanges, vehicleChanges };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success("Protokoll aktualisiert");
       qc.invalidateQueries({ queryKey: ["missions"] });
-      logActivity("Einsatz-Protokoll bearbeitet", "einsatz", { mission_id: data?.id });
+      const fieldChanges = result?.fieldChanges || [];
+      const vehicleChanges = result?.vehicleChanges || [];
+      const summary: string[] = [];
+      if (fieldChanges.length > 0) summary.push(...fieldChanges.map((c) => c.field));
+      if (vehicleChanges.length > 0) {
+        const added = vehicleChanges.filter((v) => v.action === "added").length;
+        const deleted = vehicleChanges.filter((v) => v.action === "deleted").length;
+        const updated = vehicleChanges.filter((v) => v.action === "updated").length;
+        if (added) summary.push(`Fahrzeug hinzugefügt (${added})`);
+        if (deleted) summary.push(`Fahrzeug gelöscht (${deleted})`);
+        if (updated) summary.push(`Fahrzeug bearbeitet (${updated})`);
+      }
+      logActivity("Einsatz-Protokoll bearbeitet", "einsatz", {
+        mission_id: data?.id,
+        location: data?.location_type,
+        changed_fields: summary,
+        changes: fieldChanges,
+        vehicle_changes: vehicleChanges,
+      });
       onOpenChange(false);
     },
     onError: (e: any) => toast.error(e.message),
@@ -202,8 +288,8 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
 
   const savePursuit = useMutation({
     mutationFn: async () => {
-      if (!data) return;
-      const { error } = await supabase.from("pursuits").update({
+      if (!data) return { fieldChanges: [] };
+      const updatePayload = {
         description: pDesc || null,
         vehicle_model: pVehicleModel || null,
         license_plate: pLicensePlate || null,
@@ -212,13 +298,46 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
         co_pilot: pCoPilot && pCoPilot !== "none" ? pCoPilot : null,
         left_gunner: pLeftGunner && pLeftGunner !== "none" ? pLeftGunner : null,
         right_gunner: pRightGunner && pRightGunner !== "none" ? pRightGunner : null,
-      }).eq("id", data.id);
+      };
+      const { error } = await supabase.from("pursuits").update(updatePayload).eq("id", data.id);
       if (error) throw error;
+
+      const FIELD_LABELS: Record<string, string> = {
+        description: "Beschreibung",
+        vehicle_model: "Fahrzeug",
+        license_plate: "Kennzeichen",
+        pursuit_date: "Datum/Uhrzeit",
+        pilot: "Pilot",
+        co_pilot: "Co-Pilot",
+        left_gunner: "Left Gunner",
+        right_gunner: "Right Gunner",
+      };
+      const fieldChanges: Array<{ field: string; from: any; to: any }> = [];
+      for (const key of Object.keys(FIELD_LABELS)) {
+        const before = (data as any)[key] ?? null;
+        const after = (updatePayload as any)[key] ?? null;
+        if (key === "pursuit_date") {
+          if (new Date(before).getTime() !== new Date(after).getTime()) {
+            fieldChanges.push({ field: FIELD_LABELS[key], from: before, to: after });
+          }
+          continue;
+        }
+        if (String(before ?? "") !== String(after ?? "")) {
+          fieldChanges.push({ field: FIELD_LABELS[key], from: before, to: after });
+        }
+      }
+      return { fieldChanges };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success("Verfolgung aktualisiert");
       qc.invalidateQueries({ queryKey: ["pursuits"] });
-      logActivity("Verfolgung bearbeitet", "verfolgung", { pursuit_id: data?.id });
+      const fieldChanges = result?.fieldChanges || [];
+      logActivity("Verfolgung bearbeitet", "verfolgung", {
+        pursuit_id: data?.id,
+        plate: data?.license_plate,
+        changed_fields: fieldChanges.map((c) => c.field),
+        changes: fieldChanges,
+      });
       onOpenChange(false);
     },
     onError: (e: any) => toast.error(e.message),
