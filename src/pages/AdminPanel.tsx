@@ -917,9 +917,38 @@ const AdminPanel = () => {
                           </p>
                         )}
                         {log.details && Object.keys(log.details).length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                            {formatDetails(log.details)}
-                          </p>
+                          <>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                              {formatDetails(log.details)}
+                            </p>
+                            {Array.isArray(log.details.changes) && log.details.changes.length > 0 && (
+                              <ul className="mt-1.5 space-y-0.5 border-l-2 border-primary/30 pl-2">
+                                {log.details.changes.map((c: any, idx: number) => (
+                                  <li key={idx} className="text-[10px] text-muted-foreground">
+                                    <span className="font-semibold text-foreground/80">{c.field}:</span>{" "}
+                                    <span className="line-through opacity-60">{formatValue(c.from)}</span>
+                                    <span className="mx-1 text-primary">→</span>
+                                    <span className="text-primary font-medium">{formatValue(c.to)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            {Array.isArray(log.details.vehicle_changes) && log.details.vehicle_changes.length > 0 && (
+                              <ul className="mt-1 space-y-0.5 border-l-2 border-amber-500/30 pl-2">
+                                {log.details.vehicle_changes.map((v: any, idx: number) => (
+                                  <li key={idx} className="text-[10px] text-muted-foreground">
+                                    <span className="font-semibold text-foreground/80">
+                                      {v.action === "added" ? "+ Fahrzeug hinzugefügt:" : v.action === "deleted" ? "− Fahrzeug gelöscht:" : "✎ Fahrzeug bearbeitet:"}
+                                    </span>{" "}
+                                    <span className="text-foreground/90">{v.label}</span>
+                                    {v.fields && v.fields.length > 0 && (
+                                      <span className="text-muted-foreground"> ({v.fields.join(", ")})</span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
