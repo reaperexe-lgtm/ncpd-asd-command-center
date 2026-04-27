@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Pencil } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ProtokollEditDialog } from "@/components/ProtokollEditDialog";
 
 const LOCATION_STYLES: Record<string, { bg: string; text: string; border: string; glow: string }> = {
   Staatsbank: { bg: "from-emerald-600/30 to-emerald-800/10", text: "text-emerald-300", border: "border-emerald-500/40", glow: "shadow-emerald-500/10" },
@@ -32,6 +33,7 @@ const ProtokollePage = () => {
   const { can } = usePermissions();
   const canDelete = can("delete_protocols");
   const canEdit = can("edit_protocols");
+  const canFullEdit = role === "director" || role === "admin" || role === "co_director";
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -39,6 +41,7 @@ const ProtokollePage = () => {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [editMissionId, setEditMissionId] = useState<string | null>(null);
   const [editProtokollschreiber, setEditProtokollschreiber] = useState<string>("");
+  const [fullEditEntry, setFullEditEntry] = useState<{ type: "mission" | "pursuit"; data: any } | null>(null);
   const [filter, setFilter] = useState<"all" | "mission" | "pursuit">(() => {
     const t = searchParams.get("type");
     return t === "mission" || t === "pursuit" ? t : "all";
@@ -433,11 +436,18 @@ const ProtokollePage = () => {
                       </div>
 
                       {/* Delete */}
-                      {canDelete && (
-                        <div className="flex justify-end pt-3 border-t border-border/20">
-                          <Button size="sm" variant="destructive" onClick={() => deleteMission.mutate(m.id)} className="gap-2 shadow-lg shadow-destructive/20 font-bold px-5">
-                            <Trash2 className="w-4 h-4" /> Löschen
-                          </Button>
+                      {(canDelete || canFullEdit) && (
+                        <div className="flex justify-end gap-2 pt-3 border-t border-border/20">
+                          {canFullEdit && (
+                            <Button size="sm" variant="outline" onClick={() => setFullEditEntry({ type: "mission", data: m })} className="gap-2 font-bold px-5">
+                              <Pencil className="w-4 h-4" /> Vollständig bearbeiten
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button size="sm" variant="destructive" onClick={() => deleteMission.mutate(m.id)} className="gap-2 shadow-lg shadow-destructive/20 font-bold px-5">
+                              <Trash2 className="w-4 h-4" /> Löschen
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -564,11 +574,18 @@ const ProtokollePage = () => {
                         </div>
                       </div>
 
-                      {canDelete && (
-                        <div className="flex justify-end pt-3 border-t border-border/20">
-                          <Button size="sm" variant="destructive" onClick={() => deletePursuit.mutate(p.id)} className="gap-2 shadow-lg shadow-destructive/20 font-bold px-5">
-                            <Trash2 className="w-4 h-4" /> Löschen
-                          </Button>
+                      {(canDelete || canFullEdit) && (
+                        <div className="flex justify-end gap-2 pt-3 border-t border-border/20">
+                          {canFullEdit && (
+                            <Button size="sm" variant="outline" onClick={() => setFullEditEntry({ type: "pursuit", data: p })} className="gap-2 font-bold px-5">
+                              <Pencil className="w-4 h-4" /> Vollständig bearbeiten
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button size="sm" variant="destructive" onClick={() => deletePursuit.mutate(p.id)} className="gap-2 shadow-lg shadow-destructive/20 font-bold px-5">
+                              <Trash2 className="w-4 h-4" /> Löschen
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -622,6 +639,14 @@ const ProtokollePage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Vollständiges Bearbeiten (Director/Admin) */}
+      <ProtokollEditDialog
+        open={!!fullEditEntry}
+        onOpenChange={(o) => !o && setFullEditEntry(null)}
+        type={fullEditEntry?.type || "mission"}
+        data={fullEditEntry?.data || null}
+      />
     </div>
   );
 };
