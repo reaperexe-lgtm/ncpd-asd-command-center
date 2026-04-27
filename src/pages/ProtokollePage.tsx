@@ -122,11 +122,20 @@ const ProtokollePage = () => {
     mutationFn: async ({ missionId, newWriter }: { missionId: string; newWriter: string }) => {
       const { error } = await supabase.from("missions").update({ protokollschreiber: newWriter || null }).eq("id", missionId);
       if (error) throw error;
+      return { missionId, newWriter };
     },
-    onSuccess: () => {
+    onSuccess: ({ missionId, newWriter }) => {
       queryClient.invalidateQueries({ queryKey: ["missions"] });
       toast.success("Protokollschreiber aktualisiert");
-      logActivity("Protokoll bearbeitet", "einsatz", { field: "protokollschreiber" });
+      const m = missions?.find((x: any) => x.id === missionId);
+      const fromName = getProfileName(m?.protokollschreiber || null);
+      const toName = getProfileName(newWriter || null);
+      logActivity("Protokoll bearbeitet", "einsatz", {
+        mission_id: missionId,
+        location: (m as any)?.location_type,
+        changed_fields: ["Protokollschreiber"],
+        changes: [{ field: "Protokollschreiber", from: fromName, to: toName }],
+      });
       setEditMissionId(null);
     },
     onError: (e: any) => toast.error(e.message),

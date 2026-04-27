@@ -448,6 +448,9 @@ const AdminPanel = () => {
   const formatDetails = (details: any): string => {
     if (!details || Object.keys(details).length === 0) return "";
     const parts: string[] = [];
+    if (Array.isArray(details.changed_fields) && details.changed_fields.length > 0) {
+      parts.push(`Geändert: ${details.changed_fields.join(", ")}`);
+    }
     if (details.amount) parts.push(`$${Number(details.amount).toLocaleString()}`);
     if (details.name) parts.push(details.name);
     if (details.target_name) parts.push(details.target_name);
@@ -465,6 +468,15 @@ const AdminPanel = () => {
     if (details.category && !details.old_role) parts.push(details.category);
     if (parts.length === 0) return JSON.stringify(details);
     return parts.join(" · ");
+  };
+
+  const formatValue = (v: any) => {
+    if (v === null || v === undefined || v === "") return "–";
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
+      const d = new Date(v);
+      return d.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+    return String(v);
   };
 
   return (
@@ -905,9 +917,38 @@ const AdminPanel = () => {
                           </p>
                         )}
                         {log.details && Object.keys(log.details).length > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                            {formatDetails(log.details)}
-                          </p>
+                          <>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                              {formatDetails(log.details)}
+                            </p>
+                            {Array.isArray(log.details.changes) && log.details.changes.length > 0 && (
+                              <ul className="mt-1.5 space-y-0.5 border-l-2 border-primary/30 pl-2">
+                                {log.details.changes.map((c: any, idx: number) => (
+                                  <li key={idx} className="text-[10px] text-muted-foreground">
+                                    <span className="font-semibold text-foreground/80">{c.field}:</span>{" "}
+                                    <span className="line-through opacity-60">{formatValue(c.from)}</span>
+                                    <span className="mx-1 text-primary">→</span>
+                                    <span className="text-primary font-medium">{formatValue(c.to)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            {Array.isArray(log.details.vehicle_changes) && log.details.vehicle_changes.length > 0 && (
+                              <ul className="mt-1 space-y-0.5 border-l-2 border-amber-500/30 pl-2">
+                                {log.details.vehicle_changes.map((v: any, idx: number) => (
+                                  <li key={idx} className="text-[10px] text-muted-foreground">
+                                    <span className="font-semibold text-foreground/80">
+                                      {v.action === "added" ? "+ Fahrzeug hinzugefügt:" : v.action === "deleted" ? "− Fahrzeug gelöscht:" : "✎ Fahrzeug bearbeitet:"}
+                                    </span>{" "}
+                                    <span className="text-foreground/90">{v.label}</span>
+                                    {v.fields && v.fields.length > 0 && (
+                                      <span className="text-muted-foreground"> ({v.fields.join(", ")})</span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
