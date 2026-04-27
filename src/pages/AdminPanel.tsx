@@ -448,6 +448,9 @@ const AdminPanel = () => {
   const formatDetails = (details: any): string => {
     if (!details || Object.keys(details).length === 0) return "";
     const parts: string[] = [];
+    if (Array.isArray(details.changed_fields) && details.changed_fields.length > 0) {
+      parts.push(`Geändert: ${details.changed_fields.join(", ")}`);
+    }
     if (details.amount) parts.push(`$${Number(details.amount).toLocaleString()}`);
     if (details.name) parts.push(details.name);
     if (details.target_name) parts.push(details.target_name);
@@ -465,6 +468,15 @@ const AdminPanel = () => {
     if (details.category && !details.old_role) parts.push(details.category);
     if (parts.length === 0) return JSON.stringify(details);
     return parts.join(" · ");
+  };
+
+  const formatValue = (v: any) => {
+    if (v === null || v === undefined || v === "") return "–";
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
+      const d = new Date(v);
+      return d.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+    return String(v);
   };
 
   return (
