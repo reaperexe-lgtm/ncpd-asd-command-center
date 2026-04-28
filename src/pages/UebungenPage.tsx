@@ -359,7 +359,7 @@ export default function UebungenPage() {
                       })}
                     </div>
                   )}
-                  {isFull && !isPast && myStatus !== "zusage" && (
+                  {isFull && !isPast && (
                     <p className="text-xs text-destructive">Übung ist voll besetzt</p>
                   )}
                 </CardContent>
