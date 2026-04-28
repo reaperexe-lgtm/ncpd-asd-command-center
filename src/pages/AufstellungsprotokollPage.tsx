@@ -646,25 +646,30 @@ const AufstellungsprotokollPage = () => {
                 groups.forEach((group, gi) => {
                   group.members.forEach((m, mi) => {
                     const statusBg =
-                      m.status === "Anwesend" ? "#e65100"
-                      : m.status === "Abgemeldet" ? "#e65100"
+                      m.status === "Anwesend" ? "#2e7d32"
+                      : m.status === "Abgemeldet" ? "#c62828"
                       : "#1565c0";
                     const statusText =
-                      m.status === "Anwesend" ? "Abgemeldet ✓"
+                      m.status === "Anwesend" ? "Anwesend ✓"
                       : m.status === "Abgemeldet" ? "Abgemeldet ✗"
                       : "Im Einsatz";
+                    const isAbgemeldet = m.status === "Abgemeldet";
+                    const rowBg = isAbgemeldet ? "#fdecea" : undefined;
+                    const textColor = isAbgemeldet ? "#c62828" : "#000";
+                    const fontWeight = isAbgemeldet ? 600 : 400;
                     rows.push(
                       <tr
                         key={m.id}
                         style={{
                           borderBottom: "1px solid #ddd",
                           borderTop: mi === 0 && gi > 0 ? "3px solid #ccc" : undefined,
+                          background: rowBg,
                         }}
                       >
-                        <td style={{ padding: "6px 8px" }}>
+                        <td style={{ padding: "6px 8px", color: textColor, fontWeight }}>
                           {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                         </td>
-                        <td style={{ padding: "6px 8px" }}>{m.roleLabel}</td>
+                        <td style={{ padding: "6px 8px", color: textColor, fontWeight }}>{m.roleLabel}</td>
                         <td style={{ padding: "6px 8px" }}>
                           <span style={{
                             background: statusBg, color: "#fff", padding: "2px 10px",
