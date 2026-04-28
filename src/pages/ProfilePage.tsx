@@ -25,6 +25,7 @@ const ProfilePage = () => {
     top_me: true,
   });
   const [discordServerLink, setDiscordServerLink] = useState("");
+  const [discordServerDescription, setDiscordServerDescription] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -44,6 +45,10 @@ const ProfilePage = () => {
       // Load discord server invite link
       supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
         if (data?.role) setDiscordServerLink(data.role);
+      });
+      // Load discord server description
+      supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
+        if (data?.role) setDiscordServerDescription(data.role);
       });
     }
   }, [profile, user]);
@@ -187,16 +192,25 @@ const ProfilePage = () => {
             </p>
           </div>
           {discordServerLink && (
-            <a
-              href={discordServerLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md px-4 py-2.5 text-xs font-medium transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              Discord-Server beitreten
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            <div className="space-y-2">
+              {discordServerDescription && (
+                <div className="rounded-md border border-[#5865F2]/30 bg-[#5865F2]/5 p-3">
+                  <p className="text-[11px] text-foreground leading-relaxed whitespace-pre-wrap">
+                    {discordServerDescription}
+                  </p>
+                </div>
+              )}
+              <a
+                href={discordServerLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md px-4 py-2.5 text-xs font-medium transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Discord-Server beitreten
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           )}
         </div>
 
