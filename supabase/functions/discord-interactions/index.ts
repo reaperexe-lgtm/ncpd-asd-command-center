@@ -140,6 +140,8 @@ Deno.serve(async (req) => {
       {
         name: "stats",
         description: "Zeigt die Wochenstatistik einer Person an",
+        integration_types: [0, 1],
+        contexts: [0, 1, 2],
         options: [
           {
             name: "name",
@@ -152,14 +154,20 @@ Deno.serve(async (req) => {
       {
         name: "topwoche",
         description: "Zeigt die Top-Protokollschreiber der aktuellen ASD-Woche",
+        integration_types: [0, 1],
+        contexts: [0, 1, 2],
       },
       {
         name: "topmonat",
         description: "Zeigt die Top-Protokollschreiber des aktuellen Monats",
+        integration_types: [0, 1],
+        contexts: [0, 1, 2],
       },
       {
         name: "topme",
         description: "Zeigt deine persönliche Protokoll-Statistik der aktuellen ASD-Woche",
+        integration_types: [0, 1],
+        contexts: [0, 1, 2],
       },
     ];
 
