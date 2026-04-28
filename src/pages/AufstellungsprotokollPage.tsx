@@ -509,14 +509,14 @@ const AufstellungsprotokollPage = () => {
                             </thead>
                             <tbody>
                               {(p.attendance as any[]).map((a: any, i: number) => (
-                                <tr key={i} className="border-b border-border/30">
-                                  <td className="p-1.5 text-foreground">{a.internalDienstnummer ? `[${a.internalDienstnummer}] ` : ""}{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
-                                  <td className="p-1.5 text-foreground">{a.roleLabel}</td>
+                                <tr key={i} className={`border-b border-border/30 ${a.status === "Abgemeldet" ? "bg-red-500/10" : ""}`}>
+                                  <td className={`p-1.5 ${a.status === "Abgemeldet" ? "text-red-400 font-semibold" : "text-foreground"}`}>{a.internalDienstnummer ? `[${a.internalDienstnummer}] ` : ""}{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
+                                  <td className={`p-1.5 ${a.status === "Abgemeldet" ? "text-red-400" : "text-foreground"}`}>{a.roleLabel}</td>
                                   <td className="p-1.5">
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                       a.status === "Anwesend" ? "bg-green-600 text-white"
                                       : a.status === "Im Einsatz" ? "bg-blue-600 text-white"
-                                      : "bg-orange-500 text-white"
+                                      : "bg-red-600 text-white"
                                     }`}>
                                       {a.status}
                                     </span>
