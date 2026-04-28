@@ -110,9 +110,17 @@ Deno.serve(async (req) => {
       const messages = await msgsRes.json();
 
       const needle = (data?.contains as string) ?? "Bot-Test";
-      const toDelete = messages.filter((m: any) =>
-        m.author?.id === me.id && typeof m.content === "string" && m.content.includes(needle)
-      );
+      // Match either: (a) sent by this bot user, or (b) any bot/webhook/app message
+      // whose content matches the needle. This is needed when the deployed app id
+      // differs from the historical bot user id (e.g. after re-installing the bot).
+      const matchAnyBot = data?.match_any_bot !== false;
+      const toDelete = messages.filter((m: any) => {
+        const contentMatch = typeof m.content === "string" && m.content.includes(needle);
+        if (!contentMatch) return false;
+        if (m.author?.id === me.id) return true;
+        if (matchAnyBot && (m.author?.bot === true || m.webhook_id)) return true;
+        return false;
+      });
 
       const deleted: string[] = [];
       for (const m of toDelete) {
