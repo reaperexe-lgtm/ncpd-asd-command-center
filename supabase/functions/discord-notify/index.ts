@@ -31,7 +31,12 @@ async function sendDM(botToken: string, discordId: string, message: string) {
   return await msgRes.json();
 }
 
-async function sendChannelMessage(botToken: string, channelId: string, message: string) {
+async function sendChannelMessage(
+  botToken: string,
+  channelId: string,
+  message: string,
+  mentionRoleId?: string,
+) {
   const cleanChannelId = sanitizeDiscordId(channelId);
   if (!/^\d{17,20}$/.test(cleanChannelId)) {
     throw new Error(`Ungültige Discord Channel-ID: ${channelId}`);
@@ -46,10 +51,18 @@ async function sendChannelMessage(botToken: string, channelId: string, message: 
     throw new Error(`Kein Zugriff auf Discord-Channel ${cleanChannelId}: ${err}`);
   }
 
+  const cleanRoleId = sanitizeDiscordId(mentionRoleId);
+  const hasRole = /^\d{17,20}$/.test(cleanRoleId);
+
+  const body: Record<string, unknown> = { content: message };
+  if (hasRole) {
+    body.allowed_mentions = { parse: [], roles: [cleanRoleId] };
+  }
+
   const msgRes = await fetch(`${DISCORD_API}/channels/${cleanChannelId}/messages`, {
     method: "POST",
     headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ content: message }),
+    body: JSON.stringify(body),
   });
   if (!msgRes.ok) {
     const err = await msgRes.text();
@@ -141,8 +154,13 @@ Deno.serve(async (req) => {
       if (data.created_by_name) lines.push(`\n_Erstellt von ${data.created_by_name}_`);
       lines.push(`\n👉 Im ASD Dashboard unter **Übungen** anmelden!`);
 
+      const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
+      const content = mentionRoleId
+        ? `<@&${mentionRoleId}>\n${lines.join("\n")}`
+        : lines.join("\n");
+
       try {
-        await sendChannelMessage(botToken, channelId, lines.join("\n"));
+        await sendChannelMessage(botToken, channelId, content, mentionRoleId);
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
