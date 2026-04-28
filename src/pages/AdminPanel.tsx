@@ -1148,7 +1148,7 @@ const AdminPanel = () => {
                 <Megaphone className="w-4 h-4" /> Wöchentliche Aufstellung — Discord Ankündigung
               </h2>
               <p className="text-xs text-muted-foreground">
-                Diese Ankündigung wird automatisch jeden <strong>Sonntag um 16:00 Uhr</strong> (deutsche Zeit) im Ankündigungs-Channel gepostet.
+                Diese Ankündigung wird automatisch jeden <strong>Freitag um 18:00 Uhr</strong> (deutsche Zeit) im Ankündigungs-Channel gepostet.
                 Setze hier das Datum & die Uhrzeit der nächsten Aufstellung sowie den Ort.
               </p>
 
@@ -1182,7 +1182,7 @@ const AdminPanel = () => {
                   onChange={(e) => setAufstellungAuto(e.target.checked)}
                   className="accent-primary"
                 />
-                Automatische Sonntags-Ankündigung aktivieren
+                Automatische Freitags-Ankündigung aktivieren
               </label>
 
               <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border">
