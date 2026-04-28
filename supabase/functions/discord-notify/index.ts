@@ -87,6 +87,47 @@ Deno.serve(async (req) => {
 
     const { type, data } = await req.json();
 
+    if (type === "cleanup_test_messages") {
+      const channelId = sanitizeDiscordId(
+        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
+        Deno.env.get("DISCORD_CHANNEL_ID")
+      );
+      if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
+
+      // Get bot's own user id
+      const meRes = await fetch(`${DISCORD_API}/users/@me`, {
+        headers: { Authorization: `Bot ${botToken}` },
+      });
+      const me = await meRes.json();
+
+      const msgsRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages?limit=50`, {
+        headers: { Authorization: `Bot ${botToken}` },
+      });
+      if (!msgsRes.ok) {
+        const err = await msgsRes.text();
+        throw new Error(`Nachrichten konnten nicht geladen werden: ${err}`);
+      }
+      const messages = await msgsRes.json();
+
+      const needle = (data?.contains as string) ?? "Bot-Test";
+      const toDelete = messages.filter((m: any) =>
+        m.author?.id === me.id && typeof m.content === "string" && m.content.includes(needle)
+      );
+
+      const deleted: string[] = [];
+      for (const m of toDelete) {
+        const delRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${m.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bot ${botToken}` },
+        });
+        if (delRes.ok) deleted.push(m.id);
+      }
+
+      return new Response(JSON.stringify({ success: true, deleted_count: deleted.length, deleted }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (type === "reset_request") {
       // Notify all admins with discord_id about new reset request via DM
       const { data: adminRoles } = await supabaseAdmin
