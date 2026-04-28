@@ -31,7 +31,12 @@ async function sendDM(botToken: string, discordId: string, message: string) {
   return await msgRes.json();
 }
 
-async function sendChannelMessage(botToken: string, channelId: string, message: string) {
+async function sendChannelMessage(
+  botToken: string,
+  channelId: string,
+  message: string,
+  mentionRoleId?: string,
+) {
   const cleanChannelId = sanitizeDiscordId(channelId);
   if (!/^\d{17,20}$/.test(cleanChannelId)) {
     throw new Error(`Ungültige Discord Channel-ID: ${channelId}`);
@@ -46,10 +51,18 @@ async function sendChannelMessage(botToken: string, channelId: string, message: 
     throw new Error(`Kein Zugriff auf Discord-Channel ${cleanChannelId}: ${err}`);
   }
 
+  const cleanRoleId = sanitizeDiscordId(mentionRoleId);
+  const hasRole = /^\d{17,20}$/.test(cleanRoleId);
+
+  const body: Record<string, unknown> = { content: message };
+  if (hasRole) {
+    body.allowed_mentions = { parse: [], roles: [cleanRoleId] };
+  }
+
   const msgRes = await fetch(`${DISCORD_API}/channels/${cleanChannelId}/messages`, {
     method: "POST",
     headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ content: message }),
+    body: JSON.stringify(body),
   });
   if (!msgRes.ok) {
     const err = await msgRes.text();
