@@ -25,6 +25,7 @@ const ProfilePage = () => {
     top_me: true,
   });
   const [discordServerLink, setDiscordServerLink] = useState("");
+  const [discordServerDescription, setDiscordServerDescription] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -44,6 +45,10 @@ const ProfilePage = () => {
       // Load discord server invite link
       supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
         if (data?.role) setDiscordServerLink(data.role);
+      });
+      // Load discord server description
+      supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
+        if (data?.role) setDiscordServerDescription(data.role);
       });
     }
   }, [profile, user]);
