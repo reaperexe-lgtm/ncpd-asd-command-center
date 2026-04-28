@@ -88,11 +88,12 @@ Deno.serve(async (req) => {
     const { type, data } = await req.json();
 
     if (type === "cleanup_test_messages") {
-      const channelId = sanitizeDiscordId(
-        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
-        Deno.env.get("DISCORD_CHANNEL_ID")
-      );
-      if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
+      // Search across both configured channels (announcements + general)
+      const candidateChannelIds = [
+        sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID")),
+        sanitizeDiscordId(Deno.env.get("DISCORD_CHANNEL_ID")),
+      ].filter((id, i, arr) => id && arr.indexOf(id) === i);
+      if (candidateChannelIds.length === 0) throw new Error("Kein Discord-Channel konfiguriert");
 
       // Get bot's own user id
       const meRes = await fetch(`${DISCORD_API}/users/@me`, {
@@ -100,30 +101,59 @@ Deno.serve(async (req) => {
       });
       const me = await meRes.json();
 
-      const msgsRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages?limit=50`, {
-        headers: { Authorization: `Bot ${botToken}` },
-      });
-      if (!msgsRes.ok) {
-        const err = await msgsRes.text();
-        throw new Error(`Nachrichten konnten nicht geladen werden: ${err}`);
-      }
-      const messages = await msgsRes.json();
-
       const needle = (data?.contains as string) ?? "Bot-Test";
-      const toDelete = messages.filter((m: any) =>
-        m.author?.id === me.id && typeof m.content === "string" && m.content.includes(needle)
-      );
+      // If the bot lacks Message Content Intent, m.content will be empty for messages
+      // it didn't author. So we additionally allow deletion based on author id alone
+      // when the caller passes match_own_bot_only or matchByAuthor.
+      const matchByAuthor = data?.match_by_author === true;
 
-      const deleted: string[] = [];
-      for (const m of toDelete) {
-        const delRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${m.id}`, {
-          method: "DELETE",
+      const allDeleted: string[] = [];
+      const debug: any = data?.debug ? { bot_user_id: me.id, channels: [] } : undefined;
+
+      for (const channelId of candidateChannelIds) {
+        const msgsRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages?limit=50`, {
           headers: { Authorization: `Bot ${botToken}` },
         });
-        if (delRes.ok) deleted.push(m.id);
+        if (!msgsRes.ok) {
+          if (debug) debug.channels.push({ channel_id: channelId, error: await msgsRes.text() });
+          continue;
+        }
+        const messages = await msgsRes.json();
+
+        const toDelete = messages.filter((m: any) => {
+          const isOwnBot = m.author?.id === me.id;
+          if (matchByAuthor) return isOwnBot;
+          const contentMatch = typeof m.content === "string" && m.content.includes(needle);
+          return contentMatch && (isOwnBot || m.author?.bot === true || m.webhook_id);
+        });
+
+        for (const m of toDelete) {
+          const delRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${m.id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bot ${botToken}` },
+          });
+          if (delRes.ok) allDeleted.push(m.id);
+        }
+
+        if (debug) {
+          debug.channels.push({
+            channel_id: channelId,
+            total_messages: messages.length,
+            own_bot_messages: messages.filter((m: any) => m.author?.id === me.id).length,
+            deleted_here: toDelete.length,
+            sample: messages.slice(0, 8).map((m: any) => ({
+              id: m.id,
+              author_id: m.author?.id,
+              author_username: m.author?.username,
+              is_bot: m.author?.bot,
+              webhook_id: m.webhook_id,
+              content_preview: typeof m.content === "string" ? m.content.slice(0, 80) : null,
+            })),
+          });
+        }
       }
 
-      return new Response(JSON.stringify({ success: true, deleted_count: deleted.length, deleted }), {
+      return new Response(JSON.stringify({ success: true, deleted_count: allDeleted.length, deleted: allDeleted, debug }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
