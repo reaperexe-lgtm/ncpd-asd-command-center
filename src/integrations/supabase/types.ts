@@ -868,6 +868,83 @@ export type Database = {
         }
         Relationships: []
       }
+      uebung_teilnahmen: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          uebung_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          uebung_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          uebung_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uebung_teilnahmen_uebung_id_fkey"
+            columns: ["uebung_id"]
+            isOneToOne: false
+            referencedRelation: "uebungen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uebungen: {
+        Row: {
+          beschreibung: string | null
+          created_at: string
+          created_by: string
+          id: string
+          kategorie: string
+          max_teilnehmer: number | null
+          ort: string | null
+          start_at: string
+          status: string
+          titel: string
+          updated_at: string
+        }
+        Insert: {
+          beschreibung?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          kategorie?: string
+          max_teilnehmer?: number | null
+          ort?: string | null
+          start_at: string
+          status?: string
+          titel: string
+          updated_at?: string
+        }
+        Update: {
+          beschreibung?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          kategorie?: string
+          max_teilnehmer?: number | null
+          ort?: string | null
+          start_at?: string
+          status?: string
+          titel?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
