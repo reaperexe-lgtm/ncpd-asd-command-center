@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -101,6 +101,11 @@ const AdminPanel = () => {
   const [savingLink, setSavingLink] = useState(false);
   const [discordInviteDescription, setDiscordInviteDescription] = useState("");
   const [savingDescription, setSavingDescription] = useState(false);
+  const [aufstellungAt, setAufstellungAt] = useState("");
+  const [aufstellungOrt, setAufstellungOrt] = useState("Vespucci Police Department Dach");
+  const [aufstellungAuto, setAufstellungAuto] = useState(true);
+  const [savingAufstellung, setSavingAufstellung] = useState(false);
+  const [sendingAufstellung, setSendingAufstellung] = useState(false);
 
   // Load discord invite link
   useEffect(() => {
@@ -110,6 +115,22 @@ const AdminPanel = () => {
     });
     supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
       if (data?.role) setDiscordInviteDescription(data.role);
+    });
+    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["aufstellung_next_at", "aufstellung_ort", "aufstellung_auto_enabled"]).then(({ data }) => {
+      for (const r of data || []) {
+        if (r.permission_key === "aufstellung_next_at" && r.role) {
+          // datetime-local needs format YYYY-MM-DDTHH:mm
+          try {
+            const d = new Date(r.role);
+            if (!isNaN(d.getTime())) {
+              const pad = (n: number) => String(n).padStart(2, "0");
+              setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+            }
+          } catch {}
+        }
+        if (r.permission_key === "aufstellung_ort" && r.role) setAufstellungOrt(r.role);
+        if (r.permission_key === "aufstellung_auto_enabled") setAufstellungAuto(r.role === "true");
+      }
     });
   }, [isAdmin]);
 
