@@ -3,6 +3,10 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
+function sanitizeDiscordId(value: string | null | undefined) {
+  return value?.trim().replace(/\s+/g, "") ?? "";
+}
+
 async function sendDM(botToken: string, discordId: string, message: string) {
   const channelRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
     method: "POST",
@@ -28,14 +32,28 @@ async function sendDM(botToken: string, discordId: string, message: string) {
 }
 
 async function sendChannelMessage(botToken: string, channelId: string, message: string) {
-  const msgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+  const cleanChannelId = sanitizeDiscordId(channelId);
+  if (!/^\d{17,20}$/.test(cleanChannelId)) {
+    throw new Error(`Ungültige Discord Channel-ID: ${channelId}`);
+  }
+
+  const channelRes = await fetch(`${DISCORD_API}/channels/${cleanChannelId}`, {
+    headers: { Authorization: `Bot ${botToken}` },
+  });
+
+  if (!channelRes.ok) {
+    const err = await channelRes.text();
+    throw new Error(`Kein Zugriff auf Discord-Channel ${cleanChannelId}: ${err}`);
+  }
+
+  const msgRes = await fetch(`${DISCORD_API}/channels/${cleanChannelId}/messages`, {
     method: "POST",
     headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ content: message }),
   });
   if (!msgRes.ok) {
     const err = await msgRes.text();
-    throw new Error(`Failed to send channel message: ${err}`);
+    throw new Error(`Nachricht konnte nicht in Discord-Channel ${cleanChannelId} gesendet werden: ${err}`);
   }
   return await msgRes.json();
 }
@@ -95,9 +113,10 @@ Deno.serve(async (req) => {
     }
 
     if (type === "uebung_announcement") {
-      const channelId =
+      const channelId = sanitizeDiscordId(
         Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
-        Deno.env.get("DISCORD_CHANNEL_ID");
+        Deno.env.get("DISCORD_CHANNEL_ID")
+      );
       if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
 
       const startDate = new Date(data.start_at);
