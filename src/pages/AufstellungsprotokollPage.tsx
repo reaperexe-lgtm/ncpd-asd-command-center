@@ -144,7 +144,7 @@ const AufstellungsprotokollPage = () => {
   const statusColor = (status: AttendanceStatus) => {
     switch (status) {
       case "Anwesend": return "bg-green-600 text-white";
-      case "Abgemeldet": return "bg-orange-500 text-white";
+      case "Abgemeldet": return "bg-red-600 text-white";
       case "Im Einsatz": return "bg-blue-600 text-white";
     }
   };
@@ -367,11 +367,16 @@ const AufstellungsprotokollPage = () => {
               {groupedAttendance().map((group, gi) => (
                 <>
                   {group.members.map((m, mi) => (
-                    <tr key={m.id} className={`border-b border-border/50 ${mi === 0 && gi > 0 ? "border-t-2 border-t-border" : ""}`}>
-                      <td className="p-2 text-foreground">
+                    <tr
+                      key={m.id}
+                      className={`border-b border-border/50 ${mi === 0 && gi > 0 ? "border-t-2 border-t-border" : ""} ${
+                        m.status === "Abgemeldet" ? "bg-red-500/10" : ""
+                      }`}
+                    >
+                      <td className={`p-2 ${m.status === "Abgemeldet" ? "text-red-400 font-semibold" : "text-foreground"}`}>
                         {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                       </td>
-                      <td className="p-2 text-foreground">{m.roleLabel}</td>
+                      <td className={`p-2 ${m.status === "Abgemeldet" ? "text-red-400" : "text-foreground"}`}>{m.roleLabel}</td>
                       <td className="p-2">
                         <select
                           value={m.status}
@@ -504,14 +509,14 @@ const AufstellungsprotokollPage = () => {
                             </thead>
                             <tbody>
                               {(p.attendance as any[]).map((a: any, i: number) => (
-                                <tr key={i} className="border-b border-border/30">
-                                  <td className="p-1.5 text-foreground">{a.internalDienstnummer ? `[${a.internalDienstnummer}] ` : ""}{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
-                                  <td className="p-1.5 text-foreground">{a.roleLabel}</td>
+                                <tr key={i} className={`border-b border-border/30 ${a.status === "Abgemeldet" ? "bg-red-500/10" : ""}`}>
+                                  <td className={`p-1.5 ${a.status === "Abgemeldet" ? "text-red-400 font-semibold" : "text-foreground"}`}>{a.internalDienstnummer ? `[${a.internalDienstnummer}] ` : ""}{a.dienstnummer ? `[${a.dienstnummer}] ` : ""}{a.name}</td>
+                                  <td className={`p-1.5 ${a.status === "Abgemeldet" ? "text-red-400" : "text-foreground"}`}>{a.roleLabel}</td>
                                   <td className="p-1.5">
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                       a.status === "Anwesend" ? "bg-green-600 text-white"
                                       : a.status === "Im Einsatz" ? "bg-blue-600 text-white"
-                                      : "bg-orange-500 text-white"
+                                      : "bg-red-600 text-white"
                                     }`}>
                                       {a.status}
                                     </span>
@@ -641,25 +646,30 @@ const AufstellungsprotokollPage = () => {
                 groups.forEach((group, gi) => {
                   group.members.forEach((m, mi) => {
                     const statusBg =
-                      m.status === "Anwesend" ? "#e65100"
-                      : m.status === "Abgemeldet" ? "#e65100"
+                      m.status === "Anwesend" ? "#2e7d32"
+                      : m.status === "Abgemeldet" ? "#c62828"
                       : "#1565c0";
                     const statusText =
-                      m.status === "Anwesend" ? "Abgemeldet ✓"
+                      m.status === "Anwesend" ? "Anwesend ✓"
                       : m.status === "Abgemeldet" ? "Abgemeldet ✗"
                       : "Im Einsatz";
+                    const isAbgemeldet = m.status === "Abgemeldet";
+                    const rowBg = isAbgemeldet ? "#fdecea" : undefined;
+                    const textColor = isAbgemeldet ? "#c62828" : "#000";
+                    const fontWeight = isAbgemeldet ? 600 : 400;
                     rows.push(
                       <tr
                         key={m.id}
                         style={{
                           borderBottom: "1px solid #ddd",
                           borderTop: mi === 0 && gi > 0 ? "3px solid #ccc" : undefined,
+                          background: rowBg,
                         }}
                       >
-                        <td style={{ padding: "6px 8px" }}>
+                        <td style={{ padding: "6px 8px", color: textColor, fontWeight }}>
                           {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                         </td>
-                        <td style={{ padding: "6px 8px" }}>{m.roleLabel}</td>
+                        <td style={{ padding: "6px 8px", color: textColor, fontWeight }}>{m.roleLabel}</td>
                         <td style={{ padding: "6px 8px" }}>
                           <span style={{
                             background: statusBg, color: "#fff", padding: "2px 10px",
