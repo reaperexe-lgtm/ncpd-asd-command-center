@@ -94,6 +94,45 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (type === "uebung_announcement") {
+      const channelId = Deno.env.get("DISCORD_CHANNEL_ID");
+      if (!channelId) throw new Error("DISCORD_CHANNEL_ID not set");
+
+      const startDate = new Date(data.start_at);
+      const dateStr = startDate.toLocaleString("de-DE", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const lines = [
+        `🎯 **Neue Übung angekündigt: ${data.titel}**`,
+        `━━━━━━━━━━━━━━━`,
+        `📅 **Wann:** ${dateStr} Uhr`,
+      ];
+      if (data.ort) lines.push(`📍 **Ort:** ${data.ort}`);
+      if (data.kategorie) lines.push(`🏷️ **Kategorie:** ${data.kategorie}`);
+      if (data.max_teilnehmer) lines.push(`👥 **Max. Teilnehmer:** ${data.max_teilnehmer}`);
+      if (data.beschreibung) lines.push(`\n${data.beschreibung}`);
+      if (data.created_by_name) lines.push(`\n_Erstellt von ${data.created_by_name}_`);
+      lines.push(`\n👉 Im ASD Dashboard unter **Übungen** anmelden!`);
+
+      try {
+        await sendChannelMessage(botToken, channelId, lines.join("\n"));
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (type === "stats_report") {
       // Send stats report to a Discord CHANNEL (not DMs)
       const channelId = Deno.env.get("DISCORD_CHANNEL_ID");
