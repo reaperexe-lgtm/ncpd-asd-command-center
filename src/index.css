@@ -4,44 +4,44 @@
 
 @layer base {
   :root {
-    --background: 150 25% 6%;
-    --foreground: 140 50% 45%;
+    --background: 330 40% 96%;
+    --foreground: 330 50% 20%;
 
-    --card: 150 30% 8%;
-    --card-foreground: 140 50% 45%;
+    --card: 330 60% 98%;
+    --card-foreground: 330 50% 20%;
 
-    --popover: 150 30% 8%;
-    --popover-foreground: 140 50% 45%;
+    --popover: 330 60% 98%;
+    --popover-foreground: 330 50% 20%;
 
-    --primary: 140 50% 35%;
-    --primary-foreground: 150 25% 6%;
+    --primary: 330 75% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 150 25% 12%;
-    --secondary-foreground: 140 40% 60%;
+    --secondary: 330 60% 90%;
+    --secondary-foreground: 330 60% 30%;
 
-    --muted: 150 20% 14%;
-    --muted-foreground: 150 15% 50%;
+    --muted: 330 40% 92%;
+    --muted-foreground: 330 20% 45%;
 
-    --accent: 80 45% 45%;
-    --accent-foreground: 150 25% 6%;
+    --accent: 290 70% 60%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 140 35% 18%;
-    --input: 150 25% 14%;
-    --ring: 140 50% 35%;
+    --border: 330 50% 85%;
+    --input: 330 50% 92%;
+    --ring: 330 75% 55%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 150 25% 8%;
-    --sidebar-foreground: 140 40% 60%;
-    --sidebar-primary: 140 50% 35%;
-    --sidebar-primary-foreground: 150 25% 6%;
-    --sidebar-accent: 150 25% 14%;
-    --sidebar-accent-foreground: 140 40% 60%;
-    --sidebar-border: 140 35% 18%;
-    --sidebar-ring: 140 50% 35%;
+    --sidebar-background: 330 60% 95%;
+    --sidebar-foreground: 330 50% 25%;
+    --sidebar-primary: 330 75% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 330 60% 88%;
+    --sidebar-accent-foreground: 330 60% 30%;
+    --sidebar-border: 330 50% 85%;
+    --sidebar-ring: 330 75% 55%;
   }
 }
 
@@ -67,14 +67,14 @@
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(150 25% 6%);
+  background: hsl(330 40% 96%);
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(140 35% 18%);
+  background: hsl(330 50% 75%);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(140 50% 35%);
+  background: hsl(330 75% 55%);
 }
 
 @keyframes slotScroll {
