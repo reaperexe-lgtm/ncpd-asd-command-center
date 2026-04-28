@@ -113,6 +113,35 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
 
   const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
 
+  // Bewerber & Fluglizenz-Accounts zur Auswahl
+  const { data: applicants } = useQuery({
+    queryKey: ["practical-exam-applicants"],
+    enabled: canEdit,
+    queryFn: async () => {
+      const { data: roles, error: rErr } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["asd_applicant", "flight_applicant", "flight_license"]);
+      if (rErr) throw rErr;
+      const ids = (roles || []).map((r: any) => r.user_id);
+      if (ids.length === 0) return [];
+      const { data: profs, error: pErr } = await supabase
+        .from("profiles")
+        .select("id, name, dienstnummer")
+        .in("id", ids);
+      if (pErr) throw pErr;
+      const roleMap = new Map((roles || []).map((r: any) => [r.user_id, r.role]));
+      return (profs || [])
+        .map((p: any) => ({
+          id: p.id,
+          name: p.name || "",
+          dienstnummer: p.dienstnummer || "",
+          role: roleMap.get(p.id) as string,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    },
+  });
+
   const locationScore = checkedLocations.length;
   const totalBonus = himmelsrichtungDeduction + (config.hasUturn ? uturnDeduction : 0) + ten33Deduction;
   const totalScore = Math.min(config.maxScore, locationScore + totalBonus);
@@ -252,6 +281,38 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-primary" /> Bewerber-Informationen
           </h3>
+          {applicants && applicants.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs">Bewerber/Fluglizenz-Account auswählen (optional)</Label>
+              <select
+                className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                value=""
+                onChange={(e) => {
+                  const a = applicants.find((x) => x.id === e.target.value);
+                  if (a) {
+                    setCandidateName(a.name);
+                    setCandidateDienstnummer(a.dienstnummer);
+                  }
+                }}
+              >
+                <option value="">— Aus Liste wählen —</option>
+                {applicants.map((a) => {
+                  const label =
+                    a.role === "asd_applicant" ? "ASD-Bewerber"
+                    : a.role === "flight_applicant" ? "Fluglizenz-Bewerber"
+                    : "Fluglizenz";
+                  return (
+                    <option key={a.id} value={a.id}>
+                      {a.name} {a.dienstnummer ? `(${a.dienstnummer})` : ""} — {label}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Name und Dienstnummer werden automatisch übernommen — du kannst sie danach noch anpassen.
+              </p>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-xs">Name des Bewerbers</Label>
