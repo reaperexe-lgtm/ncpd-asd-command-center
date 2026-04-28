@@ -127,15 +127,21 @@ export default function UebungenPage() {
 
     if (notifyDiscord) {
       try {
-        await supabase.functions.invoke("discord-notify", {
+        const { data: notifyResult, error: notifyError } = await supabase.functions.invoke("discord-notify", {
           body: {
             type: "uebung_announcement",
             data: { ...payload, created_by_name: profile?.name },
           },
         });
-        toast.success("Discord-Ankündigung gesendet");
+
+        if (notifyError || notifyResult?.success === false) {
+          const message = notifyError?.message || notifyResult?.error || "Discord-Notification fehlgeschlagen";
+          toast.error(message);
+        } else {
+          toast.success("Discord-Ankündigung gesendet");
+        }
       } catch (e: any) {
-        toast.error("Discord-Notification fehlgeschlagen");
+        toast.error(e?.message || "Discord-Notification fehlgeschlagen");
       }
     }
 
