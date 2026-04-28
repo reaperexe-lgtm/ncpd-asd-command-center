@@ -1081,6 +1081,45 @@ const AdminPanel = () => {
                 </a>
               )}
             </div>
+
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" /> Discord-Server Beschreibung
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Diese Beschreibung wird zusammen mit dem Einladungslink im Profil angezeigt.
+              </p>
+              <Textarea
+                value={discordInviteDescription}
+                onChange={(e) => setDiscordInviteDescription(e.target.value)}
+                placeholder="Kurze Beschreibung des Discord-Servers (z. B. Regeln, Zweck, was die Nutzer erwartet)..."
+                className="bg-background border-border min-h-[120px]"
+              />
+              <div className="flex justify-end">
+                <Button
+                  onClick={async () => {
+                    setSavingDescription(true);
+                    try {
+                      const { error } = await supabase
+                        .from("permission_settings")
+                        .update({ role: discordInviteDescription } as any)
+                        .eq("permission_key", "discord_invite_description");
+                      if (error) throw error;
+                      toast.success("Beschreibung gespeichert");
+                      logActivity("Discord-Beschreibung aktualisiert", "admin");
+                    } catch {
+                      toast.error("Fehler beim Speichern");
+                    } finally {
+                      setSavingDescription(false);
+                    }
+                  }}
+                  disabled={savingDescription}
+                  className="gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
