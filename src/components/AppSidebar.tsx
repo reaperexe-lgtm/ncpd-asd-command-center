@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
   SidebarHeader,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useEffect, useState } from "react";
@@ -63,17 +64,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-3">
-        {!collapsed ? (
-          <div className="flex items-center justify-between">
-            <span className="text-primary font-bold text-sm">ASD Dashboard</span>
-            <span className="text-primary font-mono text-xs tabular-nums">
-              {time.toLocaleTimeString("de-DE")}
-            </span>
-          </div>
-        ) : (
-          <div className="text-center text-primary text-lg">🚁</div>
-        )}
+      <SidebarHeader className="px-2 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <SidebarTrigger className="shrink-0" />
+          {!collapsed && (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-primary font-bold text-sm truncate">ASD</span>
+              <span className="text-primary font-mono text-xs tabular-nums">
+                {time.toLocaleTimeString("de-DE")}
+              </span>
+            </div>
+          )}
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
