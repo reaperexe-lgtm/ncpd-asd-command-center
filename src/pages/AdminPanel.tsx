@@ -99,12 +99,17 @@ const AdminPanel = () => {
   const [editingInternalDn, setEditingInternalDn] = useState<Record<string, string>>({});
   const [discordInviteLink, setDiscordInviteLink] = useState("");
   const [savingLink, setSavingLink] = useState(false);
+  const [discordInviteDescription, setDiscordInviteDescription] = useState("");
+  const [savingDescription, setSavingDescription] = useState(false);
 
   // Load discord invite link
   useEffect(() => {
     if (!isAdmin) return;
     supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
       if (data?.role) setDiscordInviteLink(data.role);
+    });
+    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
+      if (data?.role) setDiscordInviteDescription(data.role);
     });
   }, [isAdmin]);
 
