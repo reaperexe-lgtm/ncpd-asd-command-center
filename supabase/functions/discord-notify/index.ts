@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
       if (data.max_teilnehmer) lines.push(`👥 **Max. Teilnehmer:** ${data.max_teilnehmer}`);
       if (data.beschreibung) lines.push(`\n${data.beschreibung}`);
       if (data.created_by_name) lines.push(`\n_Erstellt von ${data.created_by_name}_`);
-      lines.push(`\n👉 Im ASD Dashboard unter **Übungen** anmelden!`);
+      lines.push(`\n👉 Im ASD Dashboard anmelden: https://asd-ncpd.lovable.app/uebungen`);
 
       const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
       const content = mentionRoleId
