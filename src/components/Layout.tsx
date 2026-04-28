@@ -1,6 +1,6 @@
 import SlideshowBackground from "./SlideshowBackground";
 import { ReactNode } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 
 const Layout = ({ children }: { children: ReactNode }) => {
