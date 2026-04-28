@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Plus, ClipboardCheck, CheckCircle2, XCircle, ArrowLeft,
-  Trash2, MapPin, AlertTriangle, Trophy, Eye, EyeOff
+  Trash2, MapPin, AlertTriangle, Trophy, Eye, EyeOff, Pencil
 } from "lucide-react";
 
 export const ASD1_LOCATIONS = [
@@ -101,6 +101,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "new" | "detail">("list");
   const [selectedExam, setSelectedExam] = useState<ExamResult | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [candidateName, setCandidateName] = useState("");
   const [candidateDienstnummer, setCandidateDienstnummer] = useState("");
@@ -135,7 +136,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("practical_exam_results").insert({
+      const payload = {
         candidate_name: candidateName,
         candidate_dienstnummer: candidateDienstnummer,
         exam_type: config.type,
@@ -147,16 +148,29 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
         total_score: totalScore,
         max_score: config.maxScore,
         status: passed ? "passed" : "failed",
-        examiner_id: user?.id,
-        examiner_name: profile?.name || null,
         notes: notes || null,
-      });
-      if (error) throw error;
+      };
+      if (editingId) {
+        const { error } = await supabase
+          .from("practical_exam_results")
+          .update(payload as any)
+          .eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("practical_exam_results").insert({
+          ...payload,
+          examiner_id: user?.id,
+          examiner_name: profile?.name || null,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["practical-exams", examType] });
-      toast.success("Prüfung gespeichert!");
+      toast.success(editingId ? "Prüfung aktualisiert!" : "Prüfung gespeichert!");
       resetForm();
+      setEditingId(null);
+      setSelectedExam(null);
       setView("list");
     },
     onError: () => toast.error("Fehler beim Speichern"),
@@ -202,6 +216,18 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
     setNotes("");
   };
 
+  const startEdit = (exam: ExamResult) => {
+    setEditingId(exam.id);
+    setCandidateName(exam.candidate_name);
+    setCandidateDienstnummer(exam.candidate_dienstnummer);
+    setCheckedLocations(exam.checked_locations || []);
+    setHimmelsrichtungDeduction(exam.himmelsrichtung_deduction || 0);
+    setUturnDeduction(exam.uturn_deduction || 0);
+    setTen33Deduction(exam.ten33_deduction || 0);
+    setNotes(exam.notes || "");
+    setView("new");
+  };
+
   const toggleLocation = (loc: string) => {
     setCheckedLocations(prev =>
       prev.includes(loc) ? prev.filter(l => l !== loc) : [...prev, loc]
@@ -213,10 +239,12 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => { resetForm(); setView("list"); }}>
+          <Button variant="ghost" size="sm" onClick={() => { resetForm(); setEditingId(null); setView(editingId ? "detail" : "list"); }}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Zurück
           </Button>
-          <h2 className="text-xl font-bold text-foreground">{config.label}</h2>
+          <h2 className="text-xl font-bold text-foreground">
+            {editingId ? `${config.label} bearbeiten` : config.label}
+          </h2>
         </div>
 
         {/* Candidate Info */}
@@ -368,9 +396,9 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
             className="gap-2"
           >
             <ClipboardCheck className="w-4 h-4" />
-            Prüfung abschließen
+            {editingId ? "Änderungen speichern" : "Prüfung abschließen"}
           </Button>
-          <Button variant="secondary" onClick={() => { resetForm(); setView("list"); }}>Abbrechen</Button>
+          <Button variant="secondary" onClick={() => { resetForm(); setEditingId(null); setView(editingId ? "detail" : "list"); }}>Abbrechen</Button>
         </div>
       </div>
     );
@@ -518,13 +546,33 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
         )}
 
         {["admin", "director", "co_director"].includes(role || "") && (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => startEdit(exam)}
+              className="gap-2"
+            >
+              <Pencil className="w-4 h-4" /> Bearbeiten
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => { if (confirm("Prüfung wirklich löschen?")) deleteMutation.mutate(exam.id); }}
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" /> Löschen
+            </Button>
+          </div>
+        )}
+        {canEdit && !["admin", "director", "co_director"].includes(role || "") && (
           <Button
-            variant="destructive"
+            variant="secondary"
             size="sm"
-            onClick={() => { if (confirm("Prüfung wirklich löschen?")) deleteMutation.mutate(exam.id); }}
+            onClick={() => startEdit(exam)}
             className="gap-2"
           >
-            <Trash2 className="w-4 h-4" /> Löschen
+            <Pencil className="w-4 h-4" /> Bearbeiten
           </Button>
         )}
       </div>
