@@ -131,7 +131,22 @@ Deno.serve(async (req) => {
         if (delRes.ok) deleted.push(m.id);
       }
 
-      return new Response(JSON.stringify({ success: true, deleted_count: deleted.length, deleted }), {
+      const debug = data?.debug
+        ? {
+            channel_id: channelId,
+            bot_user_id: me.id,
+            total_messages: messages.length,
+            sample: messages.slice(0, 10).map((m: any) => ({
+              id: m.id,
+              author_id: m.author?.id,
+              author_username: m.author?.username,
+              is_bot: m.author?.bot,
+              webhook_id: m.webhook_id,
+              content_preview: typeof m.content === "string" ? m.content.slice(0, 80) : null,
+            })),
+          }
+        : undefined;
+      return new Response(JSON.stringify({ success: true, deleted_count: deleted.length, deleted, debug }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
