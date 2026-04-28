@@ -144,7 +144,7 @@ const AufstellungsprotokollPage = () => {
   const statusColor = (status: AttendanceStatus) => {
     switch (status) {
       case "Anwesend": return "bg-green-600 text-white";
-      case "Abgemeldet": return "bg-orange-500 text-white";
+      case "Abgemeldet": return "bg-red-600 text-white";
       case "Im Einsatz": return "bg-blue-600 text-white";
     }
   };
@@ -367,11 +367,16 @@ const AufstellungsprotokollPage = () => {
               {groupedAttendance().map((group, gi) => (
                 <>
                   {group.members.map((m, mi) => (
-                    <tr key={m.id} className={`border-b border-border/50 ${mi === 0 && gi > 0 ? "border-t-2 border-t-border" : ""}`}>
-                      <td className="p-2 text-foreground">
+                    <tr
+                      key={m.id}
+                      className={`border-b border-border/50 ${mi === 0 && gi > 0 ? "border-t-2 border-t-border" : ""} ${
+                        m.status === "Abgemeldet" ? "bg-red-500/10" : ""
+                      }`}
+                    >
+                      <td className={`p-2 ${m.status === "Abgemeldet" ? "text-red-400 font-semibold" : "text-foreground"}`}>
                         {m.internalDienstnummer ? `[${m.internalDienstnummer}] ` : ""}{m.dienstnummer ? `[${m.dienstnummer}] ` : ""}{m.name}
                       </td>
-                      <td className="p-2 text-foreground">{m.roleLabel}</td>
+                      <td className={`p-2 ${m.status === "Abgemeldet" ? "text-red-400" : "text-foreground"}`}>{m.roleLabel}</td>
                       <td className="p-2">
                         <select
                           value={m.status}
