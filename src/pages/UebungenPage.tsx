@@ -123,7 +123,7 @@ export default function UebungenPage() {
       return;
     }
     toast.success("Übung erstellt!");
-    await logActivity("uebung_created", "training", { titel: payload.titel, start_at: payload.start_at });
+    await logActivity("uebung_created", "general", { titel: payload.titel, start_at: payload.start_at });
 
     if (notifyDiscord) {
       try {
