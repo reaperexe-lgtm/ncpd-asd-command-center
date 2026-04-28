@@ -265,12 +265,30 @@ Deno.serve(async (req) => {
 
       try {
         const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
-        // Add ✅ and ❌ reactions for attendance
+        // Add ✅ and ❌ reactions for attendance.
+        // Discord rate-limits reactions to ~1 per 250ms; we wait between requests
+        // and retry on 429 to make sure both reactions actually appear.
+        const reactionResults: { emoji: string; status: number; body?: string }[] = [];
         for (const emoji of ["✅", "❌"]) {
-          await fetch(
-            `${DISCORD_API}/channels/${channelId}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`,
-            { method: "PUT", headers: { Authorization: `Bot ${botToken}` } },
-          );
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const res = await fetch(
+              `${DISCORD_API}/channels/${channelId}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`,
+              { method: "PUT", headers: { Authorization: `Bot ${botToken}` } },
+            );
+            if (res.status === 429) {
+              const retry = await res.json().catch(() => ({ retry_after: 1 }));
+              await new Promise((r) => setTimeout(r, Math.ceil((retry.retry_after ?? 1) * 1000)));
+              continue;
+            }
+            reactionResults.push({
+              emoji,
+              status: res.status,
+              body: res.ok ? undefined : await res.text(),
+            });
+            break;
+          }
+          // small delay between distinct reactions to stay below the per-channel limit
+          await new Promise((r) => setTimeout(r, 350));
         }
         return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
