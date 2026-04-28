@@ -154,8 +154,13 @@ Deno.serve(async (req) => {
       if (data.created_by_name) lines.push(`\n_Erstellt von ${data.created_by_name}_`);
       lines.push(`\n👉 Im ASD Dashboard unter **Übungen** anmelden!`);
 
+      const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
+      const content = mentionRoleId
+        ? `<@&${mentionRoleId}>\n${lines.join("\n")}`
+        : lines.join("\n");
+
       try {
-        await sendChannelMessage(botToken, channelId, lines.join("\n"));
+        await sendChannelMessage(botToken, channelId, content, mentionRoleId);
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
