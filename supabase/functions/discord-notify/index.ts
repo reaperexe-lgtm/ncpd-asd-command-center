@@ -213,6 +213,76 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (type === "aufstellung_announcement") {
+      const channelId = sanitizeDiscordId(
+        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
+        Deno.env.get("DISCORD_CHANNEL_ID")
+      );
+      if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
+
+      // Load configured datetime + location from settings if not provided
+      let startAt: string | undefined = data?.start_at;
+      let ort: string = data?.ort ?? "Vespucci Police Department Dach";
+
+      if (!startAt) {
+        const { data: rows } = await supabaseAdmin
+          .from("permission_settings")
+          .select("permission_key, role")
+          .in("permission_key", ["aufstellung_next_at", "aufstellung_ort"]);
+        for (const r of rows || []) {
+          if (r.permission_key === "aufstellung_next_at" && r.role) startAt = r.role;
+          if (r.permission_key === "aufstellung_ort" && r.role) ort = r.role;
+        }
+      }
+      if (!startAt) throw new Error("Kein Aufstellungs-Datum konfiguriert");
+
+      const startDate = new Date(startAt);
+      const dateStr = startDate.toLocaleString("de-DE", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Berlin",
+      });
+
+      const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
+      const memberMention = mentionRoleId ? `<@&${mentionRoleId}>` : "@A.S.D";
+      const leitungMention = mentionRoleId ? `<@&${mentionRoleId}>` : "A.S.D Leitung";
+
+      const content = [
+        `# Wöchentliche Aufstellung`,
+        ``,
+        `Sehr geehrte ${memberMention},`,
+        `am **${dateStr} Uhr** findet unsere wöchentliche Aufstellung auf dem **${ort}** statt!`,
+        ``,
+        `Wir freuen uns darauf, möglichst viele von euch sehen zu dürfen!`,
+        ``,
+        `Mit freundlichen Grüßen,`,
+        `${leitungMention}`,
+      ].join("\n");
+
+      try {
+        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
+        // Add ✅ and ❌ reactions for attendance
+        for (const emoji of ["✅", "❌"]) {
+          await fetch(
+            `${DISCORD_API}/channels/${channelId}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`,
+            { method: "PUT", headers: { Authorization: `Bot ${botToken}` } },
+          );
+        }
+        return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (type === "stats_report") {
       // Send stats report to a Discord CHANNEL (not DMs)
       const channelId = Deno.env.get("DISCORD_CHANNEL_ID");
