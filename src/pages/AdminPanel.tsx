@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -101,6 +101,11 @@ const AdminPanel = () => {
   const [savingLink, setSavingLink] = useState(false);
   const [discordInviteDescription, setDiscordInviteDescription] = useState("");
   const [savingDescription, setSavingDescription] = useState(false);
+  const [aufstellungAt, setAufstellungAt] = useState("");
+  const [aufstellungOrt, setAufstellungOrt] = useState("Vespucci Police Department Dach");
+  const [aufstellungAuto, setAufstellungAuto] = useState(true);
+  const [savingAufstellung, setSavingAufstellung] = useState(false);
+  const [sendingAufstellung, setSendingAufstellung] = useState(false);
 
   // Load discord invite link
   useEffect(() => {
@@ -110,6 +115,22 @@ const AdminPanel = () => {
     });
     supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
       if (data?.role) setDiscordInviteDescription(data.role);
+    });
+    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["aufstellung_next_at", "aufstellung_ort", "aufstellung_auto_enabled"]).then(({ data }) => {
+      for (const r of data || []) {
+        if (r.permission_key === "aufstellung_next_at" && r.role) {
+          // datetime-local needs format YYYY-MM-DDTHH:mm
+          try {
+            const d = new Date(r.role);
+            if (!isNaN(d.getTime())) {
+              const pad = (n: number) => String(n).padStart(2, "0");
+              setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+            }
+          } catch {}
+        }
+        if (r.permission_key === "aufstellung_ort" && r.role) setAufstellungOrt(r.role);
+        if (r.permission_key === "aufstellung_auto_enabled") setAufstellungAuto(r.role === "true");
+      }
     });
   }, [isAdmin]);
 
@@ -1114,6 +1135,113 @@ const AdminPanel = () => {
                     }
                   }}
                   disabled={savingDescription}
+                  className="gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
+            {/* Wöchentliche Aufstellung — Discord Ankündigung */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Megaphone className="w-4 h-4" /> Wöchentliche Aufstellung — Discord Ankündigung
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Diese Ankündigung wird automatisch jeden <strong>Sonntag um 16:00 Uhr</strong> (deutsche Zeit) im Ankündigungs-Channel gepostet.
+                Setze hier das Datum & die Uhrzeit der nächsten Aufstellung sowie den Ort.
+              </p>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3" /> Datum & Uhrzeit der Aufstellung
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={aufstellungAt}
+                    onChange={(e) => setAufstellungAt(e.target.value)}
+                    className="bg-background border-border"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Ort</label>
+                  <Input
+                    value={aufstellungOrt}
+                    onChange={(e) => setAufstellungOrt(e.target.value)}
+                    placeholder="z. B. Vespucci Police Department Dach"
+                    className="bg-background border-border"
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aufstellungAuto}
+                  onChange={(e) => setAufstellungAuto(e.target.checked)}
+                  className="accent-primary"
+                />
+                Automatische Sonntags-Ankündigung aktivieren
+              </label>
+
+              <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (!aufstellungAt) {
+                      toast.error("Bitte zuerst Datum & Uhrzeit setzen");
+                      return;
+                    }
+                    setSendingAufstellung(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("discord-notify", {
+                        body: {
+                          type: "aufstellung_announcement",
+                          data: { start_at: new Date(aufstellungAt).toISOString(), ort: aufstellungOrt },
+                        },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      toast.success("Ankündigung gepostet");
+                      logActivity("Aufstellungs-Ankündigung manuell gesendet", "admin");
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Senden");
+                    } finally {
+                      setSendingAufstellung(false);
+                    }
+                  }}
+                  disabled={sendingAufstellung || !aufstellungAt}
+                  className="gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Jetzt testen / senden
+                </Button>
+                <Button
+                  onClick={async () => {
+                    setSavingAufstellung(true);
+                    try {
+                      const isoAt = aufstellungAt ? new Date(aufstellungAt).toISOString() : "";
+                      const updates = [
+                        { permission_key: "aufstellung_next_at", role: isoAt },
+                        { permission_key: "aufstellung_ort", role: aufstellungOrt.trim() || "Vespucci Police Department Dach" },
+                        { permission_key: "aufstellung_auto_enabled", role: aufstellungAuto ? "true" : "false" },
+                      ];
+                      for (const u of updates) {
+                        const { error } = await supabase
+                          .from("permission_settings")
+                          .update({ role: u.role } as any)
+                          .eq("permission_key", u.permission_key);
+                        if (error) throw error;
+                      }
+                      toast.success("Einstellungen gespeichert");
+                      logActivity("Aufstellungs-Einstellungen aktualisiert", "admin", { start_at: isoAt, ort: aufstellungOrt, auto: aufstellungAuto });
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Speichern");
+                    } finally {
+                      setSavingAufstellung(false);
+                    }
+                  }}
+                  disabled={savingAufstellung}
                   className="gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Speichern
