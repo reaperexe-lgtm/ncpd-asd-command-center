@@ -16,6 +16,7 @@ const navItems = [
   { to: "/fluglizenz-member", label: "Lizenz-Inhaber", emoji: "🛩️" },
   { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
   { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
+  { to: "/uebungen", label: "Übungen", emoji: "🎯" },
 ];
 
 // Items, die für Fluglizenz-Inhaber sichtbar sind (alle anderen werden ausgeblendet)
@@ -29,6 +30,7 @@ const FLIGHT_LICENSE_VISIBLE = new Set([
   "/statistik",
   "/member",
   "/fluglizenz-member",
+  "/uebungen",
 ]);
 
 const TopNav = () => {
