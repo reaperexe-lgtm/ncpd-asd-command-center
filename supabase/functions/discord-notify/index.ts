@@ -250,7 +250,81 @@ Deno.serve(async (req) => {
       );
       if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
 
-      // no-op marker
+      // Load configured datetime + location from settings if not provided
+      let startAt: string | undefined = data?.start_at;
+      let ort: string = data?.ort ?? "Vespucci Police Department Dach";
+
+      if (!startAt) {
+        const { data: rows } = await supabaseAdmin
+          .from("permission_settings")
+          .select("permission_key, role")
+          .in("permission_key", ["aufstellung_next_at", "aufstellung_ort"]);
+        for (const r of rows || []) {
+          if (r.permission_key === "aufstellung_next_at" && r.role) startAt = r.role;
+          if (r.permission_key === "aufstellung_ort" && r.role) ort = r.role;
+        }
+      }
+      if (!startAt) throw new Error("Kein Aufstellungs-Datum konfiguriert");
+
+      const startDate = new Date(startAt);
+      const dateStr = startDate.toLocaleString("de-DE", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Berlin",
+      });
+
+      const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
+      const memberMention = mentionRoleId ? `<@&${mentionRoleId}>` : "@A.S.D";
+      const leitungMention = mentionRoleId ? `<@&${mentionRoleId}>` : "A.S.D Leitung";
+
+      const content = [
+        `# Wöchentliche Aufstellung`,
+        ``,
+        `Sehr geehrte ${memberMention},`,
+        `am **${dateStr} Uhr** findet unsere wöchentliche Aufstellung auf dem **${ort}** statt!`,
+        ``,
+        `Wir freuen uns darauf, möglichst viele von euch sehen zu dürfen!`,
+        ``,
+        `Mit freundlichen Grüßen,`,
+        `${leitungMention}`,
+      ].join("\n");
+
+      try {
+        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
+        const reactionResults: { emoji: string; status: number; body?: string }[] = [];
+        for (const emoji of ["✅", "❌"]) {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const res = await fetch(
+              `${DISCORD_API}/channels/${channelId}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`,
+              { method: "PUT", headers: { Authorization: `Bot ${botToken}` } },
+            );
+            if (res.status === 429) {
+              const retry = await res.json().catch(() => ({ retry_after: 1 }));
+              await new Promise((r) => setTimeout(r, Math.ceil((retry.retry_after ?? 1) * 1000)));
+              continue;
+            }
+            reactionResults.push({
+              emoji,
+              status: res.status,
+              body: res.ok ? undefined : await res.text(),
+            });
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 350));
+        }
+        return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (type === "aufstellung_reminder") {
@@ -300,89 +374,6 @@ Deno.serve(async (req) => {
 
       try {
         const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
-        return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } catch (e) {
-        return new Response(JSON.stringify({ success: false, error: e.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    if (type === "__never__") {
-
-      // Load configured datetime + location from settings if not provided
-      let startAt: string | undefined = data?.start_at;
-      let ort: string = data?.ort ?? "Vespucci Police Department Dach";
-
-      if (!startAt) {
-        const { data: rows } = await supabaseAdmin
-          .from("permission_settings")
-          .select("permission_key, role")
-          .in("permission_key", ["aufstellung_next_at", "aufstellung_ort"]);
-        for (const r of rows || []) {
-          if (r.permission_key === "aufstellung_next_at" && r.role) startAt = r.role;
-          if (r.permission_key === "aufstellung_ort" && r.role) ort = r.role;
-        }
-      }
-      if (!startAt) throw new Error("Kein Aufstellungs-Datum konfiguriert");
-
-      const startDate = new Date(startAt);
-      const dateStr = startDate.toLocaleString("de-DE", {
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Europe/Berlin",
-      });
-
-      const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
-      const memberMention = mentionRoleId ? `<@&${mentionRoleId}>` : "@A.S.D";
-      const leitungMention = mentionRoleId ? `<@&${mentionRoleId}>` : "A.S.D Leitung";
-
-      const content = [
-        `# Wöchentliche Aufstellung`,
-        ``,
-        `Sehr geehrte ${memberMention},`,
-        `am **${dateStr} Uhr** findet unsere wöchentliche Aufstellung auf dem **${ort}** statt!`,
-        ``,
-        `Wir freuen uns darauf, möglichst viele von euch sehen zu dürfen!`,
-        ``,
-        `Mit freundlichen Grüßen,`,
-        `${leitungMention}`,
-      ].join("\n");
-
-      try {
-        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
-        // Add ✅ and ❌ reactions for attendance.
-        // Discord rate-limits reactions to ~1 per 250ms; we wait between requests
-        // and retry on 429 to make sure both reactions actually appear.
-        const reactionResults: { emoji: string; status: number; body?: string }[] = [];
-        for (const emoji of ["✅", "❌"]) {
-          for (let attempt = 0; attempt < 3; attempt++) {
-            const res = await fetch(
-              `${DISCORD_API}/channels/${channelId}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`,
-              { method: "PUT", headers: { Authorization: `Bot ${botToken}` } },
-            );
-            if (res.status === 429) {
-              const retry = await res.json().catch(() => ({ retry_after: 1 }));
-              await new Promise((r) => setTimeout(r, Math.ceil((retry.retry_after ?? 1) * 1000)));
-              continue;
-            }
-            reactionResults.push({
-              emoji,
-              status: res.status,
-              body: res.ok ? undefined : await res.text(),
-            });
-            break;
-          }
-          // small delay between distinct reactions to stay below the per-channel limit
-          await new Promise((r) => setTimeout(r, 350));
-        }
         return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
