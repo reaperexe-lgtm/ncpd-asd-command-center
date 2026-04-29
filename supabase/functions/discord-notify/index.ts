@@ -295,9 +295,6 @@ Deno.serve(async (req) => {
 
       try {
         const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
-        // Add ✅ and ❌ reactions for attendance.
-        // Discord rate-limits reactions to ~1 per 250ms; we wait between requests
-        // and retry on 429 to make sure both reactions actually appear.
         const reactionResults: { emoji: string; status: number; body?: string }[] = [];
         for (const emoji of ["✅", "❌"]) {
           for (let attempt = 0; attempt < 3; attempt++) {
@@ -317,9 +314,66 @@ Deno.serve(async (req) => {
             });
             break;
           }
-          // small delay between distinct reactions to stay below the per-channel limit
           await new Promise((r) => setTimeout(r, 350));
         }
+        return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    if (type === "aufstellung_reminder") {
+      const channelId = sanitizeDiscordId(
+        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
+        Deno.env.get("DISCORD_CHANNEL_ID")
+      );
+      if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
+
+      let startAt: string | undefined = data?.start_at;
+      let ort: string = data?.ort ?? "Vespucci Police Department Dach";
+
+      if (!startAt) {
+        const { data: rows } = await supabaseAdmin
+          .from("permission_settings")
+          .select("permission_key, role")
+          .in("permission_key", ["aufstellung_next_at", "aufstellung_ort"]);
+        for (const r of rows || []) {
+          if (r.permission_key === "aufstellung_next_at" && r.role) startAt = r.role;
+          if (r.permission_key === "aufstellung_ort" && r.role) ort = r.role;
+        }
+      }
+
+      const timeStr = startAt
+        ? new Date(startAt).toLocaleString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Europe/Berlin",
+          }) + " Uhr"
+        : "18:00 Uhr";
+
+      const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
+      const memberMention = mentionRoleId ? `<@&${mentionRoleId}>` : "@A.S.D";
+      const leitungMention = mentionRoleId ? `<@&${mentionRoleId}>` : "A.S.D Leitung";
+
+      const content = [
+        `# ⏰ Erinnerung: Aufstellung in 2 Stunden`,
+        ``,
+        `Sehr geehrte ${memberMention},`,
+        `dies ist eine freundliche Erinnerung, dass unsere wöchentliche Aufstellung **heute um ${timeStr}** auf dem **${ort}** stattfindet.`,
+        ``,
+        `Bitte erscheint pünktlich und in vollständiger Dienstkleidung.`,
+        ``,
+        `Mit freundlichen Grüßen,`,
+        `${leitungMention}`,
+      ].join("\n");
+
+      try {
+        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
         return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
