@@ -1,0 +1,1 @@
+ALTER TABLE public.flight_license_validity ADD COLUMN IF NOT EXISTS issued_at date;
