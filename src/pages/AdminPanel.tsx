@@ -952,6 +952,7 @@ const AdminPanel = () => {
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Dienstnummer</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Interne DN</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Ausgestellt am</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Gültig bis</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Registriert</th>
@@ -960,6 +961,7 @@ const AdminPanel = () => {
                     <tbody>
                       {licenseHolders.map((lic: any) => {
                         const validUntil: string | null = lic.valid_until || null;
+                        const issuedAt: string | null = lic.issued_at || null;
                         let statusLabel = "Nicht gesetzt";
                         let statusClass = "bg-muted text-muted-foreground";
                         if (validUntil) {
@@ -1000,10 +1002,35 @@ const AdminPanel = () => {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-xs">
+                            <Input
+                              type="date"
+                              defaultValue={issuedAt || ""}
+                              key={`issued-${issuedAt || "empty"}`}
+                              onBlur={(e) => {
+                                const newIssued = e.target.value || null;
+                                if ((newIssued || null) === (issuedAt || null)) return;
+                                let computedValidUntil: string | null = validUntil;
+                                if (newIssued) {
+                                  const d = new Date(newIssued);
+                                  d.setMonth(d.getMonth() + 4);
+                                  computedValidUntil = d.toISOString().split("T")[0];
+                                }
+                                licenseValidityMutation.mutate({
+                                  userId: lic.id,
+                                  issuedAt: newIssued,
+                                  validUntil: computedValidUntil,
+                                });
+                              }}
+                              className="h-7 text-xs w-36 bg-background"
+                              title="Ausstellungsdatum – Gültig bis wird automatisch +4 Monate gesetzt"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-xs">
                             <div className="flex items-center gap-1">
                               <Input
                                 type="date"
                                 defaultValue={validUntil || ""}
+                                key={`valid-${validUntil || "empty"}`}
                                 onBlur={(e) => {
                                   const newVal = e.target.value || null;
                                   if ((newVal || null) !== (validUntil || null)) {
@@ -1017,7 +1044,7 @@ const AdminPanel = () => {
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 w-7 p-0"
-                                  onClick={() => licenseValidityMutation.mutate({ userId: lic.id, validUntil: null })}
+                                  onClick={() => licenseValidityMutation.mutate({ userId: lic.id, validUntil: null, issuedAt: null })}
                                   title="Gültigkeit entfernen"
                                 >
                                   <X className="w-3.5 h-3.5" />
