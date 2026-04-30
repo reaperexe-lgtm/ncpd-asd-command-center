@@ -147,6 +147,24 @@ const AdminPanel = () => {
     enabled: isAdmin,
   });
 
+  // Wöchentliche Aktivität (1080 Verfolgungen oder Einsätze) pro User
+  const { data: weeklyActiveIds } = useQuery({
+    queryKey: ["admin-weekly-activity"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const [{ data: missions }, { data: pursuits }] = await Promise.all([
+        supabase.from("missions").select("created_by").gte("created_at", since),
+        supabase.from("pursuits").select("created_by").gte("created_at", since),
+      ]);
+      const ids = new Set<string>();
+      (missions || []).forEach((m: any) => m.created_by && ids.add(m.created_by));
+      (pursuits || []).forEach((p: any) => p.created_by && ids.add(p.created_by));
+      return ids;
+    },
+    enabled: isAdmin,
+    refetchInterval: 60_000,
+  });
+
   const { data: logs, isLoading: logsLoading } = useQuery({
     queryKey: ["activity-logs", logFilter],
     queryFn: async () => {
