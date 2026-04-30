@@ -264,11 +264,11 @@ const AdminPanel = () => {
 
       const { data: validity } = await supabase
         .from("flight_license_validity")
-        .select("user_id, valid_until")
+        .select("user_id, valid_until, issued_at")
         .in("user_id", userIds);
 
-      const validityMap = new Map<string, string>(
-        (validity || []).map((v: any) => [v.user_id, v.valid_until]),
+      const validityMap = new Map<string, { valid_until: string | null; issued_at: string | null }>(
+        (validity || []).map((v: any) => [v.user_id, { valid_until: v.valid_until, issued_at: v.issued_at }]),
       );
 
       return (profiles || []).map((p: any) => ({
@@ -276,7 +276,8 @@ const AdminPanel = () => {
         profile: p,
         role: "flight_license",
         created_at: p.created_at,
-        valid_until: validityMap.get(p.id) || null,
+        valid_until: validityMap.get(p.id)?.valid_until || null,
+        issued_at: validityMap.get(p.id)?.issued_at || null,
       }));
     },
     enabled: isAdmin && activeTab === "licenses",
@@ -384,8 +385,8 @@ const AdminPanel = () => {
   });
 
   const licenseValidityMutation = useMutation({
-    mutationFn: async ({ userId, validUntil }: { userId: string; validUntil: string | null }) => {
-      if (!validUntil) {
+    mutationFn: async ({ userId, validUntil, issuedAt }: { userId: string; validUntil: string | null; issuedAt?: string | null }) => {
+      if (!validUntil && issuedAt === undefined) {
         const { error } = await supabase
           .from("flight_license_validity")
           .delete()
@@ -393,9 +394,12 @@ const AdminPanel = () => {
         if (error) throw error;
         return;
       }
+      const payload: any = { user_id: userId };
+      if (validUntil !== undefined) payload.valid_until = validUntil;
+      if (issuedAt !== undefined) payload.issued_at = issuedAt;
       const { error } = await supabase
         .from("flight_license_validity")
-        .upsert({ user_id: userId, valid_until: validUntil }, { onConflict: "user_id" });
+        .upsert(payload, { onConflict: "user_id" });
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
