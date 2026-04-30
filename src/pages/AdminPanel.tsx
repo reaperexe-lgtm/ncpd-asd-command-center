@@ -106,6 +106,9 @@ const AdminPanel = () => {
   const [aufstellungAuto, setAufstellungAuto] = useState(true);
   const [savingAufstellung, setSavingAufstellung] = useState(false);
   const [sendingAufstellung, setSendingAufstellung] = useState(false);
+  const [statsPingDirector, setStatsPingDirector] = useState("");
+  const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
+  const [savingStatsPings, setSavingStatsPings] = useState(false);
 
   // Load discord invite link
   useEffect(() => {
@@ -130,6 +133,12 @@ const AdminPanel = () => {
         }
         if (r.permission_key === "aufstellung_ort" && r.role) setAufstellungOrt(r.role);
         if (r.permission_key === "aufstellung_auto_enabled") setAufstellungAuto(r.role === "true");
+      }
+    });
+    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["stats_ping_director_id", "stats_ping_codirector_id"]).then(({ data }) => {
+      for (const r of data || []) {
+        if (r.permission_key === "stats_ping_director_id" && r.role) setStatsPingDirector(r.role);
+        if (r.permission_key === "stats_ping_codirector_id" && r.role) setStatsPingCoDirector(r.role);
       }
     });
   }, [isAdmin]);
@@ -1383,6 +1392,68 @@ const AdminPanel = () => {
                     }
                   }}
                   disabled={savingAufstellung}
+                  className="gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
+            {/* Discord Stats Ping — Director & Co-Director */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Megaphone className="w-4 h-4" /> Discord Statistik-Ping
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Hinterlege hier die <strong>Discord-User-IDs</strong> von Director und Co-Director. Diese beiden werden bei jeder
+                wöchentlichen und monatlichen Statistik im Discord automatisch markiert (gepingt).
+                Discord-ID findest du, indem du im Discord mit Rechtsklick auf den User → "ID kopieren" klickst (Entwicklermodus aktivieren).
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Director Discord-ID</label>
+                  <Input
+                    value={statsPingDirector}
+                    onChange={(e) => setStatsPingDirector(e.target.value)}
+                    placeholder="z. B. 123456789012345678"
+                    className="bg-background border-border"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Co-Director Discord-ID</label>
+                  <Input
+                    value={statsPingCoDirector}
+                    onChange={(e) => setStatsPingCoDirector(e.target.value)}
+                    placeholder="z. B. 123456789012345678"
+                    className="bg-background border-border"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end pt-2 border-t border-border">
+                <Button
+                  onClick={async () => {
+                    setSavingStatsPings(true);
+                    try {
+                      const updates = [
+                        { permission_key: "stats_ping_director_id", role: statsPingDirector.trim() },
+                        { permission_key: "stats_ping_codirector_id", role: statsPingCoDirector.trim() },
+                      ];
+                      for (const u of updates) {
+                        const { error } = await supabase
+                          .from("permission_settings")
+                          .update({ role: u.role } as any)
+                          .eq("permission_key", u.permission_key);
+                        if (error) throw error;
+                      }
+                      toast.success("Discord-IDs gespeichert");
+                      logActivity("Stats-Ping Discord-IDs aktualisiert", "admin");
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Speichern");
+                    } finally {
+                      setSavingStatsPings(false);
+                    }
+                  }}
+                  disabled={savingStatsPings}
                   className="gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Speichern

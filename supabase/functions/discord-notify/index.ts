@@ -447,7 +447,22 @@ Deno.serve(async (req) => {
 
       if (!leaderboard) leaderboard = "Keine Protokolle in diesem Zeitraum.";
 
-      const message = `${label}\n━━━━━━━━━━━━━━━\n${leaderboard}\n📅 Zeitraum: ${startDate.toLocaleDateString("de-DE")} – ${now.toLocaleDateString("de-DE")}\n📝 Gesamt: ${missions?.length || 0} Protokolle`;
+      // Load Director & Co-Director Discord IDs to ping at top of report
+      let pingPrefix = "";
+      try {
+        const { data: pingRows } = await supabaseAdmin
+          .from("permission_settings")
+          .select("permission_key, role")
+          .in("permission_key", ["stats_ping_director_id", "stats_ping_codirector_id"]);
+        const pings: string[] = [];
+        for (const r of pingRows || []) {
+          const id = (r as any).role?.trim();
+          if (id) pings.push(`<@${id}>`);
+        }
+        if (pings.length) pingPrefix = pings.join(" ") + "\n";
+      } catch (_) { /* ignore */ }
+
+      const message = `${pingPrefix}${label}\n━━━━━━━━━━━━━━━\n${leaderboard}\n📅 Zeitraum: ${startDate.toLocaleDateString("de-DE")} – ${now.toLocaleDateString("de-DE")}\n📝 Gesamt: ${missions?.length || 0} Protokolle`;
 
       // Send to channel instead of DMs
       try {
