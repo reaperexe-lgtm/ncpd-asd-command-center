@@ -20,15 +20,16 @@ const FluglizenzenUrkunde = () => {
   const handleDownloadPdf = async () => {
     if (!certificateRef.current) return;
     const canvas = await html2canvas(certificateRef.current, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
     });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    // JPEG keeps file size well under 10MB
+    const imgData = canvas.toDataURL("image/jpeg", 0.9);
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
-    pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+    pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH, undefined, "FAST");
     pdf.save(`Fluglizenz_${candidateName.replace(/\s+/g, "_")}.pdf`);
   };
 
@@ -141,7 +142,7 @@ const FluglizenzenUrkunde = () => {
             <div className="w-full flex justify-between items-end px-[5%]">
               <div className="text-center">
                 <p
-                  className="text-[clamp(1rem,2.5vw,1.8rem)] leading-[1.1] text-[#1a1a1a] pb-1"
+                  className="text-[clamp(1rem,2.5vw,1.8rem)] leading-[1.1] text-[#1a1a1a] mb-2"
                   style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
                 >
                   {directorName}
@@ -154,7 +155,7 @@ const FluglizenzenUrkunde = () => {
               </div>
               <div className="text-center">
                 <p
-                  className="text-[clamp(1rem,2.5vw,1.8rem)] leading-[1.1] text-[#1a1a1a] pb-1"
+                  className="text-[clamp(1rem,2.5vw,1.8rem)] leading-[1.1] text-[#1a1a1a] mb-2"
                   style={{ fontFamily: "'Great Vibes', 'Pinyon Script', cursive, serif" }}
                 >
                   {coDirectorName}
