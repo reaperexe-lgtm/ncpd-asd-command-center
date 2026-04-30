@@ -1027,19 +1027,10 @@ const AdminPanel = () => {
                           </td>
                           <td className="px-4 py-3 text-xs">
                             <div className="flex items-center gap-1">
-                              <Input
-                                type="date"
-                                defaultValue={validUntil || ""}
-                                key={`valid-${validUntil || "empty"}`}
-                                onBlur={(e) => {
-                                  const newVal = e.target.value || null;
-                                  if ((newVal || null) !== (validUntil || null)) {
-                                    licenseValidityMutation.mutate({ userId: lic.id, validUntil: newVal });
-                                  }
-                                }}
-                                className="h-7 text-xs w-36 bg-background"
-                              />
-                              {validUntil && (
+                              <span className="font-mono tabular-nums text-xs px-2 py-1 rounded bg-background/60 border border-border w-36 inline-block">
+                                {validUntil ? new Date(validUntil).toLocaleDateString("de-DE") : <span className="text-muted-foreground">–</span>}
+                              </span>
+                              {(validUntil || issuedAt) && (
                                 <Button
                                   size="sm"
                                   variant="ghost"
