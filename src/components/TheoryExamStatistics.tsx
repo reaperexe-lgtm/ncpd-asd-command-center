@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, TrendingUp, TrendingDown, CheckCircle2, XCircle, Clock, Target, Award } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, CheckCircle2, XCircle, Clock, Target, Award, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ExamRow {
   id: string;
@@ -15,6 +15,7 @@ interface ExamRow {
 }
 
 const TheoryExamStatistics = () => {
+  const [open, setOpen] = useState(false);
   const { data: results, isLoading } = useQuery({
     queryKey: ["theory-exam-stats"],
     queryFn: async () => {
@@ -122,17 +123,28 @@ const TheoryExamStatistics = () => {
   }
 
   return (
-    <div className="border border-border rounded-xl bg-card p-5 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="border border-border rounded-xl bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-3 p-5 hover:bg-primary/[0.03] transition-colors text-left"
+        aria-expanded={open}
+      >
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">Theorieprüfungs-Statistik</h2>
+          <span className="text-[10px] text-muted-foreground">({stats.reviewed} bewertet)</span>
         </div>
-        <span className={`text-xs px-3 py-1 rounded-full font-medium border ${difficulty.cls}`} title={difficulty.hint}>
-          {difficulty.label}
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-3 py-1 rounded-full font-medium border ${difficulty.cls}`} title={difficulty.hint}>
+            {difficulty.label}
+          </span>
+          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </div>
+      </button>
 
+      {open && (
+        <div className="px-5 pb-5 space-y-5 border-t border-border pt-5">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard icon={<Target className="w-4 h-4" />} label="Bestehensquote" value={`${stats.passRate.toFixed(0)}%`} color="text-emerald-400" sub={`${stats.passed}/${stats.reviewed} bestanden`} />
@@ -199,6 +211,8 @@ const TheoryExamStatistics = () => {
       <p className="text-[11px] text-muted-foreground italic border-t border-border pt-3">
         💡 {difficulty.hint}
       </p>
+        </div>
+      )}
     </div>
   );
 };
