@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -145,6 +145,24 @@ const AdminPanel = () => {
       }));
     },
     enabled: isAdmin,
+  });
+
+  // Wöchentliche Aktivität (1080 Verfolgungen oder Einsätze) pro User
+  const { data: weeklyActiveIds } = useQuery({
+    queryKey: ["admin-weekly-activity"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const [{ data: missions }, { data: pursuits }] = await Promise.all([
+        supabase.from("missions").select("created_by").gte("created_at", since),
+        supabase.from("pursuits").select("created_by").gte("created_at", since),
+      ]);
+      const ids = new Set<string>();
+      (missions || []).forEach((m: any) => m.created_by && ids.add(m.created_by));
+      (pursuits || []).forEach((p: any) => p.created_by && ids.add(p.created_by));
+      return ids;
+    },
+    enabled: isAdmin,
+    refetchInterval: 60_000,
   });
 
   const { data: logs, isLoading: logsLoading } = useQuery({
@@ -461,9 +479,20 @@ const AdminPanel = () => {
 
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
+  const APPLICANT_ROLES = new Set(["asd_applicant", "flight_applicant"]);
   const pending = users?.filter((u) => !u.is_approved && !(u as any).is_blocked) || [];
-  const approved = sortByRankAndDn(users?.filter((u) => u.is_approved && !(u as any).is_blocked) || []);
+  const approvedAll = users?.filter((u) => u.is_approved && !(u as any).is_blocked) || [];
+  const approved = sortByRankAndDn(approvedAll.filter((u) => !APPLICANT_ROLES.has(u.role)));
+  const applicants = sortByRankAndDn(approvedAll.filter((u) => APPLICANT_ROLES.has(u.role)));
   const blocked = users?.filter((u) => (u as any).is_blocked) || [];
+
+  // ASD-Mitglieder gelten als inaktiv, wenn sie in den letzten 7 Tagen keinen Einsatz / keine 10-80 erstellt haben.
+  // Bewerber, Fluglizenz-Accounts und Trial Member werden hier nicht als inaktiv markiert.
+  const INACTIVE_TRACKED_ROLES = new Set([
+    "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member",
+  ]);
+  const isInactive = (u: any) =>
+    INACTIVE_TRACKED_ROLES.has(u.role) && !(weeklyActiveIds?.has(u.id) ?? false);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -516,9 +545,17 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-7 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-8 w-full max-w-4xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
+          </TabsTrigger>
+          <TabsTrigger value="applicants" className="gap-1.5 text-xs relative">
+            <UserPlus className="w-3.5 h-3.5" /> Bewerber
+            {applicants.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {applicants.length}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="blocked" className="gap-1.5 text-xs relative">
             <Ban className="w-3.5 h-3.5" /> Gesperrt
@@ -607,7 +644,11 @@ const AdminPanel = () => {
                         <p className="font-medium">{u.name || "–"}</p>
                         <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
                       </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                      {isInactive(u) ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium" title="Keine 10-80 oder Einsätze in den letzten 7 Tagen">Inaktiv</span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -702,7 +743,13 @@ const AdminPanel = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                          {isInactive(u) ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium inline-flex items-center gap-1" title="Keine 10-80 oder Einsätze in den letzten 7 Tagen">
+                              <Activity className="w-3 h-3" /> Inaktiv
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
@@ -727,6 +774,61 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* Bewerber Tab */}
+        <TabsContent value="applicants">
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+              <UserPlus className="w-4 h-4" /> Bewerber ({applicants.length})
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              ASD- und Flugbewerber werden hier separat verwaltet und erscheinen nicht in der regulären Benutzerliste.
+            </p>
+            {applicants.length === 0 ? (
+              <div className="text-center py-12 text-sm text-muted-foreground bg-card border border-border rounded-lg">
+                Keine Bewerber vorhanden
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {applicants.map((u) => (
+                  <div key={u.id} className="bg-card border border-primary/20 rounded-lg px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{u.name || "Unbekannt"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role] || u.role}
+                        </p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        {u.role === "asd_applicant" ? "ASD-Bewerber" : "Flug-Bewerber"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        defaultValue={u.role}
+                        onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}
+                        disabled={!canEditUser(currentUserRole, u.role)}
+                      >
+                        <SelectTrigger className="w-44 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                        <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                      </Select>
+                      {canEditUser(currentUserRole, u.role) && (
+                        <>
+                          <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-8 text-xs">
+                            <Ban className="w-3.5 h-3.5" /> Sperren
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(u.id)} className="gap-1.5 h-8 text-xs">
+                            <Trash2 className="w-3.5 h-3.5" /> Löschen
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         {/* Blocked Users Tab */}
