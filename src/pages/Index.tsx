@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { X, Plane } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -31,6 +31,34 @@ const Index = () => {
       return (profiles || []).map((p) => ({
         ...p,
         role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
+      }));
+    },
+  });
+
+  const { data: licenseHolders } = useQuery({
+    queryKey: ["home-license-holders"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "flight_license");
+      const ids = (roles || []).map((r: any) => r.user_id);
+      if (!ids.length) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, image_url")
+        .in("id", ids);
+      const { data: validity } = await supabase
+        .from("flight_license_validity")
+        .select("user_id, valid_until, issued_at")
+        .in("user_id", ids);
+      const vMap = new Map<string, { valid_until: string | null; issued_at: string | null }>(
+        (validity || []).map((v: any) => [v.user_id, { valid_until: v.valid_until, issued_at: v.issued_at }]),
+      );
+      return (profiles || []).map((p: any) => ({
+        ...p,
+        valid_until: vMap.get(p.id)?.valid_until || null,
+        issued_at: vMap.get(p.id)?.issued_at || null,
       }));
     },
   });
@@ -66,6 +94,24 @@ const Index = () => {
   const ausbilder = (members?.filter((m) => ["ausbilder","trial_ausbilder"].includes(m.role)) || []).sort(sortByRole);
   const mitglieder = members?.filter((m) => m.role === "member") || [];
   const trials = members?.filter((m) => m.role === "trial_member") || [];
+
+  type LicStatus = "active" | "expiring" | "expired" | "none";
+  const getLicStatus = (validUntil: string | null): LicStatus => {
+    if (!validUntil) return "none";
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const exp = new Date(validUntil);
+    const diff = Math.ceil((exp.getTime() - today.getTime()) / 86400000);
+    if (diff < 0) return "expired";
+    if (diff <= 14) return "expiring";
+    return "active";
+  };
+  const STATUS_RANK: Record<LicStatus, number> = { expired: 0, expiring: 1, active: 2, none: 3 };
+  const sortedLicenseHolders = (licenseHolders || []).slice().sort((a, b) => {
+    const sa = STATUS_RANK[getLicStatus(a.valid_until)];
+    const sb = STATUS_RANK[getLicStatus(b.valid_until)];
+    if (sa !== sb) return sa - sb;
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -159,6 +205,56 @@ const Index = () => {
           {members?.length === 0 && <p className="text-sm text-muted-foreground">Noch keine Mitglieder.</p>}
         </div>
       </div>
+
+      {sortedLicenseHolders.length > 0 && (
+        <div className="w-full max-w-4xl bg-card border border-border rounded-lg p-3 sm:p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h2 className="font-bold text-primary flex items-center gap-2">
+              <Plane className="w-4 h-4" /> Fluglizenz-Inhaber
+            </h2>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 font-medium">
+              {sortedLicenseHolders.length} {sortedLicenseHolders.length === 1 ? "Mitglied" : "Mitglieder"}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+            {sortedLicenseHolders.map((m: any) => {
+              const status = getLicStatus(m.valid_until);
+              const statusInfo = {
+                active:   { label: "Aktiv",       cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+                expiring: { label: "Läuft bald",  cls: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30" },
+                expired:  { label: "Abgelaufen",  cls: "bg-red-500/10 text-red-400 border-red-500/30" },
+                none:     { label: "Offen",       cls: "bg-muted text-muted-foreground border-border" },
+              }[status];
+              const ringCls =
+                status === "active" ? "ring-1 ring-emerald-500/20" :
+                status === "expiring" ? "ring-1 ring-yellow-500/20" :
+                status === "expired" ? "ring-1 ring-red-500/30" : "";
+              return (
+                <div key={m.id} className={`flex items-center gap-3 p-2.5 rounded-md bg-background/60 border border-border hover:bg-primary/[0.03] transition-colors ${ringCls}`}>
+                  {m.image_url ? (
+                    <img src={m.image_url} alt="" className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+                      <Plane className="w-4 h-4" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{m.name}</p>
+                    <p className="text-[10px] text-muted-foreground tabular-nums">
+                      {m.valid_until
+                        ? `bis ${new Date(m.valid_until).toLocaleDateString("de-DE")}`
+                        : "Kein Ablaufdatum"}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${statusInfo.cls}`}>
+                    {statusInfo.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
