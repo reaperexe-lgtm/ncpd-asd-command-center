@@ -106,6 +106,9 @@ const AdminPanel = () => {
   const [aufstellungAuto, setAufstellungAuto] = useState(true);
   const [savingAufstellung, setSavingAufstellung] = useState(false);
   const [sendingAufstellung, setSendingAufstellung] = useState(false);
+  const [statsPingDirector, setStatsPingDirector] = useState("");
+  const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
+  const [savingStatsPings, setSavingStatsPings] = useState(false);
 
   // Load discord invite link
   useEffect(() => {
@@ -130,6 +133,12 @@ const AdminPanel = () => {
         }
         if (r.permission_key === "aufstellung_ort" && r.role) setAufstellungOrt(r.role);
         if (r.permission_key === "aufstellung_auto_enabled") setAufstellungAuto(r.role === "true");
+      }
+    });
+    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["stats_ping_director_id", "stats_ping_codirector_id"]).then(({ data }) => {
+      for (const r of data || []) {
+        if (r.permission_key === "stats_ping_director_id" && r.role) setStatsPingDirector(r.role);
+        if (r.permission_key === "stats_ping_codirector_id" && r.role) setStatsPingCoDirector(r.role);
       }
     });
   }, [isAdmin]);
