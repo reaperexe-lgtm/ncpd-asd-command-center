@@ -494,13 +494,25 @@ const AdminPanel = () => {
   const applicants = sortByRankAndDn(approvedAll.filter((u) => APPLICANT_ROLES.has(u.role)));
   const blocked = users?.filter((u) => (u as any).is_blocked) || [];
 
-  // ASD-Mitglieder gelten als inaktiv, wenn sie in den letzten 7 Tagen keinen Einsatz / keine 10-80 erstellt haben.
-  // Bewerber, Fluglizenz-Accounts und Trial Member werden hier nicht als inaktiv markiert.
+  // ASD-Mitglieder bekommen Inaktivitäts-Status anhand der letzten 1080/Einsatz-Aktivität.
+  // Bewerber, Fluglizenz-Accounts und Trial Member werden hier nicht markiert.
   const INACTIVE_TRACKED_ROLES = new Set([
     "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member",
   ]);
-  const isInactive = (u: any) =>
-    INACTIVE_TRACKED_ROLES.has(u.role) && !(weeklyActiveIds?.has(u.id) ?? false);
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  /** Liefert den Inaktivitäts-Status:
+   *  - "active":   Aktivität in den letzten 7 Tagen
+   *  - "inactive": keine Aktivität seit ≥ 7 Tagen (orange)
+   *  - "abwesend": keine Aktivität seit ≥ 14 Tagen (rot)
+   */
+  const getActivityStatus = (u: any): "active" | "inactive" | "abwesend" => {
+    if (!INACTIVE_TRACKED_ROLES.has(u.role)) return "active";
+    const last = lastActivityMap?.get(u.id) ?? 0;
+    const ageDays = (Date.now() - last) / ONE_DAY;
+    if (ageDays >= 14) return "abwesend";
+    if (ageDays >= 7) return "inactive";
+    return "active";
+  };
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
