@@ -479,9 +479,20 @@ const AdminPanel = () => {
 
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
+  const APPLICANT_ROLES = new Set(["asd_applicant", "flight_applicant"]);
   const pending = users?.filter((u) => !u.is_approved && !(u as any).is_blocked) || [];
-  const approved = sortByRankAndDn(users?.filter((u) => u.is_approved && !(u as any).is_blocked) || []);
+  const approvedAll = users?.filter((u) => u.is_approved && !(u as any).is_blocked) || [];
+  const approved = sortByRankAndDn(approvedAll.filter((u) => !APPLICANT_ROLES.has(u.role)));
+  const applicants = sortByRankAndDn(approvedAll.filter((u) => APPLICANT_ROLES.has(u.role)));
   const blocked = users?.filter((u) => (u as any).is_blocked) || [];
+
+  // ASD-Mitglieder gelten als inaktiv, wenn sie in den letzten 7 Tagen keinen Einsatz / keine 10-80 erstellt haben.
+  // Bewerber, Fluglizenz-Accounts und Trial Member werden hier nicht als inaktiv markiert.
+  const INACTIVE_TRACKED_ROLES = new Set([
+    "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member",
+  ]);
+  const isInactive = (u: any) =>
+    INACTIVE_TRACKED_ROLES.has(u.role) && !(weeklyActiveIds?.has(u.id) ?? false);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
