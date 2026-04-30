@@ -12,6 +12,7 @@ import {
   ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, Trash2,
   Plus, Image, Save, GripVertical, Pencil, Settings2
 } from "lucide-react";
+import TheoryExamStatistics from "@/components/TheoryExamStatistics";
 
 interface ExamAnswer {
   questionId: string;
@@ -237,6 +238,8 @@ const TheoryExamResultsPage = () => {
           </Button>
         )}
       </div>
+
+      <TheoryExamStatistics />
 
       {/* Question Manager */}
       {showQuestionManager && canEditQuestions && (
