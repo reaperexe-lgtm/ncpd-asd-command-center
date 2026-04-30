@@ -776,6 +776,61 @@ const AdminPanel = () => {
           )}
         </TabsContent>
 
+        {/* Bewerber Tab */}
+        <TabsContent value="applicants">
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+              <UserPlus className="w-4 h-4" /> Bewerber ({applicants.length})
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              ASD- und Flugbewerber werden hier separat verwaltet und erscheinen nicht in der regulären Benutzerliste.
+            </p>
+            {applicants.length === 0 ? (
+              <div className="text-center py-12 text-sm text-muted-foreground bg-card border border-border rounded-lg">
+                Keine Bewerber vorhanden
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {applicants.map((u) => (
+                  <div key={u.id} className="bg-card border border-primary/20 rounded-lg px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{u.name || "Unbekannt"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {u.dienstnummer || "Keine DN"} · {ROLE_LABELS[u.role] || u.role}
+                        </p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        {u.role === "asd_applicant" ? "ASD-Bewerber" : "Flug-Bewerber"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        defaultValue={u.role}
+                        onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}
+                        disabled={!canEditUser(currentUserRole, u.role)}
+                      >
+                        <SelectTrigger className="w-44 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                        <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                      </Select>
+                      {canEditUser(currentUserRole, u.role) && (
+                        <>
+                          <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-8 text-xs">
+                            <Ban className="w-3.5 h-3.5" /> Sperren
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(u.id)} className="gap-1.5 h-8 text-xs">
+                            <Trash2 className="w-3.5 h-3.5" /> Löschen
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
         {/* Blocked Users Tab */}
         <TabsContent value="blocked">
           <div className="space-y-4">
