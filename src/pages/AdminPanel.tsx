@@ -514,6 +514,35 @@ const AdminPanel = () => {
     return "active";
   };
 
+  const renderActivityBadge = (u: any, withIcon = false) => {
+    const status = getActivityStatus(u);
+    if (status === "abwesend") {
+      return (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-medium inline-flex items-center gap-1"
+          title="Keine 10-80 oder Einsätze seit 14+ Tagen"
+        >
+          {withIcon && <Activity className="w-3 h-3" />} Abwesend
+        </span>
+      );
+    }
+    if (status === "inactive") {
+      return (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium inline-flex items-center gap-1"
+          title="Keine 10-80 oder Einsätze in den letzten 7 Tagen"
+        >
+          {withIcon && <Activity className="w-3 h-3" />} Inaktiv
+        </span>
+      );
+    }
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">
+        Aktiv
+      </span>
+    );
+  };
+
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " +
