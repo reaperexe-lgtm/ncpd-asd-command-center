@@ -497,9 +497,12 @@ const AdminPanel = () => {
   if (!isAdmin) return <p className="text-destructive p-8">Kein Zugriff.</p>;
 
   const APPLICANT_ROLES = new Set(["asd_applicant", "flight_applicant"]);
+  const LICENSE_ONLY_ROLES = new Set(["flight_license"]);
   const pending = users?.filter((u) => !u.is_approved && !(u as any).is_blocked) || [];
   const approvedAll = users?.filter((u) => u.is_approved && !(u as any).is_blocked) || [];
-  const approved = sortByRankAndDn(approvedAll.filter((u) => !APPLICANT_ROLES.has(u.role)));
+  const approved = sortByRankAndDn(
+    approvedAll.filter((u) => !APPLICANT_ROLES.has(u.role) && !LICENSE_ONLY_ROLES.has(u.role)),
+  );
   const applicants = sortByRankAndDn(approvedAll.filter((u) => APPLICANT_ROLES.has(u.role)));
   const blocked = users?.filter((u) => (u as any).is_blocked) || [];
 
