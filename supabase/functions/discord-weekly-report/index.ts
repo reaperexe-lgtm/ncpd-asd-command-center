@@ -88,6 +88,21 @@ Deno.serve(async (req) => {
 
     const { sorted, totalMissions, totalPursuits } = await getTopProtokollschreiber(supabaseAdmin, weekStart, now);
 
+    // Load Director & Co-Director Discord IDs to ping at top of report
+    let pingPrefix = "";
+    try {
+      const { data: pingRows } = await supabaseAdmin
+        .from("permission_settings")
+        .select("permission_key, role")
+        .in("permission_key", ["stats_ping_director_id", "stats_ping_codirector_id"]);
+      const pings: string[] = [];
+      for (const r of pingRows || []) {
+        const id = (r as any).role?.trim();
+        if (id) pings.push(`<@${id}>`);
+      }
+      if (pings.length) pingPrefix = pings.join(" ") + "\n";
+    } catch (_) { /* ignore */ }
+
     const medals = ["🥇", "🥈", "🥉"];
     let leaderboard = "";
     sorted.slice(0, 15).forEach((entry, idx) => {
@@ -99,6 +114,7 @@ Deno.serve(async (req) => {
     if (!leaderboard) leaderboard = "Keine Protokolle in diesem Zeitraum.\n";
 
     const message = [
+      pingPrefix.trim(),
       `📊 **Automatischer Wochenbericht — Top-Protokollschreiber**`,
       `━━━━━━━━━━━━━━━`,
       leaderboard.trim(),
@@ -107,7 +123,7 @@ Deno.serve(async (req) => {
       `📝 Gesamt: **${totalMissions + totalPursuits}** Protokolle (📋 ${totalMissions} Einsätze + 🚔 ${totalPursuits} 10-80)`,
       ``,
       `_Automatisch gesendet am ${now.toLocaleDateString("de-DE")} um ${now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr_`,
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 
     const discordRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: "POST",
