@@ -147,19 +147,27 @@ const AdminPanel = () => {
     enabled: isAdmin,
   });
 
-  // Wöchentliche Aktivität (1080 Verfolgungen oder Einsätze) pro User
-  const { data: weeklyActiveIds } = useQuery({
-    queryKey: ["admin-weekly-activity"],
+  // Letzte Aktivität (1080 Verfolgungen oder Einsätze) pro User innerhalb der letzten 14 Tage
+  const { data: lastActivityMap } = useQuery({
+    queryKey: ["admin-last-activity"],
     queryFn: async () => {
-      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
       const [{ data: missions }, { data: pursuits }] = await Promise.all([
-        supabase.from("missions").select("created_by").gte("created_at", since),
-        supabase.from("pursuits").select("created_by").gte("created_at", since),
+        supabase.from("missions").select("created_by, created_at").gte("created_at", since),
+        supabase.from("pursuits").select("created_by, created_at").gte("created_at", since),
       ]);
-      const ids = new Set<string>();
-      (missions || []).forEach((m: any) => m.created_by && ids.add(m.created_by));
-      (pursuits || []).forEach((p: any) => p.created_by && ids.add(p.created_by));
-      return ids;
+      const map = new Map<string, number>();
+      const consume = (rows: any[] | null) => {
+        (rows || []).forEach((r: any) => {
+          if (!r.created_by) return;
+          const t = new Date(r.created_at).getTime();
+          const prev = map.get(r.created_by) ?? 0;
+          if (t > prev) map.set(r.created_by, t);
+        });
+      };
+      consume(missions);
+      consume(pursuits);
+      return map;
     },
     enabled: isAdmin,
     refetchInterval: 60_000,
@@ -486,13 +494,54 @@ const AdminPanel = () => {
   const applicants = sortByRankAndDn(approvedAll.filter((u) => APPLICANT_ROLES.has(u.role)));
   const blocked = users?.filter((u) => (u as any).is_blocked) || [];
 
-  // ASD-Mitglieder gelten als inaktiv, wenn sie in den letzten 7 Tagen keinen Einsatz / keine 10-80 erstellt haben.
-  // Bewerber, Fluglizenz-Accounts und Trial Member werden hier nicht als inaktiv markiert.
+  // ASD-Mitglieder bekommen Inaktivitäts-Status anhand der letzten 1080/Einsatz-Aktivität.
+  // Bewerber, Fluglizenz-Accounts und Trial Member werden hier nicht markiert.
   const INACTIVE_TRACKED_ROLES = new Set([
     "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member",
   ]);
-  const isInactive = (u: any) =>
-    INACTIVE_TRACKED_ROLES.has(u.role) && !(weeklyActiveIds?.has(u.id) ?? false);
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  /** Liefert den Inaktivitäts-Status:
+   *  - "active":   Aktivität in den letzten 7 Tagen
+   *  - "inactive": keine Aktivität seit ≥ 7 Tagen (orange)
+   *  - "abwesend": keine Aktivität seit ≥ 14 Tagen (rot)
+   */
+  const getActivityStatus = (u: any): "active" | "inactive" | "abwesend" => {
+    if (!INACTIVE_TRACKED_ROLES.has(u.role)) return "active";
+    const last = lastActivityMap?.get(u.id) ?? 0;
+    const ageDays = (Date.now() - last) / ONE_DAY;
+    if (ageDays >= 14) return "abwesend";
+    if (ageDays >= 7) return "inactive";
+    return "active";
+  };
+
+  const renderActivityBadge = (u: any, withIcon = false) => {
+    const status = getActivityStatus(u);
+    if (status === "abwesend") {
+      return (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-medium inline-flex items-center gap-1"
+          title="Keine 10-80 oder Einsätze seit 14+ Tagen"
+        >
+          {withIcon && <Activity className="w-3 h-3" />} Abwesend
+        </span>
+      );
+    }
+    if (status === "inactive") {
+      return (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium inline-flex items-center gap-1"
+          title="Keine 10-80 oder Einsätze in den letzten 7 Tagen"
+        >
+          {withIcon && <Activity className="w-3 h-3" />} Inaktiv
+        </span>
+      );
+    }
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">
+        Aktiv
+      </span>
+    );
+  };
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -644,11 +693,7 @@ const AdminPanel = () => {
                         <p className="font-medium">{u.name || "–"}</p>
                         <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
                       </div>
-                      {isInactive(u) ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium" title="Keine 10-80 oder Einsätze in den letzten 7 Tagen">Inaktiv</span>
-                      ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
-                      )}
+                      {renderActivityBadge(u)}
                     </div>
                     <div className="flex items-center gap-2">
                       <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -743,13 +788,7 @@ const AdminPanel = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {isInactive(u) ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium inline-flex items-center gap-1" title="Keine 10-80 oder Einsätze in den letzten 7 Tagen">
-                              <Activity className="w-3 h-3" /> Inaktiv
-                            </span>
-                          ) : (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
-                          )}
+                          {renderActivityBadge(u, true)}
                         </td>
                         <td className="px-4 py-3">
                           <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
