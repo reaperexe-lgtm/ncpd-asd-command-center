@@ -644,7 +644,11 @@ const AdminPanel = () => {
                         <p className="font-medium">{u.name || "–"}</p>
                         <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
                       </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                      {isInactive(u) ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium" title="Keine 10-80 oder Einsätze in den letzten 7 Tagen">Inaktiv</span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -739,7 +743,13 @@ const AdminPanel = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                          {isInactive(u) ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-medium inline-flex items-center gap-1" title="Keine 10-80 oder Einsätze in den letzten 7 Tagen">
+                              <Activity className="w-3 h-3" /> Inaktiv
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Aktiv</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
