@@ -5,7 +5,12 @@ import SRTrainingCurriculum from "@/components/SRTrainingCurriculum";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ShieldCheck, GraduationCap, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
 import { allModuleCodes } from "@/lib/srCurriculum";
@@ -19,11 +24,12 @@ type Candidate = {
 };
 
 const SRMemberProgress = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selected, setSelected] = useState<string>("");
   const [progress, setProgress] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -131,6 +137,26 @@ const SRMemberProgress = () => {
   const done = progress.size;
   const allDone = total > 0 && done === total;
 
+  const resetSrHistory = async () => {
+    if (!selected || !candidate) return;
+    setResetting(true);
+    const [{ error: e1 }, { error: e2 }, { error: e3 }, { error: e4 }] = await Promise.all([
+      supabase.from("sr_training_progress" as any).delete().eq("user_id", selected),
+      supabase.from("sr_theory_exam_results").delete().eq("user_id", selected),
+      supabase.from("sr_training_signups" as any).delete().eq("user_id", selected),
+      supabase.from("profiles").update({ has_sr_training: false } as any).eq("id", selected),
+    ]);
+    setResetting(false);
+    const err = e1 || e2 || e3 || e4;
+    if (err) { toast.error(err.message); return; }
+    toast.success(`SR-Verlauf von ${candidate.name} wurde zurückgesetzt`);
+    logActivity("SR-Verlauf zurückgesetzt", "admin", { target_user_id: selected });
+    // refresh local state
+    setProgress(new Set());
+    setCandidates((prev) => prev.filter((c) => c.id !== selected));
+    setSelected("");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -158,15 +184,45 @@ const SRMemberProgress = () => {
             <p className="text-xs text-muted-foreground">
               {candidate.name} – {done}/{total} Module abgehakt
             </p>
-            {candidate.has_sr_training ? (
-              <Badge className="bg-primary/15 text-primary border-primary/30 gap-1">
-                <ShieldCheck className="w-3 h-3" /> Zertifiziert
-              </Badge>
-            ) : allDone ? (
-              <Badge variant="outline" className="border-yellow-500/50 text-yellow-500">Theorieprüfung ausstehend</Badge>
-            ) : (
-              <Badge variant="outline" className="border-border text-muted-foreground">In Ausbildung</Badge>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {candidate.has_sr_training ? (
+                <Badge className="bg-primary/15 text-primary border-primary/30 gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Zertifiziert
+                </Badge>
+              ) : allDone ? (
+                <Badge variant="outline" className="border-yellow-500/50 text-yellow-500">Theorieprüfung ausstehend</Badge>
+              ) : (
+                <Badge variant="outline" className="border-border text-muted-foreground">In Ausbildung</Badge>
+              )}
+              {isAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10">
+                      <RotateCcw className="w-3.5 h-3.5" /> Verlauf löschen
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>SR-Verlauf wirklich löschen?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Anmeldung, Theorieprüfungs-Ergebnisse, Modulfortschritt und Zertifizierung von
+                        <strong> {candidate.name} </strong> werden komplett entfernt. Der Member muss sich neu anmelden.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={resetSrHistory}
+                        disabled={resetting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Endgültig löschen
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
         )}
       </Card>
