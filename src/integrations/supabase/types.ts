@@ -715,6 +715,7 @@ export type Database = {
           dienstnummer: string | null
           discord_id: string | null
           discord_notifications: Json
+          has_sr_training: boolean
           id: string
           image_url: string | null
           internal_dienstnummer: string | null
@@ -731,6 +732,7 @@ export type Database = {
           dienstnummer?: string | null
           discord_id?: string | null
           discord_notifications?: Json
+          has_sr_training?: boolean
           id: string
           image_url?: string | null
           internal_dienstnummer?: string | null
@@ -747,6 +749,7 @@ export type Database = {
           dienstnummer?: string | null
           discord_id?: string | null
           discord_notifications?: Json
+          has_sr_training?: boolean
           id?: string
           image_url?: string | null
           internal_dienstnummer?: string | null
@@ -868,6 +871,39 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      sr_training_signups: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 
@@ -448,6 +449,19 @@ const AdminPanel = () => {
     },
   });
 
+  const srTrainingMutation = useMutation({
+    mutationFn: async ({ userId, value }: { userId: string; value: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ has_sr_training: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success(vars.value ? "SR-Training markiert" : "SR-Training entfernt");
+      logActivity(vars.value ? "SR-Training markiert" : "SR-Training entfernt", "admin", { target_user_id: vars.userId });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleResetRequest = useMutation({
     mutationFn: async ({ requestId, approve, request }: { requestId: string; approve: boolean; request: any }) => {
       const { error } = await supabase
@@ -750,6 +764,14 @@ const AdminPanel = () => {
                         </Button>
                       )}
                     </div>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                      <Checkbox
+                        checked={!!(u as any).has_sr_training}
+                        onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
+                      />
+                      <LifeBuoy className="w-3.5 h-3.5 text-primary" />
+                      <span>Search & Rescue Ausbildung</span>
+                    </label>
                   </div>
                 ))}
               </div>
@@ -765,6 +787,7 @@ const AdminPanel = () => {
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Discord ID</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
+                      <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">SR</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Aktionen</th>
                     </tr>
                   </thead>
@@ -811,6 +834,14 @@ const AdminPanel = () => {
                             <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                             <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                           </Select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center" title="Search & Rescue Ausbildung">
+                            <Checkbox
+                              checked={!!(u as any).has_sr_training}
+                              onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
+                            />
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           {canEditUser(currentUserRole, u.role) ? (

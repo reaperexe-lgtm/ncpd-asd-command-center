@@ -33,6 +33,7 @@ const navItems = [
   { to: "/uebungen", label: "Übungen", emoji: "🎯" },
   { to: "/lernen", label: "Lernen", emoji: "📚" },
   { to: "/achievements", label: "Achievements", emoji: "🏆" },
+  { to: "/search-rescue", label: "Search & Rescue", emoji: "🚁" },
 ];
 
 const FLIGHT_LICENSE_VISIBLE = new Set([
