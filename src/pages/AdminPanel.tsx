@@ -110,6 +110,8 @@ const AdminPanel = () => {
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
+  const [srMaxAttempts, setSrMaxAttempts] = useState("3");
+  const [savingSrAttempts, setSavingSrAttempts] = useState(false);
 
   // Load discord invite link
   useEffect(() => {
@@ -141,6 +143,9 @@ const AdminPanel = () => {
         if (r.permission_key === "stats_ping_director_id" && r.role) setStatsPingDirector(r.role);
         if (r.permission_key === "stats_ping_codirector_id" && r.role) setStatsPingCoDirector(r.role);
       }
+    });
+    supabase.from("permission_settings").select("role").eq("permission_key", "sr_max_attempts").maybeSingle().then(({ data }) => {
+      if (data?.role) setSrMaxAttempts(data.role);
     });
   }, [isAdmin]);
 
