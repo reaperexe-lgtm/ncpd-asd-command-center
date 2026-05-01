@@ -787,6 +787,7 @@ const AdminPanel = () => {
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Discord ID</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
+                      <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">SR</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Aktionen</th>
                     </tr>
                   </thead>
