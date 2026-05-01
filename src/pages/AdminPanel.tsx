@@ -836,6 +836,14 @@ const AdminPanel = () => {
                           </Select>
                         </td>
                         <td className="px-4 py-3">
+                          <div className="flex items-center justify-center" title="Search & Rescue Ausbildung">
+                            <Checkbox
+                              checked={!!(u as any).has_sr_training}
+                              onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
                           {canEditUser(currentUserRole, u.role) ? (
                             <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
                               <Ban className="w-3 h-3" /> Sperren
