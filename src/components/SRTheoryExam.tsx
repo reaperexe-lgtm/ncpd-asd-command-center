@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CheckCircle2, XCircle, GraduationCap } from "lucide-react";
+import { CheckCircle2, XCircle, GraduationCap, Lock, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
 
@@ -132,14 +132,49 @@ type Props = {
 
 const SRTheoryExam = ({ onPassed }: Props) => {
   const { user } = useAuth();
+  const storageKey = user ? `sr_exam_answers_${user.id}` : "";
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null);
+  const [maxAttempts, setMaxAttempts] = useState<number>(3);
+  const [attemptsUsed, setAttemptsUsed] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  // Load attempts + limit + restore answers from localStorage
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const [limitRes, attemptsRes] = await Promise.all([
+        supabase.from("permission_settings").select("role").eq("permission_key", "sr_max_attempts").maybeSingle(),
+        supabase.from("sr_theory_exam_results").select("id, passed").eq("user_id", user.id),
+      ]);
+      const lim = parseInt(limitRes.data?.role ?? "3", 10);
+      if (!Number.isNaN(lim) && lim > 0) setMaxAttempts(lim);
+      setAttemptsUsed((attemptsRes.data || []).length);
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) setAnswers(JSON.parse(raw));
+      } catch {}
+      setLoading(false);
+    })();
+  }, [user?.id]);
+
+  // Persist answers
+  useEffect(() => {
+    if (!storageKey || loading) return;
+    try { localStorage.setItem(storageKey, JSON.stringify(answers)); } catch {}
+  }, [answers, storageKey, loading]);
 
   const allAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined);
+  const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed);
+  const locked = attemptsRemaining <= 0;
 
   const handleSubmit = async () => {
     if (!user || !allAnswered) return;
+    if (locked) {
+      toast.error("Versuchslimit erreicht.");
+      return;
+    }
     setSubmitting(true);
     let score = 0;
     QUESTIONS.forEach((q) => {
@@ -158,11 +193,12 @@ const SRTheoryExam = ({ onPassed }: Props) => {
       toast.error("Speichern fehlgeschlagen: " + error.message);
       return;
     }
+    setAttemptsUsed((n) => n + 1);
     setResult({ score, passed });
+    try { localStorage.removeItem(storageKey); } catch {}
     if (passed) {
       toast.success(`Bestanden! ${score}/${QUESTIONS.length}`);
       logActivity("Hat die SR-Theorieprüfung bestanden", "general");
-      onPassed();
     } else {
       toast.error(`Nicht bestanden: ${score}/${QUESTIONS.length} – mind. ${PASS_THRESHOLD} nötig`);
     }
@@ -173,33 +209,67 @@ const SRTheoryExam = ({ onPassed }: Props) => {
     setResult(null);
   };
 
-  if (result && !result.passed) {
+  if (loading) {
+    return <Card className="p-6 text-sm text-muted-foreground">Lade Prüfung...</Card>;
+  }
+
+  // Result overview (passed or failed) — always show score + correct answers
+  if (result) {
+    const isPass = result.passed;
+    const accent = isPass ? "primary" : "destructive";
     return (
-      <Card className="bg-destructive/5 border-destructive/40 p-6 space-y-4">
+      <Card className={`bg-${accent}/5 border-${accent}/40 p-6 space-y-4`}>
         <div className="flex items-center gap-3">
-          <XCircle className="w-8 h-8 text-destructive" />
+          {isPass ? <Trophy className="w-8 h-8 text-primary" /> : <XCircle className="w-8 h-8 text-destructive" />}
           <div>
-            <h3 className="text-lg font-bold text-destructive">Leider nicht bestanden</h3>
+            <h3 className={`text-lg font-bold ${isPass ? "text-primary" : "text-destructive"}`}>
+              {isPass ? "Theorieprüfung bestanden" : "Leider nicht bestanden"}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Du hast {result.score}/{QUESTIONS.length} Punkte erreicht. Mindestens {PASS_THRESHOLD} sind nötig.
-              Lies die Theorie noch einmal in Ruhe durch.
+              {isPass
+                ? "Deine praktischen Module werden jetzt freigeschaltet."
+                : `Du benötigst mindestens ${PASS_THRESHOLD} richtige Antworten.`}
             </p>
           </div>
         </div>
-        <Button onClick={reset} variant="outline">Erneut versuchen</Button>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Score</p>
+            <p className="text-2xl font-bold text-foreground">{Math.round((result.score / QUESTIONS.length) * 100)}%</p>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Richtige Antworten</p>
+            <p className="text-2xl font-bold text-foreground">{result.score} / {QUESTIONS.length}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Versuche</p>
+            <p className="text-2xl font-bold text-foreground">{attemptsUsed} / {maxAttempts}</p>
+          </div>
+        </div>
+        {isPass ? (
+          <Button onClick={onPassed} className="gap-2">
+            <CheckCircle2 className="w-4 h-4" /> Weiter zu den Modulen
+          </Button>
+        ) : attemptsRemaining > 0 ? (
+          <Button onClick={reset} variant="outline">Erneut versuchen ({attemptsRemaining} übrig)</Button>
+        ) : (
+          <p className="text-sm text-destructive font-semibold">Versuchslimit erreicht. Bitte kontaktiere einen Ausbilder.</p>
+        )}
       </Card>
     );
   }
 
-  if (result && result.passed) {
+  if (locked) {
     return (
-      <Card className="bg-primary/5 border-primary/40 p-6 flex items-center gap-3">
-        <CheckCircle2 className="w-8 h-8 text-primary" />
-        <div>
-          <h3 className="text-lg font-bold text-primary">Theorieprüfung bestanden</h3>
-          <p className="text-sm text-muted-foreground">
-            Ergebnis: {result.score}/{QUESTIONS.length}. Deine Module werden jetzt freigeschaltet.
-          </p>
+      <Card className="bg-destructive/5 border-destructive/40 p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Lock className="w-8 h-8 text-destructive" />
+          <div>
+            <h3 className="text-lg font-bold text-destructive">Prüfung gesperrt</h3>
+            <p className="text-sm text-muted-foreground">
+              Du hast alle {maxAttempts} Versuche aufgebraucht. Bitte kontaktiere einen Ausbilder, damit dein Verlauf zurückgesetzt wird.
+            </p>
+          </div>
         </div>
       </Card>
     );
@@ -209,11 +279,15 @@ const SRTheoryExam = ({ onPassed }: Props) => {
     <Card className="bg-card border-border p-6 space-y-6">
       <div className="flex items-center gap-3">
         <GraduationCap className="w-7 h-7 text-primary" />
-        <div>
+        <div className="flex-1">
           <h3 className="text-lg font-bold text-foreground">SR-Theorieprüfung</h3>
           <p className="text-sm text-muted-foreground">
             {QUESTIONS.length} Fragen. Bestehensgrenze: {PASS_THRESHOLD} richtige Antworten.
           </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Versuche</p>
+          <p className="text-sm font-bold text-foreground">{attemptsRemaining} / {maxAttempts} übrig</p>
         </div>
       </div>
       <div className="space-y-6">
