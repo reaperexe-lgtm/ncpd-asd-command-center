@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import SearchAndRescueContent from "@/components/SearchAndRescueContent";
-import SRTrainingCurriculum from "@/components/SRTrainingCurriculum";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LifeBuoy, CheckCircle2, Clock, XCircle, ShieldCheck } from "lucide-react";
+import { LifeBuoy, CheckCircle2, Clock, XCircle, ShieldCheck, Users, Building2, HeartPulse } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
 
@@ -22,22 +20,18 @@ const SearchRescuePage = () => {
   const { user } = useAuth();
   const [hasSr, setHasSr] = useState(false);
   const [signup, setSignup] = useState<Signup | null>(null);
-  const [progress, setProgress] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [profileRes, signupRes, progressRes] = await Promise.all([
+    const [profileRes, signupRes] = await Promise.all([
       supabase.from("profiles").select("has_sr_training").eq("id", user.id).maybeSingle(),
       supabase.from("sr_training_signups" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("sr_training_progress" as any).select("module_code, completed").eq("user_id", user.id),
     ]);
     setHasSr(!!(profileRes.data as any)?.has_sr_training);
     setSignup(signupRes.data as any);
-    const codes = ((progressRes.data as any[]) || []).filter((r) => r.completed).map((r) => r.module_code);
-    setProgress(new Set(codes));
     setLoading(false);
   };
 
@@ -133,15 +127,35 @@ const SearchRescuePage = () => {
         <p className="text-sm text-muted-foreground mt-1">Spezialausbildung für Personenbergung & urbane Rettung</p>
       </div>
       {renderStatusCard()}
-      <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">Dein Ausbildungsplan</h2>
-        <p className="text-sm text-muted-foreground mb-4">Diese Module musst du durcharbeiten. Häkchen werden vom Ausbilder gesetzt.</p>
-        <SRTrainingCurriculum completed={progress} readOnly />
-      </div>
-      <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie (Grundlagen)</h2>
-      <SearchAndRescueContent />
-      </div>
+      <Card className="bg-card border-border p-6 space-y-4">
+        <h2 className="text-lg font-bold text-foreground">Was ist Search & Rescue?</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Search & Rescue (SR) ist die Spezialeinheit der ASD für Personenbergung, medizinische
+          Luftrettung und kritische Haus- bzw. Dachlandungen. SR-Piloten führen Einsätze durch,
+          die normale Piloten nicht gewährleisten können – von Bergungen in unwegsamem Gelände
+          bis zu Rettungen aus urbanen Bereichen.
+        </p>
+        <div className="grid sm:grid-cols-3 gap-3 pt-2">
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1">
+            <Users className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground text-sm">Personenbergung</h3>
+            <p className="text-xs text-muted-foreground">Sichere Aufnahme von Personen aus schwer zugänglichem Gelände.</p>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1">
+            <HeartPulse className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground text-sm">Medizinische Luftrettung</h3>
+            <p className="text-xs text-muted-foreground">Schneller Transport in Notfallsituationen mit Spotter-Unterstützung.</p>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1">
+            <Building2 className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground text-sm">Urbane Einsätze</h3>
+            <p className="text-xs text-muted-foreground">Dachlandungen und Operationen in dichtbebauten Bereichen.</p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground pt-2">
+          Die vollständigen Ausbildungsinhalte erhältst du nach erfolgreicher Anmeldung von deinem Ausbilder.
+        </p>
+      </Card>
     </div>
   );
 };
