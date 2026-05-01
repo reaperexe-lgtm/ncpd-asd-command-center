@@ -11,6 +11,7 @@ import AusbilderStatistik from "@/components/AusbilderStatistik";
 import AusbilderKontakte from "@/components/AusbilderKontakte";
 import SearchAndRescueContent from "@/components/SearchAndRescueContent";
 import SRTrainingSignups from "@/components/SRTrainingSignups";
+import SRMemberProgress from "@/components/SRMemberProgress";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
@@ -93,13 +94,16 @@ const AusbilderPage = () => {
         </TabsContent>
 
         <TabsContent value="sr" className="mt-6">
-          <div className="space-y-8">
-            <SRTrainingSignups />
-            <div>
-              <h2 className="text-lg font-bold text-foreground mb-4">Theoretische Inhalte</h2>
-              <SearchAndRescueContent />
-            </div>
-          </div>
+          <Tabs defaultValue="signups" className="w-full">
+            <TabsList className="bg-secondary/50 border border-border">
+              <TabsTrigger value="signups" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">Anmeldungen</TabsTrigger>
+              <TabsTrigger value="progress" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">Modulfortschritt</TabsTrigger>
+              <TabsTrigger value="theorie" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">Theorie</TabsTrigger>
+            </TabsList>
+            <TabsContent value="signups" className="mt-4"><SRTrainingSignups /></TabsContent>
+            <TabsContent value="progress" className="mt-4"><SRMemberProgress /></TabsContent>
+            <TabsContent value="theorie" className="mt-4"><SearchAndRescueContent /></TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="kontakte" className="mt-6">
