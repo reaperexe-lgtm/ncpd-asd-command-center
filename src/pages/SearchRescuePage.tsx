@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LifeBuoy, CheckCircle2, Clock, XCircle, ShieldCheck, Users, Building2, HeartPulse } from "lucide-react";
+import { LifeBuoy, CheckCircle2, Clock, XCircle, ShieldCheck, Users, Building2, HeartPulse, GraduationCap, Play } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
 import SearchAndRescueContent from "@/components/SearchAndRescueContent";
@@ -27,6 +27,7 @@ const SearchRescuePage = () => {
   const [theoryPassed, setTheoryPassed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [examStarted, setExamStarted] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -194,18 +195,42 @@ const SearchRescuePage = () => {
       {/* Approved (freigeschaltet) but theory not yet passed */}
       {!hasSr && signup?.status === "approved" && !theoryPassed && (
         <>
-          <div>
-            <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Lies die Theorie sorgfältig durch. Anschließend musst du die Theorieprüfung bestehen,
-              um die praktischen Module freizuschalten.
-            </p>
-            <SearchAndRescueContent />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground mb-3">Theorieprüfung</h2>
-            <SRTheoryExam onPassed={load} />
-          </div>
+          {!examStarted ? (
+            <>
+              <div>
+                <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Lies die Theorie sorgfältig durch. Anschließend musst du die Theorieprüfung bestehen,
+                  um die praktischen Module freizuschalten.
+                </p>
+                <SearchAndRescueContent />
+              </div>
+              <Card className="bg-card border-border p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground">Bereit für die Theorieprüfung?</h2>
+                    <p className="text-sm text-muted-foreground">
+                      10 Fragen · Bestehensgrenze: 8 richtige Antworten. Sobald du startest, ist die Theorie nicht mehr sichtbar.
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setExamStarted(true)} className="gap-2">
+                  <Play className="w-4 h-4" /> Theorieprüfung starten
+                </Button>
+              </Card>
+            </>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <h2 className="text-lg font-bold text-foreground">Theorieprüfung läuft</h2>
+                <Badge variant="outline" className="border-yellow-500/50 text-yellow-500">Theorie ausgeblendet</Badge>
+              </div>
+              <SRTheoryExam onPassed={() => { setExamStarted(false); load(); }} />
+            </div>
+          )}
         </>
       )}
 
