@@ -216,9 +216,8 @@ const SRTheoryExam = ({ onPassed }: Props) => {
   // Result overview (passed or failed) — always show score + correct answers
   if (result) {
     const isPass = result.passed;
-    const accent = isPass ? "primary" : "destructive";
     return (
-      <Card className={`bg-${accent}/5 border-${accent}/40 p-6 space-y-4`}>
+      <Card className={isPass ? "bg-primary/5 border-primary/40 p-6 space-y-4" : "bg-destructive/5 border-destructive/40 p-6 space-y-4"}>
         <div className="flex items-center gap-3">
           {isPass ? <Trophy className="w-8 h-8 text-primary" /> : <XCircle className="w-8 h-8 text-destructive" />}
           <div>
