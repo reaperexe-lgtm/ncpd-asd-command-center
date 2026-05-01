@@ -825,6 +825,7 @@ const StatistikPage = () => {
 
         {/* ===== WEEK TAB ===== */}
         <TabsContent value="weekly" className="space-y-6 mt-4">
+          <MyWeekCard />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TopWritersCard
               scope="weekly"
