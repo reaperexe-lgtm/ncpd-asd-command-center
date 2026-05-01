@@ -55,11 +55,11 @@ const SRTrainingSignups = () => {
       .update({ status, note, reviewed_by: user.id, reviewed_at: new Date().toISOString() })
       .eq("id", s.id);
     if (updErr) { toast.error(updErr.message); return; }
-    if (status === "approved") {
-      const { error: profErr } = await supabase.from("profiles").update({ has_sr_training: true } as any).eq("id", s.user_id);
-      if (profErr) { toast.error(profErr.message); return; }
-    }
-    toast.success(status === "approved" ? "Anmeldung angenommen" : "Anmeldung abgelehnt");
+    toast.success(
+      status === "approved"
+        ? "Anmeldung angenommen – Theorie & Module werden für den Member freigeschaltet"
+        : "Anmeldung abgelehnt"
+    );
     logActivity(
       status === "approved" ? "SR-Anmeldung angenommen" : "SR-Anmeldung abgelehnt",
       "admin",
