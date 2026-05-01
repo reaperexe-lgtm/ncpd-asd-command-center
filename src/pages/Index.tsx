@@ -256,6 +256,8 @@ const Index = () => {
           </div>
         </div>
       )}
+
+      <ApplicantProgressOverview />
       </div>
     </div>
   );
