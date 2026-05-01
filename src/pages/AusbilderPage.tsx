@@ -10,6 +10,7 @@ import FlightApplicantManagement from "@/components/FlightApplicantManagement";
 import AusbilderStatistik from "@/components/AusbilderStatistik";
 import AusbilderKontakte from "@/components/AusbilderKontakte";
 import SearchAndRescueContent from "@/components/SearchAndRescueContent";
+import SRTrainingSignups from "@/components/SRTrainingSignups";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
@@ -92,7 +93,13 @@ const AusbilderPage = () => {
         </TabsContent>
 
         <TabsContent value="sr" className="mt-6">
-          <SearchAndRescueContent />
+          <div className="space-y-8">
+            <SRTrainingSignups />
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-4">Theoretische Inhalte</h2>
+              <SearchAndRescueContent />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="kontakte" className="mt-6">
