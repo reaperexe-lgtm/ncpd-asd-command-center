@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import SearchAndRescueContent from "@/components/SearchAndRescueContent";
+import SRTrainingCurriculum from "@/components/SRTrainingCurriculum";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,18 +22,22 @@ const SearchRescuePage = () => {
   const { user } = useAuth();
   const [hasSr, setHasSr] = useState(false);
   const [signup, setSignup] = useState<Signup | null>(null);
+  const [progress, setProgress] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [profileRes, signupRes] = await Promise.all([
+    const [profileRes, signupRes, progressRes] = await Promise.all([
       supabase.from("profiles").select("has_sr_training").eq("id", user.id).maybeSingle(),
       supabase.from("sr_training_signups" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("sr_training_progress" as any).select("module_code, completed").eq("user_id", user.id),
     ]);
     setHasSr(!!(profileRes.data as any)?.has_sr_training);
     setSignup(signupRes.data as any);
+    const codes = ((progressRes.data as any[]) || []).filter((r) => r.completed).map((r) => r.module_code);
+    setProgress(new Set(codes));
     setLoading(false);
   };
 
@@ -128,7 +133,15 @@ const SearchRescuePage = () => {
         <p className="text-sm text-muted-foreground mt-1">Spezialausbildung für Personenbergung & urbane Rettung</p>
       </div>
       {renderStatusCard()}
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3">Dein Ausbildungsplan</h2>
+        <p className="text-sm text-muted-foreground mb-4">Diese Module musst du durcharbeiten. Häkchen werden vom Ausbilder gesetzt.</p>
+        <SRTrainingCurriculum completed={progress} readOnly />
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie (Grundlagen)</h2>
       <SearchAndRescueContent />
+      </div>
     </div>
   );
 };
