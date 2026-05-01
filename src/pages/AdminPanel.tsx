@@ -1353,6 +1353,64 @@ const AdminPanel = () => {
               </div>
             </div>
 
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <LifeBuoy className="w-4 h-4" /> SR-Theorieprüfung – Versuchslimit
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Anzahl Versuche, die ein Member für die SR-Theorieprüfung hat. Nach Erreichen des Limits ist die Prüfung gesperrt, bis ein Ausbilder den SR-Verlauf zurücksetzt.
+              </p>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={srMaxAttempts}
+                  onChange={(e) => setSrMaxAttempts(e.target.value)}
+                  className="bg-background border-border w-32"
+                />
+                <Button
+                  onClick={async () => {
+                    const n = parseInt(srMaxAttempts, 10);
+                    if (Number.isNaN(n) || n < 1) {
+                      toast.error("Bitte eine Zahl ≥ 1 eingeben");
+                      return;
+                    }
+                    setSavingSrAttempts(true);
+                    try {
+                      const { data: existing } = await supabase
+                        .from("permission_settings")
+                        .select("id")
+                        .eq("permission_key", "sr_max_attempts")
+                        .maybeSingle();
+                      if (existing) {
+                        const { error } = await supabase
+                          .from("permission_settings")
+                          .update({ role: String(n) } as any)
+                          .eq("permission_key", "sr_max_attempts");
+                        if (error) throw error;
+                      } else {
+                        const { error } = await supabase
+                          .from("permission_settings")
+                          .insert({ permission_key: "sr_max_attempts", role: String(n), allowed: true } as any);
+                        if (error) throw error;
+                      }
+                      toast.success("Versuchslimit gespeichert");
+                      logActivity("SR-Versuchslimit aktualisiert", "admin", { value: n });
+                    } catch (e: any) {
+                      toast.error("Fehler: " + (e?.message ?? "Speichern fehlgeschlagen"));
+                    } finally {
+                      setSavingSrAttempts(false);
+                    }
+                  }}
+                  disabled={savingSrAttempts}
+                  className="gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
             {/* Wöchentliche Aufstellung — Discord Ankündigung */}
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
