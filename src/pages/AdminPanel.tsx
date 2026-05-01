@@ -764,6 +764,14 @@ const AdminPanel = () => {
                         </Button>
                       )}
                     </div>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                      <Checkbox
+                        checked={!!(u as any).has_sr_training}
+                        onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
+                      />
+                      <LifeBuoy className="w-3.5 h-3.5 text-primary" />
+                      <span>Search & Rescue Ausbildung</span>
+                    </label>
                   </div>
                 ))}
               </div>
