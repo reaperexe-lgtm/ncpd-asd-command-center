@@ -163,7 +163,7 @@ const SRMemberProgress = () => {
                 <ShieldCheck className="w-3 h-3" /> Zertifiziert
               </Badge>
             ) : allDone ? (
-              <Badge variant="outline" className="border-yellow-500/50 text-yellow-500">Bereit für Zertifizierung – Haken im Admin setzen</Badge>
+              <Badge variant="outline" className="border-yellow-500/50 text-yellow-500">Theorieprüfung ausstehend</Badge>
             ) : (
               <Badge variant="outline" className="border-border text-muted-foreground">In Ausbildung</Badge>
             )}
