@@ -28,21 +28,47 @@ const SearchRescuePage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
+  const [attemptsUsed, setAttemptsUsed] = useState(0);
+  const [maxAttempts, setMaxAttempts] = useState(3);
+
+  const examStartedKey = user ? `sr_exam_started_${user.id}` : "";
+
+  // Restore examStarted across refresh/logout per user
+  useEffect(() => {
+    if (!examStartedKey) return;
+    try {
+      const v = localStorage.getItem(examStartedKey);
+      if (v === "1") setExamStarted(true);
+    } catch {}
+  }, [examStartedKey]);
+
+  const persistExamStarted = (v: boolean) => {
+    setExamStarted(v);
+    try {
+      if (v) localStorage.setItem(examStartedKey, "1");
+      else localStorage.removeItem(examStartedKey);
+    } catch {}
+  };
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [profileRes, signupRes, progressRes, theoryRes] = await Promise.all([
+    const [profileRes, signupRes, progressRes, theoryRes, attemptsRes, limitRes] = await Promise.all([
       supabase.from("profiles").select("has_sr_training").eq("id", user.id).maybeSingle(),
       supabase.from("sr_training_signups" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("sr_training_progress" as any).select("module_code, completed").eq("user_id", user.id),
       supabase.from("sr_theory_exam_results").select("passed").eq("user_id", user.id).eq("passed", true).limit(1).maybeSingle(),
+      supabase.from("sr_theory_exam_results").select("id").eq("user_id", user.id),
+      supabase.from("permission_settings").select("role").eq("permission_key", "sr_max_attempts").maybeSingle(),
     ]);
     setHasSr(!!(profileRes.data as any)?.has_sr_training);
     setSignup(signupRes.data as any);
     const codes = ((progressRes.data as any[]) || []).filter((r) => r.completed).map((r) => r.module_code);
     setProgress(new Set(codes));
     setTheoryPassed(!!theoryRes.data);
+    setAttemptsUsed((attemptsRes.data || []).length);
+    const lim = parseInt((limitRes.data as any)?.role ?? "3", 10);
+    if (!Number.isNaN(lim) && lim > 0) setMaxAttempts(lim);
     setLoading(false);
   };
 
@@ -151,6 +177,8 @@ const SearchRescuePage = () => {
     );
   };
 
+  const isExamLocked = attemptsUsed >= maxAttempts && !theoryPassed;
+
   return (
     <div className="space-y-6">
       <div>
@@ -195,7 +223,7 @@ const SearchRescuePage = () => {
       {/* Approved (freigeschaltet) but theory not yet passed */}
       {!hasSr && signup?.status === "approved" && !theoryPassed && (
         <>
-          {!examStarted ? (
+          {!examStarted && !isExamLocked ? (
             <>
               <div>
                 <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie</h2>
@@ -213,11 +241,11 @@ const SearchRescuePage = () => {
                   <div>
                     <h2 className="text-lg font-bold text-foreground">Bereit für die Theorieprüfung?</h2>
                     <p className="text-sm text-muted-foreground">
-                      10 Fragen · Bestehensgrenze: 8 richtige Antworten. Sobald du startest, ist die Theorie nicht mehr sichtbar.
+                      10 Fragen · Bestehensgrenze: 8 richtige Antworten · Versuche: {maxAttempts - attemptsUsed} / {maxAttempts} übrig. Sobald du startest, ist die Theorie nicht mehr sichtbar.
                     </p>
                   </div>
                 </div>
-                <Button onClick={() => setExamStarted(true)} className="gap-2">
+                <Button onClick={() => persistExamStarted(true)} className="gap-2">
                   <Play className="w-4 h-4" /> Theorieprüfung starten
                 </Button>
               </Card>
@@ -228,7 +256,7 @@ const SearchRescuePage = () => {
                 <h2 className="text-lg font-bold text-foreground">Theorieprüfung läuft</h2>
                 <Badge variant="outline" className="border-yellow-500/50 text-yellow-500">Theorie ausgeblendet</Badge>
               </div>
-              <SRTheoryExam onPassed={() => { setExamStarted(false); load(); }} />
+              <SRTheoryExam onPassed={() => { persistExamStarted(false); load(); }} />
             </div>
           )}
         </>
