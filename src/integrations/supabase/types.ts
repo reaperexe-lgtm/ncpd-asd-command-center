@@ -874,6 +874,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sr_training_progress: {
+        Row: {
+          completed: boolean
+          completed_at: string
+          completed_by: string | null
+          id: string
+          module_code: string
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string
+          completed_by?: string | null
+          id?: string
+          module_code: string
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string
+          completed_by?: string | null
+          id?: string
+          module_code?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sr_training_signups: {
         Row: {
           created_at: string
