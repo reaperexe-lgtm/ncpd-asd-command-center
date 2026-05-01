@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { X, Plane } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
 import ApplicantProgressOverview from "@/components/ApplicantProgressOverview";
+import MemberOfMonthCard from "@/components/MemberOfMonthCard";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
@@ -258,6 +259,9 @@ const Index = () => {
       )}
 
       <ApplicantProgressOverview />
+      <div className="w-full max-w-4xl">
+        <MemberOfMonthCard />
+      </div>
       </div>
     </div>
   );

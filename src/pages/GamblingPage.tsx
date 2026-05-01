@@ -423,6 +423,7 @@ const GamblingPage = () => {
         winAmount = bet * mult;
         resultMsg = `🎉 JACKPOT! x${mult}`;
         playJackpotSound(volume);
+        logActivity("casino_jackpot", "casino", { bet, win: winAmount, symbol: final[0] });
         const end = Date.now() + 2500;
         const frame = () => {
           confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
