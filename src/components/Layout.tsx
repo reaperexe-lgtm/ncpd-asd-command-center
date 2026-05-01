@@ -2,6 +2,7 @@ import SlideshowBackground from "./SlideshowBackground";
 import { ReactNode } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import QuickActionFAB from "./QuickActionFAB";
 
 const Layout = ({ children }: { children: ReactNode }) => {
   return (
@@ -16,6 +17,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
             </main>
           </div>
         </div>
+        <QuickActionFAB />
       </div>
     </SidebarProvider>
   );

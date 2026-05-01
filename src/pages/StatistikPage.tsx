@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
+import MyWeekCard from "@/components/MyWeekCard";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "hsl(160, 60%, 45%)",
@@ -824,6 +825,7 @@ const StatistikPage = () => {
 
         {/* ===== WEEK TAB ===== */}
         <TabsContent value="weekly" className="space-y-6 mt-4">
+          <MyWeekCard />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TopWritersCard
               scope="weekly"
