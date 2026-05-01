@@ -874,6 +874,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sr_theory_exam_results: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          max_score: number
+          passed: boolean
+          score: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          max_score?: number
+          passed?: boolean
+          score?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          max_score?: number
+          passed?: boolean
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       sr_training_progress: {
         Row: {
           completed: boolean

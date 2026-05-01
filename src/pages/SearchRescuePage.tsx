@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { LifeBuoy, CheckCircle2, Clock, XCircle, ShieldCheck, Users, Building2, HeartPulse } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
+import SearchAndRescueContent from "@/components/SearchAndRescueContent";
+import SRTrainingCurriculum from "@/components/SRTrainingCurriculum";
+import SRTheoryExam from "@/components/SRTheoryExam";
 
 type Signup = {
   id: string;
@@ -20,18 +23,25 @@ const SearchRescuePage = () => {
   const { user } = useAuth();
   const [hasSr, setHasSr] = useState(false);
   const [signup, setSignup] = useState<Signup | null>(null);
+  const [progress, setProgress] = useState<Set<string>>(new Set());
+  const [theoryPassed, setTheoryPassed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [profileRes, signupRes] = await Promise.all([
+    const [profileRes, signupRes, progressRes, theoryRes] = await Promise.all([
       supabase.from("profiles").select("has_sr_training").eq("id", user.id).maybeSingle(),
       supabase.from("sr_training_signups" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("sr_training_progress" as any).select("module_code, completed").eq("user_id", user.id),
+      supabase.from("sr_theory_exam_results").select("passed").eq("user_id", user.id).eq("passed", true).limit(1).maybeSingle(),
     ]);
     setHasSr(!!(profileRes.data as any)?.has_sr_training);
     setSignup(signupRes.data as any);
+    const codes = ((progressRes.data as any[]) || []).filter((r) => r.completed).map((r) => r.module_code);
+    setProgress(new Set(codes));
+    setTheoryPassed(!!theoryRes.data);
     setLoading(false);
   };
 
@@ -127,6 +137,7 @@ const SearchRescuePage = () => {
         <p className="text-sm text-muted-foreground mt-1">Spezialausbildung für Personenbergung & urbane Rettung</p>
       </div>
       {renderStatusCard()}
+      {(!signup || signup.status !== "approved") && !hasSr && (
       <Card className="bg-card border-border p-6 space-y-4">
         <h2 className="text-lg font-bold text-foreground">Was ist Search & Rescue?</h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -156,6 +167,36 @@ const SearchRescuePage = () => {
           Die vollständigen Ausbildungsinhalte erhältst du nach erfolgreicher Anmeldung von deinem Ausbilder.
         </p>
       </Card>
+      )}
+
+      {/* Approved (freigeschaltet) but theory not yet passed */}
+      {!hasSr && signup?.status === "approved" && !theoryPassed && (
+        <>
+          <div>
+            <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Lies die Theorie sorgfältig durch. Anschließend musst du die Theorieprüfung bestehen,
+              um die praktischen Module freizuschalten.
+            </p>
+            <SearchAndRescueContent />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground mb-3">Theorieprüfung</h2>
+            <SRTheoryExam onPassed={load} />
+          </div>
+        </>
+      )}
+
+      {/* Theory passed (or fully certified) — show modules */}
+      {(theoryPassed || hasSr) && (
+        <div>
+          <h2 className="text-lg font-bold text-foreground mb-3">Dein Modulfortschritt</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Diese Module musst du durcharbeiten. Häkchen werden vom Ausbilder gesetzt.
+          </p>
+          <SRTrainingCurriculum completed={progress} readOnly />
+        </div>
+      )}
     </div>
   );
 };
