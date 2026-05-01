@@ -278,14 +278,14 @@ const StatistikPage = () => {
   const { start: weekStart } = getASDWeekRange();
   const effectiveWeekStart = lastWeeklyReset && new Date(lastWeeklyReset) > weekStart ? new Date(lastWeeklyReset) : weekStart;
   const weeklyMissions = missions?.filter((m) => {
-    const d = new Date(m.created_at);
+    const d = new Date((m as any).tatzeit ?? m.created_at);
     return d >= effectiveWeekStart && d < weekEnd;
   }) || [];
   const effectiveWeeklyPursuitStart = lastPursuitReset && new Date(lastPursuitReset) > effectiveWeekStart
     ? new Date(lastPursuitReset)
     : effectiveWeekStart;
   const weeklyPursuits = pursuits?.filter((p) => {
-    const d = new Date(p.created_at);
+    const d = new Date((p as any).pursuit_date ?? p.created_at);
     return d >= effectiveWeeklyPursuitStart && d < weekEnd;
   }) || [];
 
@@ -294,11 +294,11 @@ const StatistikPage = () => {
     ? new Date(lastOverviewReset)
     : weekStart;
   const weeklyOverviewMissions = missions?.filter((m) => {
-    const d = new Date(m.created_at);
+    const d = new Date((m as any).tatzeit ?? m.created_at);
     return d >= effectiveWeekOverviewStart && d < weekEnd;
   }) || [];
   const weeklyOverviewPursuits = pursuits?.filter((p) => {
-    const d = new Date(p.created_at);
+    const d = new Date((p as any).pursuit_date ?? p.created_at);
     return d >= effectiveWeekOverviewStart && d < weekEnd;
   }) || [];
 
@@ -315,14 +315,14 @@ const StatistikPage = () => {
   const { start: monthStart } = getMonthRange();
   const effectiveMonthStart = lastMonthlyReset && new Date(lastMonthlyReset) > monthStart ? new Date(lastMonthlyReset) : monthStart;
   const monthlyMissions = missions?.filter((m) => {
-    const d = new Date(m.created_at);
+    const d = new Date((m as any).tatzeit ?? m.created_at);
     return d >= effectiveMonthStart && d < monthEnd;
   }) || [];
   const effectiveMonthlyPursuitStart = lastPursuitMonthlyReset && new Date(lastPursuitMonthlyReset) > effectiveMonthStart
     ? new Date(lastPursuitMonthlyReset)
     : effectiveMonthStart;
   const monthlyPursuits = pursuits?.filter((p) => {
-    const d = new Date(p.created_at);
+    const d = new Date((p as any).pursuit_date ?? p.created_at);
     return d >= effectiveMonthlyPursuitStart && d < monthEnd;
   }) || [];
 
@@ -331,11 +331,11 @@ const StatistikPage = () => {
     ? new Date(lastOverviewMonthlyReset)
     : monthStart;
   const monthlyOverviewMissions = missions?.filter((m) => {
-    const d = new Date(m.created_at);
+    const d = new Date((m as any).tatzeit ?? m.created_at);
     return d >= effectiveMonthOverviewStart && d < monthEnd;
   }) || [];
   const monthlyOverviewPursuits = pursuits?.filter((p) => {
-    const d = new Date(p.created_at);
+    const d = new Date((p as any).pursuit_date ?? p.created_at);
     return d >= effectiveMonthOverviewStart && d < monthEnd;
   }) || [];
 
