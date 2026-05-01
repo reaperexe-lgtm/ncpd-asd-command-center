@@ -68,15 +68,6 @@ export const SR_CURRICULUM: SrStage[] = [
     subtitle: "Bestehen = Rangvergabe „ASD-SR\"",
     sections: [
       {
-        title: "3.1 Theoretischer Test",
-        modules: [
-          { code: "3.1.a", label: "Flugphysik" },
-          { code: "3.1.b", label: "Sicherheitsregeln" },
-          { code: "3.1.c", label: "Einsatzverfahren" },
-          { code: "3.1.d", label: "SR-SOPs" },
-        ],
-      },
-      {
         title: "3.2 Praktische Prüfung – Teil A: Menschenbergung",
         modules: [
           { code: "3.2.a", label: "Anflug enges Gebiet (Mount Chiliad)" },

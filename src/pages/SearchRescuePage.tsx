@@ -110,6 +110,28 @@ const SearchRescuePage = () => {
         </Card>
       );
     }
+    if (signup?.status === "approved") {
+      return (
+        <Card className="bg-primary/5 border-primary/40 p-6 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-primary">Freigeschaltet</h2>
+              <p className="text-sm text-muted-foreground">
+                {theoryPassed
+                  ? "Theorie bestanden – arbeite jetzt deine Module mit dem Ausbilder ab."
+                  : "Lies die Theorie unten und bestehe die Theorieprüfung."}
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="border-primary/50 text-primary">
+            {theoryPassed ? "Praxis-Phase" : "Theorie-Phase"}
+          </Badge>
+        </Card>
+      );
+    }
     return (
       <Card className="bg-card border-border p-6 space-y-4">
         <div className="flex items-center gap-4">
