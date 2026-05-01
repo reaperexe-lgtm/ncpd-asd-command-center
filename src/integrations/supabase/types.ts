@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_definitions: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          metric: string
+          sort_order: number
+          threshold: number
+          tier: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          metric: string
+          sort_order?: number
+          threshold?: number
+          tier?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          metric?: string
+          sort_order?: number
+          threshold?: number
+          tier?: string
+          title?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action: string
@@ -175,6 +220,30 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_completions: {
+        Row: {
+          challenge_id: string
+          completed_at: string
+          id: string
+          reward_paid: boolean
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string
+          id?: string
+          reward_paid?: boolean
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string
+          id?: string
+          reward_paid?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       changelogs: {
         Row: {
           changes: Json | null
@@ -199,6 +268,45 @@ export type Database = {
           id?: string
           title?: string
           version?: string
+        }
+        Relationships: []
+      }
+      flashcards: {
+        Row: {
+          back: string
+          category: string
+          created_at: string
+          created_by: string | null
+          front: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          back: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          front: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          back?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          front?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -364,6 +472,36 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      member_of_month: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          month: number
+          score: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          month: number
+          score?: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          month?: number
+          score?: number
+          user_id?: string
+          year?: number
         }
         Relationships: []
       }
@@ -571,6 +709,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          asd_join_date: string | null
+          birthday: string | null
           created_at: string
           dienstnummer: string | null
           discord_id: string | null
@@ -585,6 +725,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          asd_join_date?: string | null
+          birthday?: string | null
           created_at?: string
           dienstnummer?: string | null
           discord_id?: string | null
@@ -599,6 +741,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          asd_join_date?: string | null
+          birthday?: string | null
           created_at?: string
           dienstnummer?: string | null
           discord_id?: string | null
@@ -948,6 +1092,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_code: string
+          awarded_at: string
+          id: string
+          progress_value: number
+          user_id: string
+        }
+        Insert: {
+          achievement_code: string
+          awarded_at?: string
+          id?: string
+          progress_value?: number
+          user_id: string
+        }
+        Update: {
+          achievement_code?: string
+          awarded_at?: string
+          id?: string
+          progress_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -963,6 +1131,81 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      video_tutorials: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+          youtube_url: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+          youtube_url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
+      weekly_challenges: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          metric: string
+          reward_amount: number
+          target: number
+          title: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          metric: string
+          reward_amount?: number
+          target?: number
+          title: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          metric?: string
+          reward_amount?: number
+          target?: number
+          title?: string
+          week_start?: string
         }
         Relationships: []
       }

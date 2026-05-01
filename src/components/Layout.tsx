@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import QuickActionFAB from "./QuickActionFAB";
+import MiniGamesEasterEgg from "./MiniGamesEasterEgg";
 
 const Layout = ({ children }: { children: ReactNode }) => {
   return (
@@ -18,6 +19,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
         <QuickActionFAB />
+        <MiniGamesEasterEgg />
       </div>
     </SidebarProvider>
   );

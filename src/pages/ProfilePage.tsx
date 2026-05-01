@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink, Cake, PartyPopper } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
@@ -26,6 +26,8 @@ const ProfilePage = () => {
   });
   const [discordServerLink, setDiscordServerLink] = useState("");
   const [discordServerDescription, setDiscordServerDescription] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [asdJoinDate, setAsdJoinDate] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -35,12 +37,14 @@ const ProfilePage = () => {
     }
     // Load discord_id from DB
     if (user) {
-      supabase.from("profiles").select("discord_id, discord_notifications, internal_dienstnummer").eq("id", user.id).single().then(({ data }) => {
+      supabase.from("profiles").select("discord_id, discord_notifications, internal_dienstnummer, birthday, asd_join_date").eq("id", user.id).single().then(({ data }) => {
         if (data?.discord_id) setDiscordId(data.discord_id);
         if (data?.discord_notifications) {
           setNotifications(data.discord_notifications as any);
         }
         setInternalDienstnummer((data as any)?.internal_dienstnummer ?? null);
+        if ((data as any)?.birthday) setBirthday((data as any).birthday);
+        if ((data as any)?.asd_join_date) setAsdJoinDate((data as any).asd_join_date);
       });
       // Load discord server invite link
       supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
@@ -83,6 +87,8 @@ const ProfilePage = () => {
         image_url: imageUrl,
         discord_id: discordId.trim() || null,
         discord_notifications: notifications,
+        birthday: birthday || null,
+        asd_join_date: asdJoinDate || null,
       } as any, { onConflict: "id" });
       if (error) throw error;
 
@@ -217,6 +223,29 @@ const ProfilePage = () => {
         <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
           <Save className="w-4 h-4" />
           {saving ? "Speichere..." : "Profil speichern"}
+        </Button>
+      </div>
+
+      {/* Geburtstag & Jubiläum */}
+      <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <PartyPopper className="w-5 h-5 text-pink-400" />
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Geburtstag & ASD-Jubiläum</h2>
+            <p className="text-[10px] text-muted-foreground">Damit deine Crew dich feiern kann 🎉</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1.5"><Cake className="w-3.5 h-3.5 text-pink-400" /> Geburtstag</Label>
+          <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="bg-background border-border" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1.5"><PartyPopper className="w-3.5 h-3.5 text-purple-400" /> ASD-Beitrittsdatum</Label>
+          <Input type="date" value={asdJoinDate} onChange={(e) => setAsdJoinDate(e.target.value)} className="bg-background border-border" />
+          <p className="text-[10px] text-muted-foreground">Wird für Jubiläums-Reminder genutzt (z.B. „1 Jahr im ASD")</p>
+        </div>
+        <Button onClick={handleSave} disabled={saving} variant="outline" className="w-full gap-2">
+          <Save className="w-4 h-4" /> Speichern
         </Button>
       </div>
 
