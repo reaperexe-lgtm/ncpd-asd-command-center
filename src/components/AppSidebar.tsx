@@ -31,11 +31,13 @@ const navItems = [
   { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
   { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
   { to: "/uebungen", label: "Übungen", emoji: "🎯" },
+  { to: "/lernen", label: "Lernen", emoji: "📚" },
+  { to: "/achievements", label: "Achievements", emoji: "🏆" },
 ];
 
 const FLIGHT_LICENSE_VISIBLE = new Set([
   "/", "/gambling", "/verfolgung", "/einsatz", "/protokolle",
-  "/familien", "/statistik", "/member", "/fluglizenz-member", "/uebungen",
+  "/familien", "/statistik", "/member", "/fluglizenz-member", "/uebungen", "/lernen", "/achievements",
 ]);
 
 export function AppSidebar() {

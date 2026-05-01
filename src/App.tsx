@@ -25,6 +25,8 @@ import AufstellungsprotokollPage from "./pages/AufstellungsprotokollPage";
 import UebungenPage from "./pages/UebungenPage";
 import ASDApplicantDashboard from "./pages/ASDApplicantDashboard";
 import FlightApplicantDashboard from "./pages/FlightApplicantDashboard";
+import LernenPage from "./pages/LernenPage";
+import AchievementsPage from "./pages/AchievementsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +66,8 @@ const ProtectedRoutes = () => {
         <Route path="/ausbilder" element={<AusbilderPage />} />
         <Route path="/aufstellungsprotokoll" element={<AufstellungsprotokollPage />} />
         <Route path="/uebungen" element={<UebungenPage />} />
+        <Route path="/lernen" element={<LernenPage />} />
+        <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
