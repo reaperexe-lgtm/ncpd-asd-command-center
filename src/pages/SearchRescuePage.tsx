@@ -133,7 +133,15 @@ const SearchRescuePage = () => {
         <p className="text-sm text-muted-foreground mt-1">Spezialausbildung für Personenbergung & urbane Rettung</p>
       </div>
       {renderStatusCard()}
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3">Dein Ausbildungsplan</h2>
+        <p className="text-sm text-muted-foreground mb-4">Diese Module musst du durcharbeiten. Häkchen werden vom Ausbilder gesetzt.</p>
+        <SRTrainingCurriculum completed={progress} readOnly />
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3">SR-Theorie (Grundlagen)</h2>
       <SearchAndRescueContent />
+      </div>
     </div>
   );
 };
