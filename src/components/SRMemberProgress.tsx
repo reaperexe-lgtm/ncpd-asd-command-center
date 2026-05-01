@@ -83,6 +83,47 @@ const SRMemberProgress = () => {
       return;
     }
     logActivity(value ? `SR-Modul ${code} abgehakt` : `SR-Modul ${code} entfernt`, "admin", { target_user_id: selected });
+
+    // Auto-Zertifizierung: alle Module fertig + Theorie bestanden -> has_sr_training=true
+    // Sobald wieder ein Modul entfernt wird -> Zertifizierung zurücksetzen
+    const total = allModuleCodes().length;
+    const candidate = candidates.find((c) => c.id === selected);
+    const wasCertified = !!candidate?.has_sr_training;
+
+    if (value && next.size === total && total > 0) {
+      // Theorie-Status prüfen
+      const { data: theory } = await supabase
+        .from("sr_theory_exam_results")
+        .select("passed")
+        .eq("user_id", selected)
+        .eq("passed", true)
+        .limit(1)
+        .maybeSingle();
+      if (!theory) {
+        toast.warning("Alle Module abgehakt, aber die Theorieprüfung ist noch nicht bestanden. Zertifizierung erfolgt automatisch danach.");
+        return;
+      }
+      if (!wasCertified) {
+        const { error: certErr } = await supabase
+          .from("profiles")
+          .update({ has_sr_training: true } as any)
+          .eq("id", selected);
+        if (certErr) { toast.error(certErr.message); return; }
+        setCandidates((prev) => prev.map((c) => c.id === selected ? { ...c, has_sr_training: true } : c));
+        toast.success("SR-Ausbildung abgeschlossen – Member ist nun zertifiziert!");
+        logActivity("SR-Ausbildung automatisch abgeschlossen (Zertifizierung)", "admin", { target_user_id: selected });
+      }
+    } else if (!value && wasCertified) {
+      // Modul wurde entfernt, war aber zertifiziert -> Zertifizierung zurückziehen
+      const { error: certErr } = await supabase
+        .from("profiles")
+        .update({ has_sr_training: false } as any)
+        .eq("id", selected);
+      if (certErr) { toast.error(certErr.message); return; }
+      setCandidates((prev) => prev.map((c) => c.id === selected ? { ...c, has_sr_training: false } : c));
+      toast.info("Zertifizierung zurückgezogen, da nicht mehr alle Module abgehakt sind.");
+      logActivity("SR-Zertifizierung zurückgezogen", "admin", { target_user_id: selected });
+    }
   };
 
   const candidate = candidates.find((c) => c.id === selected);
