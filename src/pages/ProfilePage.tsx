@@ -226,6 +226,29 @@ const ProfilePage = () => {
         </Button>
       </div>
 
+      {/* Geburtstag & Jubiläum */}
+      <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <PartyPopper className="w-5 h-5 text-pink-400" />
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Geburtstag & ASD-Jubiläum</h2>
+            <p className="text-[10px] text-muted-foreground">Damit deine Crew dich feiern kann 🎉</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1.5"><Cake className="w-3.5 h-3.5 text-pink-400" /> Geburtstag</Label>
+          <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="bg-background border-border" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1.5"><PartyPopper className="w-3.5 h-3.5 text-purple-400" /> ASD-Beitrittsdatum</Label>
+          <Input type="date" value={asdJoinDate} onChange={(e) => setAsdJoinDate(e.target.value)} className="bg-background border-border" />
+          <p className="text-[10px] text-muted-foreground">Wird für Jubiläums-Reminder genutzt (z.B. „1 Jahr im ASD")</p>
+        </div>
+        <Button onClick={handleSave} disabled={saving} variant="outline" className="w-full gap-2">
+          <Save className="w-4 h-4" /> Speichern
+        </Button>
+      </div>
+
       {/* Discord Notifications */}
       <div className="bg-card border border-border rounded-lg p-5 space-y-5">
         <div className="flex items-center gap-2">
