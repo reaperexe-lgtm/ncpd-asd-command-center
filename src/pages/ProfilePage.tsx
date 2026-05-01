@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink, Cake, PartyPopper } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
@@ -26,6 +26,8 @@ const ProfilePage = () => {
   });
   const [discordServerLink, setDiscordServerLink] = useState("");
   const [discordServerDescription, setDiscordServerDescription] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [asdJoinDate, setAsdJoinDate] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -35,12 +37,14 @@ const ProfilePage = () => {
     }
     // Load discord_id from DB
     if (user) {
-      supabase.from("profiles").select("discord_id, discord_notifications, internal_dienstnummer").eq("id", user.id).single().then(({ data }) => {
+      supabase.from("profiles").select("discord_id, discord_notifications, internal_dienstnummer, birthday, asd_join_date").eq("id", user.id).single().then(({ data }) => {
         if (data?.discord_id) setDiscordId(data.discord_id);
         if (data?.discord_notifications) {
           setNotifications(data.discord_notifications as any);
         }
         setInternalDienstnummer((data as any)?.internal_dienstnummer ?? null);
+        if ((data as any)?.birthday) setBirthday((data as any).birthday);
+        if ((data as any)?.asd_join_date) setAsdJoinDate((data as any).asd_join_date);
       });
       // Load discord server invite link
       supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
@@ -83,6 +87,8 @@ const ProfilePage = () => {
         image_url: imageUrl,
         discord_id: discordId.trim() || null,
         discord_notifications: notifications,
+        birthday: birthday || null,
+        asd_join_date: asdJoinDate || null,
       } as any, { onConflict: "id" });
       if (error) throw error;
 
