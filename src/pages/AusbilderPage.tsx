@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3, Phone, Plane } from "lucide-react";
+import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3, Phone, Plane, LifeBuoy } from "lucide-react";
 import TheoryExamResultsPage from "./TheoryExamResultsPage";
 import TrainingModules from "@/components/TrainingModules";
 import PracticalExam from "@/components/PracticalExam";
@@ -9,6 +9,7 @@ import ASDApplicantManagement from "@/components/ASDApplicantManagement";
 import FlightApplicantManagement from "@/components/FlightApplicantManagement";
 import AusbilderStatistik from "@/components/AusbilderStatistik";
 import AusbilderKontakte from "@/components/AusbilderKontakte";
+import SearchAndRescueContent from "@/components/SearchAndRescueContent";
 
 const AusbilderPage = () => {
   const { role } = useAuth();
@@ -27,7 +28,7 @@ const AusbilderPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-8 bg-secondary/50 border border-border">
+        <TabsList className="w-full grid grid-cols-9 bg-secondary/50 border border-border">
           <TabsTrigger value="pruefungen" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <ClipboardCheck className="w-4 h-4" />
             Theorie
@@ -51,6 +52,10 @@ const AusbilderPage = () => {
           <TabsTrigger value="fluglizenz" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <Plane className="w-4 h-4" />
             Fluglizenz
+          </TabsTrigger>
+          <TabsTrigger value="sr" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
+            <LifeBuoy className="w-4 h-4" />
+            Search & Rescue
           </TabsTrigger>
           <TabsTrigger value="kontakte" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <Phone className="w-4 h-4" />
@@ -84,6 +89,10 @@ const AusbilderPage = () => {
 
         <TabsContent value="fluglizenz" className="mt-6">
           <FlightApplicantManagement />
+        </TabsContent>
+
+        <TabsContent value="sr" className="mt-6">
+          <SearchAndRescueContent />
         </TabsContent>
 
         <TabsContent value="kontakte" className="mt-6">
