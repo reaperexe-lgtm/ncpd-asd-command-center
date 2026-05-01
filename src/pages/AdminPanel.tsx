@@ -449,6 +449,19 @@ const AdminPanel = () => {
     },
   });
 
+  const srTrainingMutation = useMutation({
+    mutationFn: async ({ userId, value }: { userId: string; value: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ has_sr_training: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success(vars.value ? "SR-Training markiert" : "SR-Training entfernt");
+      logActivity(vars.value ? "SR-Training markiert" : "SR-Training entfernt", "admin", { target_user_id: vars.userId });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleResetRequest = useMutation({
     mutationFn: async ({ requestId, approve, request }: { requestId: string; approve: boolean; request: any }) => {
       const { error } = await supabase
