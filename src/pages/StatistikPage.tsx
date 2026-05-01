@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
+import MyWeekCard from "@/components/MyWeekCard";
 
 const LOCATION_COLORS: Record<string, string> = {
   Staatsbank: "hsl(160, 60%, 45%)",
