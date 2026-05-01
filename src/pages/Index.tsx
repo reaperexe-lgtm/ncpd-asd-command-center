@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X, Plane } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
+import ApplicantProgressOverview from "@/components/ApplicantProgressOverview";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
