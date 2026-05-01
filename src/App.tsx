@@ -27,6 +27,7 @@ import ASDApplicantDashboard from "./pages/ASDApplicantDashboard";
 import FlightApplicantDashboard from "./pages/FlightApplicantDashboard";
 import LernenPage from "./pages/LernenPage";
 import AchievementsPage from "./pages/AchievementsPage";
+import SearchRescuePage from "./pages/SearchRescuePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const ProtectedRoutes = () => {
         <Route path="/uebungen" element={<UebungenPage />} />
         <Route path="/lernen" element={<LernenPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/search-rescue" element={<SearchRescuePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
