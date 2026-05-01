@@ -48,7 +48,7 @@ const SearchRescuePage = () => {
       return;
     }
     toast.success("Anmeldung zur SR-Ausbildung gesendet");
-    logActivity("Hat sich zur SR-Ausbildung angemeldet", "training");
+    logActivity("Hat sich zur SR-Ausbildung angemeldet", "general");
     load();
   };
 
