@@ -647,6 +647,39 @@ export type Database = {
         }
         Relationships: []
       }
+      practical_exam_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          exam_type: string
+          id: string
+          image_url: string
+          sort_order: number
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          exam_type: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          exam_type?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: []
+      }
       practical_exam_results: {
         Row: {
           candidate_dienstnummer: string
