@@ -396,12 +396,6 @@ Deno.serve(async (req) => {
     }
 
     if (type === "achievement_unlocked") {
-      const ASD_LEITUNG_ROLE_ID = "1354392542178840686";
-      const channelId = sanitizeDiscordId(
-        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
-        Deno.env.get("DISCORD_CHANNEL_ID")
-      );
-
       const tierEmoji: Record<string, string> = {
         bronze: "🥉",
         silver: "🥈",
@@ -439,29 +433,48 @@ Deno.serve(async (req) => {
         dmStatus = { sent: false, error: (e as Error).message };
       }
 
-      // 2) Channel ping for ASD Direction
-      let channelStatus: any = { sent: false };
-      if (channelId) {
-        const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
-        const channelContent = [
-          `<@&${ASD_LEITUNG_ROLE_ID}>`,
-          `${emoji} **Achievement freigeschaltet**`,
-          `━━━━━━━━━━━━━━━`,
-          `👤 **Mitglied:** ${data.user_name}${dn}`,
-          `🏆 **Achievement:** ${data.achievement_title}`,
-          data.achievement_description ? `📝 ${data.achievement_description}` : "",
-          ``,
-          `💰 Bitte **50.000$** an das Mitglied auszahlen.`,
-        ].filter(Boolean).join("\n");
-        try {
-          await sendChannelMessage(botToken, channelId, channelContent, undefined, [ASD_LEITUNG_ROLE_ID]);
-          channelStatus = { sent: true, channel_id: channelId };
-        } catch (e) {
-          channelStatus = { sent: false, error: (e as Error).message };
+      // 2) Direct Messages to all Direction members (director, co_director)
+      const directionResults: any[] = [];
+      try {
+        const { data: directionRoles } = await supabaseAdmin
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["director", "co_director"]);
+
+        const directionIds = (directionRoles || []).map((r: any) => r.user_id);
+        if (directionIds.length > 0) {
+          const { data: directionProfiles } = await supabaseAdmin
+            .from("profiles")
+            .select("discord_id, name")
+            .in("id", directionIds)
+            .not("discord_id", "is", null);
+
+          const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
+          const directionMessage = [
+            `${emoji} **Achievement freigeschaltet**`,
+            `━━━━━━━━━━━━━━━`,
+            `👤 **Mitglied:** ${data.user_name}${dn}`,
+            `🏆 **Achievement:** ${data.achievement_title}`,
+            data.achievement_description ? `📝 ${data.achievement_description}` : "",
+            ``,
+            `💰 Bitte **50.000$** an das Mitglied auszahlen.`,
+          ].filter(Boolean).join("\n");
+
+          for (const profile of directionProfiles || []) {
+            if (!profile.discord_id) continue;
+            try {
+              await sendDM(botToken, profile.discord_id, directionMessage);
+              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: true });
+            } catch (e) {
+              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: false, error: (e as Error).message });
+            }
+          }
         }
+      } catch (e) {
+        directionResults.push({ sent: false, error: (e as Error).message });
       }
 
-      return new Response(JSON.stringify({ success: true, dm: dmStatus, channel: channelStatus }), {
+      return new Response(JSON.stringify({ success: true, dm: dmStatus, direction_dms: directionResults }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
