@@ -67,12 +67,15 @@ const Changelog = () => {
                 <p className="text-xs text-muted-foreground">{log.description}</p>
               )}
               <ul className="space-y-0.5">
-                {(log.changes as string[])?.map((change, i) => (
-                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                    <span className="text-primary mt-0.5">•</span>
-                    {change}
-                  </li>
-                ))}
+                {(log.changes as Array<string | { text: string; type?: string }>)?.map((change, i) => {
+                  const text = typeof change === "string" ? change : change?.text ?? "";
+                  return (
+                    <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                      <span className="text-primary mt-0.5">•</span>
+                      {text}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
