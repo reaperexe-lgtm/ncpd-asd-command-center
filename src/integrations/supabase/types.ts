@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       achievement_definitions: {
         Row: {
+          base_code: string | null
           category: string
           code: string
           created_at: string
@@ -27,9 +28,11 @@ export type Database = {
           sort_order: number
           threshold: number
           tier: string
+          tier_level: number | null
           title: string
         }
         Insert: {
+          base_code?: string | null
           category?: string
           code: string
           created_at?: string
@@ -41,9 +44,11 @@ export type Database = {
           sort_order?: number
           threshold?: number
           tier?: string
+          tier_level?: number | null
           title: string
         }
         Update: {
+          base_code?: string | null
           category?: string
           code?: string
           created_at?: string
@@ -55,6 +60,7 @@ export type Database = {
           sort_order?: number
           threshold?: number
           tier?: string
+          tier_level?: number | null
           title?: string
         }
         Relationships: []
