@@ -461,15 +461,52 @@ const AchievementsManager = () => {
                 <Label>Basis-Code</Label>
                 <Input
                   value={setForm.base_code}
-                  onChange={(e) => setSetForm({ ...setForm, base_code: e.target.value.replace(/\s+/g, "_").toLowerCase() })}
+                  onChange={(e) => {
+                    setBaseCodeTouched(true);
+                    setSetForm({ ...setForm, base_code: e.target.value.replace(/\s+/g, "_").toLowerCase() });
+                  }}
                   placeholder="z.B. mission_master"
                 />
+                {(() => {
+                  const taken = new Set((defs || []).map((d: any) => d.base_code || d.code).filter(Boolean));
+                  const suggestions = suggestBaseCodes(setForm.title, setForm.metric, taken)
+                    .filter((s) => s !== setForm.base_code);
+                  if (suggestions.length === 0) return null;
+                  return (
+                    <div className="mt-1.5 flex flex-wrap gap-1 items-center">
+                      <span className="text-[10px] text-muted-foreground">Vorschläge:</span>
+                      {suggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            setBaseCodeTouched(true);
+                            setSetForm({ ...setForm, base_code: s });
+                          }}
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <Label>Titel</Label>
                 <Input
                   value={setForm.title}
-                  onChange={(e) => setSetForm({ ...setForm, title: e.target.value })}
+                  onChange={(e) => {
+                    const newTitle = e.target.value;
+                    const taken = new Set((defs || []).map((d: any) => d.base_code || d.code).filter(Boolean));
+                    setSetForm((prev) => ({
+                      ...prev,
+                      title: newTitle,
+                      base_code: baseCodeTouched
+                        ? prev.base_code
+                        : (suggestBaseCodes(newTitle, prev.metric, taken)[0] || ""),
+                    }));
+                  }}
                   placeholder="Einsatz-Profi"
                 />
               </div>
