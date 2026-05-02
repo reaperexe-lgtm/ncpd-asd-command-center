@@ -83,6 +83,7 @@ const AchievementsManager = () => {
   const [editing, setEditing] = useState<AchievementDef | null>(null);
   const [open, setOpen] = useState(false);
   const [setOpen2, setSetOpen2] = useState(false);
+  const [baseCodeTouched, setBaseCodeTouched] = useState(false);
   const [setForm, setSetForm] = useState({
     base_code: "",
     title: "",
