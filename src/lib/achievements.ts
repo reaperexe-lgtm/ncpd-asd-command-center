@@ -102,6 +102,30 @@ export async function awardAchievements(userId: string, userName: string, dienst
 
   if (toAward.length) {
     await supabase.from("user_achievements").insert(toAward);
+
+    // Fire Discord notification for each newly awarded achievement (DM to user + ping ASD-Leitung in channel)
+    for (const award of toAward) {
+      const def = defs.find((d: any) => d.code === award.achievement_code);
+      if (!def) continue;
+      try {
+        await supabase.functions.invoke("discord-notify", {
+          body: {
+            type: "achievement_unlocked",
+            data: {
+              user_id: userId,
+              user_name: userName,
+              dienstnummer: dienstnummer ?? null,
+              achievement_code: def.code,
+              achievement_title: def.title,
+              achievement_description: def.description,
+              achievement_tier: def.tier,
+            },
+          },
+        });
+      } catch (e) {
+        console.error("Failed to send achievement Discord notification:", e);
+      }
+    }
   }
   return { newlyAwarded: toAward.length, metrics };
 }
