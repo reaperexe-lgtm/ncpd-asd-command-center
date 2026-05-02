@@ -371,7 +371,7 @@ const MemberPage = () => {
                   <div className="flex items-center gap-2">
                     <PartyPopper className="w-4 h-4 text-purple-400 shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Im ASD seit</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">In der ASD seit</p>
                       <p className="text-sm font-medium text-foreground">
                         {selectedMember?.asd_join_date
                           ? new Date(selectedMember.asd_join_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -391,7 +391,7 @@ const MemberPage = () => {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                        <PartyPopper className="w-3 h-3 text-purple-400" /> Im ASD seit
+                        <PartyPopper className="w-3 h-3 text-purple-400" /> In der ASD seit
                       </label>
                       <Input type="date" value={editJoinDate} onChange={(e) => setEditJoinDate(e.target.value)} className="h-8 text-xs bg-background border-border" />
                     </div>
