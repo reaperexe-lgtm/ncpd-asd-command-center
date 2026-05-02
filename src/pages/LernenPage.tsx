@@ -163,6 +163,31 @@ const AddCardForm = ({ onDone, userId }: { onDone: () => void; userId?: string }
   );
 };
 
+const EditTheoryForm = ({ question, onDone }: { question: any; onDone: () => void }) => {
+  const [front, setFront] = useState(question.question || "");
+  const [back, setBack] = useState(question.solution || "");
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    if (!front.trim()) return toast.error("Frage darf nicht leer sein.");
+    setSaving(true);
+    const { error } = await supabase.from("theory_exam_questions").update({ question: front, solution: back }).eq("id", question.id);
+    setSaving(false);
+    if (error) return toast.error("Fehler: " + error.message);
+    toast.success("Frage aktualisiert.");
+    onDone();
+  };
+  return (
+    <>
+      <DialogHeader><DialogTitle>Theorie-Frage bearbeiten</DialogTitle></DialogHeader>
+      <div className="space-y-3 mt-2">
+        <div><Label>Frage</Label><Textarea value={front} onChange={(e) => setFront(e.target.value)} rows={4} /></div>
+        <div><Label>Lösung / Antwort</Label><Textarea value={back} onChange={(e) => setBack(e.target.value)} rows={5} /></div>
+        <Button className="w-full" onClick={submit} disabled={saving}>{saving ? "Speichert…" : "Speichern"}</Button>
+      </div>
+    </>
+  );
+};
+
 /* ========== Quiz Tab ========== */
 const QuizTab = () => {
   const { data: questions } = useQuery({
