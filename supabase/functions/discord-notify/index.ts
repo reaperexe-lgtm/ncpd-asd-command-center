@@ -36,6 +36,7 @@ async function sendChannelMessage(
   channelId: string,
   message: string,
   mentionRoleId?: string,
+  extraRoleIds: string[] = [],
 ) {
   const cleanChannelId = sanitizeDiscordId(channelId);
   if (!/^\d{17,20}$/.test(cleanChannelId)) {
@@ -54,9 +55,16 @@ async function sendChannelMessage(
   const cleanRoleId = sanitizeDiscordId(mentionRoleId);
   const hasRole = /^\d{17,20}$/.test(cleanRoleId);
 
+  const allowedRoles: string[] = [];
+  if (hasRole) allowedRoles.push(cleanRoleId);
+  for (const r of extraRoleIds) {
+    const c = sanitizeDiscordId(r);
+    if (/^\d{17,20}$/.test(c) && !allowedRoles.includes(c)) allowedRoles.push(c);
+  }
+
   const body: Record<string, unknown> = { content: message };
-  if (hasRole) {
-    body.allowed_mentions = { parse: [], roles: [cleanRoleId] };
+  if (allowedRoles.length > 0) {
+    body.allowed_mentions = { parse: [], roles: allowedRoles };
   }
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${cleanChannelId}/messages`, {
@@ -279,7 +287,8 @@ Deno.serve(async (req) => {
 
       const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
       const memberMention = mentionRoleId ? `<@&${mentionRoleId}>` : "@A.S.D";
-      const leitungMention = mentionRoleId ? `<@&${mentionRoleId}>` : "A.S.D Leitung";
+      const ASD_LEITUNG_ROLE_ID = "1354392542178840686";
+      const leitungMention = `<@&${ASD_LEITUNG_ROLE_ID}>`;
 
       const content = [
         `# Wöchentliche Aufstellung`,
@@ -294,7 +303,7 @@ Deno.serve(async (req) => {
       ].join("\n");
 
       try {
-        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
+        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId, [ASD_LEITUNG_ROLE_ID]);
         const reactionResults: { emoji: string; status: number; body?: string }[] = [];
         for (const emoji of ["✅", "❌"]) {
           for (let attempt = 0; attempt < 3; attempt++) {
@@ -358,7 +367,8 @@ Deno.serve(async (req) => {
 
       const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
       const memberMention = mentionRoleId ? `<@&${mentionRoleId}>` : "@A.S.D";
-      const leitungMention = mentionRoleId ? `<@&${mentionRoleId}>` : "A.S.D Leitung";
+      const ASD_LEITUNG_ROLE_ID = "1354392542178840686";
+      const leitungMention = `<@&${ASD_LEITUNG_ROLE_ID}>`;
 
       const content = [
         `# ⏰ Erinnerung: Aufstellung in 2 Stunden`,
@@ -373,7 +383,7 @@ Deno.serve(async (req) => {
       ].join("\n");
 
       try {
-        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
+        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId, [ASD_LEITUNG_ROLE_ID]);
         return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
