@@ -451,13 +451,13 @@ Deno.serve(async (req) => {
 
           const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
           const directionMessage = [
-            `${emoji} **Achievement freigeschaltet**`,
-            `━━━━━━━━━━━━━━━`,
-            `👤 **Mitglied:** ${data.user_name}${dn}`,
-            `🏆 **Achievement:** ${data.achievement_title}`,
-            data.achievement_description ? `📝 ${data.achievement_description}` : "",
+            `${emoji} **Achievement-Auszahlung erforderlich**`,
+            `🎖️ **${data.user_name}${dn}** hat ein neues Achievement freigeschaltet:`,
+            `🏆 **${data.achievement_title}**`,
+            data.achievement_description ? `_${data.achievement_description}_` : "",
             ``,
-            `💰 Bitte **50.000$** an das Mitglied auszahlen.`,
+            `💰 **Belohnung: 50.000$**`,
+            `Bitte zahle dem Mitglied die **50.000$** aus, sobald es sich bei dir meldet.`,
           ].filter(Boolean).join("\n");
 
           for (const profile of directionProfiles || []) {
