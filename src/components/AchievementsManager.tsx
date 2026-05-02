@@ -239,6 +239,7 @@ const AchievementsManager = () => {
         base_code: "", title: "", description: "", metric: "missions_total",
         base_threshold: 10, icon: "Trophy", category: "general", sort_order: 0,
       });
+      setBaseCodeTouched(false);
     },
     onError: (e: any) => toast.error(e.message || "Set-Erstellung fehlgeschlagen"),
   });
