@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { logActivity } from "@/lib/activityLog";
+import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,6 +81,7 @@ const VerfolgungPage = () => {
       queryClient.invalidateQueries({ queryKey: ["pursuits"] });
       logActivity("Verfolgung erstellt", "verfolgung", { vehicle: vehicleModel, plate: licensePlate });
       resetForm();
+      checkWeeklyPerformance();
     },
     onError: (e: any) => toast.error(e.message),
   });
