@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, FileText, Siren, Plane, Upload, Trash2, Plus, Search, AlertCircle } from "lucide-react";
+import { Users, FileText, Siren, Plane, Upload, Trash2, Plus, Search, AlertCircle, Cake, PartyPopper, Pencil, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,27 @@ const MemberPage = () => {
   const [search, setSearch] = useState("");
 
   const canManageLicenses = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const isAdmin = ["admin", "director", "co_director", "supervisor"].includes(role || "");
+  const [editingDates, setEditingDates] = useState(false);
+  const [editBirthday, setEditBirthday] = useState("");
+  const [editJoinDate, setEditJoinDate] = useState("");
+
+  const updateDatesMutation = useMutation({
+    mutationFn: async ({ id, birthday, asd_join_date }: { id: string; birthday: string | null; asd_join_date: string | null }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ birthday, asd_join_date })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setSelectedMember((prev: any) => prev ? { ...prev, birthday: vars.birthday, asd_join_date: vars.asd_join_date } : prev);
+      setEditingDates(false);
+      toast.success("Daten aktualisiert");
+    },
+    onError: () => toast.error("Fehler beim Speichern"),
+  });
 
   const { data: members, isLoading } = useQuery({
     queryKey: ["members"],
@@ -314,6 +335,88 @@ const MemberPage = () => {
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
+            {/* Geburtstag & ASD-Beitritt */}
+            <div className="bg-background/50 border border-border/50 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Persönliches</h3>
+                {isAdmin && !editingDates && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-xs"
+                    onClick={() => {
+                      setEditBirthday(selectedMember?.birthday || "");
+                      setEditJoinDate(selectedMember?.asd_join_date || "");
+                      setEditingDates(true);
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Bearbeiten
+                  </Button>
+                )}
+              </div>
+
+              {!editingDates ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <Cake className="w-4 h-4 text-pink-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Geburtstag</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {selectedMember?.birthday
+                          ? new Date(selectedMember.birthday).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PartyPopper className="w-4 h-4 text-purple-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Im ASD seit</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {selectedMember?.asd_join_date
+                          ? new Date(selectedMember.asd_join_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                        <Cake className="w-3 h-3 text-pink-400" /> Geburtstag
+                      </label>
+                      <Input type="date" value={editBirthday} onChange={(e) => setEditBirthday(e.target.value)} className="h-8 text-xs bg-background border-border" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                        <PartyPopper className="w-3 h-3 text-purple-400" /> Im ASD seit
+                      </label>
+                      <Input type="date" value={editJoinDate} onChange={(e) => setEditJoinDate(e.target.value)} className="h-8 text-xs bg-background border-border" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => setEditingDates(false)} disabled={updateDatesMutation.isPending}>
+                      <X className="w-3.5 h-3.5" /> Abbrechen
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 gap-1 text-xs"
+                      disabled={updateDatesMutation.isPending}
+                      onClick={() => updateDatesMutation.mutate({
+                        id: selectedMember.id,
+                        birthday: editBirthday || null,
+                        asd_join_date: editJoinDate || null,
+                      })}
+                    >
+                      <Check className="w-3.5 h-3.5" /> Speichern
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Statistiken</h3>
 
             <div className="grid grid-cols-2 gap-3">
