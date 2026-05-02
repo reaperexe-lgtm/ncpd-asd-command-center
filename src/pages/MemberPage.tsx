@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, FileText, Siren, Plane, Upload, Trash2, Plus, Search, AlertCircle } from "lucide-react";
+import { Users, FileText, Siren, Plane, Upload, Trash2, Plus, Search, AlertCircle, Cake, PartyPopper, Pencil, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,27 @@ const MemberPage = () => {
   const [search, setSearch] = useState("");
 
   const canManageLicenses = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const isAdmin = ["admin", "director", "co_director", "supervisor"].includes(role || "");
+  const [editingDates, setEditingDates] = useState(false);
+  const [editBirthday, setEditBirthday] = useState("");
+  const [editJoinDate, setEditJoinDate] = useState("");
+
+  const updateDatesMutation = useMutation({
+    mutationFn: async ({ id, birthday, asd_join_date }: { id: string; birthday: string | null; asd_join_date: string | null }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ birthday, asd_join_date })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setSelectedMember((prev: any) => prev ? { ...prev, birthday: vars.birthday, asd_join_date: vars.asd_join_date } : prev);
+      setEditingDates(false);
+      toast.success("Daten aktualisiert");
+    },
+    onError: () => toast.error("Fehler beim Speichern"),
+  });
 
   const { data: members, isLoading } = useQuery({
     queryKey: ["members"],
