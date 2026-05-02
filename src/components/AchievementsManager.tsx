@@ -78,6 +78,55 @@ const emptyDef: AchievementDef = {
   is_active: true,
 };
 
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+}
+
+function uniquify(base: string, taken: Set<string>): string {
+  if (!taken.has(base)) return base;
+  let i = 2;
+  while (taken.has(`${base}_${i}`)) i++;
+  return `${base}_${i}`;
+}
+
+function suggestBaseCodes(title: string, metric: string, taken: Set<string>): string[] {
+  const slug = slugifyTitle(title);
+  if (!slug) return [];
+  const metricHints: Record<string, string> = {
+    missions_total: "mission",
+    pursuits_total: "pursuit",
+    pursuits_week: "pursuit_week",
+    protocols_total: "protocol",
+    formations_total: "formation",
+    uebungen_attended: "uebung",
+    theory_passed: "theory",
+    practical_passed: "practical",
+    casino_jackpot: "jackpot",
+    casino_balance: "casino",
+    challenges_total: "challenge",
+  };
+  const hint = metricHints[metric];
+  const variants: string[] = [];
+  variants.push(slug);
+  if (hint && !slug.includes(hint)) variants.push(`${hint}_${slug}`);
+  variants.push(`${slug}_set`);
+  // dedupe + uniquify against taken
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of variants) {
+    const u = uniquify(v, taken);
+    if (!seen.has(u)) { seen.add(u); out.push(u); }
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
 const AchievementsManager = () => {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<AchievementDef | null>(null);
