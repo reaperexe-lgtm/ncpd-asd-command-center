@@ -13,11 +13,11 @@ const ICONS: Record<string, any> = {
 };
 
 const TIER_CLS: Record<string, string> = {
-  bronze: "from-amber-700/30 to-amber-900/20 border-amber-700/50 text-amber-300",
-  silver: "from-slate-400/30 to-slate-600/20 border-slate-400/50 text-slate-200",
-  gold: "from-yellow-500/30 to-yellow-700/20 border-yellow-500/60 text-yellow-300",
-  platinum: "from-cyan-300/30 to-purple-500/20 border-cyan-300/60 text-cyan-200",
-  diamond: "from-fuchsia-400/30 to-indigo-500/20 border-fuchsia-300/60 text-fuchsia-200",
+  bronze: "from-amber-700/40 to-amber-900/30 border-amber-600/70 text-amber-100",
+  silver: "from-slate-400/40 to-slate-600/30 border-slate-300/70 text-slate-50",
+  gold: "from-yellow-500/40 to-yellow-700/30 border-yellow-400/80 text-yellow-50",
+  platinum: "from-cyan-300/40 to-purple-500/30 border-cyan-200/80 text-cyan-50",
+  diamond: "from-fuchsia-400/40 to-indigo-500/30 border-fuchsia-200/80 text-fuchsia-50",
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -146,16 +146,16 @@ const AchievementsCard = () => {
             return (
               <div
                 key={g.base}
-                className={`relative rounded-lg p-3 border bg-gradient-to-br ${cardCls}`}
+                className={`relative rounded-lg p-3 border-2 bg-gradient-to-br ${cardCls}`}
                 title={g.description}
               >
                 <div className="flex items-start gap-2 mb-2">
-                  <Icon className="w-6 h-6 shrink-0" />
+                  <Icon className="w-6 h-6 shrink-0 text-foreground" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold leading-tight">{g.title}</p>
-                    <p className="text-[10px] opacity-80 leading-tight">{g.description}</p>
+                    <p className="text-base font-extrabold leading-tight text-foreground drop-shadow-sm">{g.title}</p>
+                    <p className="text-xs leading-snug text-foreground/85 mt-0.5">{g.description}</p>
                   </div>
-                  <span className="text-[10px] tabular-nums opacity-90 font-bold shrink-0">
+                  <span className="text-xs tabular-nums font-extrabold shrink-0 bg-background/40 px-1.5 py-0.5 rounded text-foreground">
                     {ownedTiers.length}/{g.tiers.length}
                   </span>
                 </div>
@@ -169,12 +169,12 @@ const AchievementsCard = () => {
                       <div
                         key={t.code}
                         className={`flex flex-col items-center gap-0.5 flex-1 ${
-                          ownedTier ? TIER_MEDAL_CLS[t.tier] || "text-foreground" : "text-muted-foreground/40"
+                          ownedTier ? TIER_MEDAL_CLS[t.tier] || "text-foreground" : "text-foreground/30"
                         }`}
                         title={`${TIER_LABELS[t.tier] || t.tier} · ab ${t.threshold}`}
                       >
                         <MedalIcon className={`w-5 h-5 ${ownedTier ? "drop-shadow-glow" : ""}`} />
-                        <span className="text-[8px] tabular-nums font-semibold">{t.threshold}</span>
+                        <span className="text-[10px] tabular-nums font-bold">{t.threshold}</span>
                       </div>
                     );
                   })}
@@ -182,13 +182,13 @@ const AchievementsCard = () => {
 
                 {next ? (
                   <div>
-                    <Progress value={pct} className="h-1" />
-                    <p className="text-[9px] mt-0.5 tabular-nums opacity-80">
+                    <Progress value={pct} className="h-1.5" />
+                    <p className="text-xs mt-1 tabular-nums font-semibold text-foreground/90">
                       {value} / {next.threshold} → nächste Medaille: {TIER_LABELS[next.tier] || next.tier}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[10px] uppercase tracking-wide font-bold opacity-90">
+                  <p className="text-xs uppercase tracking-wide font-extrabold text-foreground">
                     ✓ Alle Medaillen erreicht
                   </p>
                 )}
