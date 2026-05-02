@@ -12,8 +12,8 @@ const AchievementsPage = () => {
         <MemberOfMonthCard />
         <WeeklyChallengesCard />
       </div>
-      <AchievementsCard />
       <MedalWallCard />
+      <AchievementsCard />
     </div>
   );
 };
