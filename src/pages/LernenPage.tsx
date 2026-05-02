@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, ArrowRight, RotateCcw, Trash2, Check, X, BookOpen, Video } from "lucide-react";
+import { Plus, ArrowRight, RotateCcw, Trash2, Check, X, BookOpen, Video, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const LernenPage = () => {
   const { role } = useAuth();
   const canManage = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const canEditTheory = ["admin", "director", "co_director", "supervisor"].includes(role || "");
 
   return (
     <div className="space-y-4">
@@ -27,7 +28,7 @@ const LernenPage = () => {
           <TabsTrigger value="quiz">⚡ Quiz</TabsTrigger>
           <TabsTrigger value="videos"><Video className="w-4 h-4 mr-1" /> Videos</TabsTrigger>
         </TabsList>
-        <TabsContent value="cards" className="mt-4"><FlashcardsTab canManage={canManage} /></TabsContent>
+        <TabsContent value="cards" className="mt-4"><FlashcardsTab canManage={canManage} canEditTheory={canEditTheory} /></TabsContent>
         <TabsContent value="quiz" className="mt-4"><QuizTab /></TabsContent>
         <TabsContent value="videos" className="mt-4"><VideosTab canManage={canManage} /></TabsContent>
       </Tabs>
@@ -36,11 +37,12 @@ const LernenPage = () => {
 };
 
 /* ========== Karteikarten Tab ========== */
-const FlashcardsTab = ({ canManage }: { canManage: boolean }) => {
+const FlashcardsTab = ({ canManage, canEditTheory }: { canManage: boolean; canEditTheory: boolean }) => {
   const [source, setSource] = useState<"theory" | "custom">("custom");
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [editTheory, setEditTheory] = useState<any | null>(null);
   const { user } = useAuth();
 
   const { data: customCards, refetch: refetchCustom } = useQuery({
@@ -50,11 +52,11 @@ const FlashcardsTab = ({ canManage }: { canManage: boolean }) => {
       return (data || []).map((c: any) => ({ id: c.id, front: c.front, back: c.back, image_url: c.image_url }));
     },
   });
-  const { data: theoryCards } = useQuery({
+  const { data: theoryCards, refetch: refetchTheory } = useQuery({
     queryKey: ["flashcards-theory"],
     queryFn: async () => {
       const { data } = await supabase.from("theory_exam_questions").select("*").order("sort_order");
-      return (data || []).map((q: any) => ({ id: q.id, front: q.question, back: q.solution || "(keine Lösung)", image_url: q.image_url }));
+      return (data || []).map((q: any) => ({ id: q.id, front: q.question, back: q.solution || "(keine Lösung)", image_url: q.image_url, _raw: q }));
     },
   });
 
@@ -96,6 +98,11 @@ const FlashcardsTab = ({ canManage }: { canManage: boolean }) => {
           </button>
           <div className="flex justify-center gap-2">
             <Button onClick={next}><ArrowRight className="w-4 h-4 mr-1" /> Nächste Karte</Button>
+            {canEditTheory && source === "theory" && card && (
+              <Button variant="outline" onClick={() => setEditTheory((card as any)._raw)}>
+                <Pencil className="w-4 h-4 mr-1" /> Bearbeiten
+              </Button>
+            )}
           </div>
 
           {canManage && source === "custom" && (
@@ -117,6 +124,17 @@ const FlashcardsTab = ({ canManage }: { canManage: boolean }) => {
           )}
         </>
       )}
+
+      <Dialog open={!!editTheory} onOpenChange={(o) => !o && setEditTheory(null)}>
+        <DialogContent>
+          {editTheory && (
+            <EditTheoryForm
+              question={editTheory}
+              onDone={() => { setEditTheory(null); refetchTheory(); }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -140,6 +158,31 @@ const AddCardForm = ({ onDone, userId }: { onDone: () => void; userId?: string }
         <div><Label>Rückseite (Antwort)</Label><Textarea value={back} onChange={(e) => setBack(e.target.value)} rows={3} /></div>
         <div><Label>Kategorie</Label><Input value={category} onChange={(e) => setCategory(e.target.value)} /></div>
         <Button className="w-full" onClick={submit}>Speichern</Button>
+      </div>
+    </>
+  );
+};
+
+const EditTheoryForm = ({ question, onDone }: { question: any; onDone: () => void }) => {
+  const [front, setFront] = useState(question.question || "");
+  const [back, setBack] = useState(question.solution || "");
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    if (!front.trim()) return toast.error("Frage darf nicht leer sein.");
+    setSaving(true);
+    const { error } = await supabase.from("theory_exam_questions").update({ question: front, solution: back }).eq("id", question.id);
+    setSaving(false);
+    if (error) return toast.error("Fehler: " + error.message);
+    toast.success("Frage aktualisiert.");
+    onDone();
+  };
+  return (
+    <>
+      <DialogHeader><DialogTitle>Theorie-Frage bearbeiten</DialogTitle></DialogHeader>
+      <div className="space-y-3 mt-2">
+        <div><Label>Frage</Label><Textarea value={front} onChange={(e) => setFront(e.target.value)} rows={4} /></div>
+        <div><Label>Lösung / Antwort</Label><Textarea value={back} onChange={(e) => setBack(e.target.value)} rows={5} /></div>
+        <Button className="w-full" onClick={submit} disabled={saving}>{saving ? "Speichert…" : "Speichern"}</Button>
       </div>
     </>
   );
