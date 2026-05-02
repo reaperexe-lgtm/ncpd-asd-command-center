@@ -1102,6 +1102,10 @@ const AdminPanel = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="achievements">
+          <AchievementsManager />
+        </TabsContent>
+
         <TabsContent value="logs">
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/50">
