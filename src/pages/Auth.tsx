@@ -26,8 +26,7 @@ const Auth = () => {
   const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (authLoading) return null;
-  if (user) {
+  if (user && !authLoading) {
     if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
     if (role === "flight_applicant") return <Navigate to="/flight-dashboard" replace />;
     return <Navigate to="/" replace />;
