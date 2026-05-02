@@ -30,21 +30,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
-    const [profileRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
-    ]);
-    if (profileRes.data) {
-      setProfile({ name: profileRes.data.name, image_url: profileRes.data.image_url, dienstnummer: profileRes.data.dienstnummer });
-      setIsApproved(profileRes.data.is_approved ?? false);
-    }
-    if (roleRes.data) {
-      setRole(roleRes.data.role as AppRole);
+    try {
+      const [profileRes, roleRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+      ]);
+      if (profileRes.error) console.error("Profile fetch error:", profileRes.error);
+      if (roleRes.error) console.error("Role fetch error:", roleRes.error);
+      if (profileRes.data) {
+        setProfile({ name: profileRes.data.name, image_url: profileRes.data.image_url, dienstnummer: profileRes.data.dienstnummer });
+        setIsApproved(profileRes.data.is_approved ?? false);
+      }
+      if (roleRes.data) {
+        setRole(roleRes.data.role as AppRole);
+      }
+    } catch (e) {
+      console.error("fetchUserData failed:", e);
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    // Safety: never stay in loading state for more than 5s
+    const safetyTimer = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 5000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
@@ -80,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);
