@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X, Plane } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
-import ApplicantProgressOverview from "@/components/ApplicantProgressOverview";
 import MemberOfMonthCard from "@/components/MemberOfMonthCard";
+import OnlineUsersCard from "@/components/OnlineUsersCard";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
@@ -258,7 +258,9 @@ const Index = () => {
         </div>
       )}
 
-      <ApplicantProgressOverview />
+      <div className="w-full max-w-4xl">
+        <OnlineUsersCard />
+      </div>
       <div className="w-full max-w-4xl">
         <MemberOfMonthCard />
       </div>
