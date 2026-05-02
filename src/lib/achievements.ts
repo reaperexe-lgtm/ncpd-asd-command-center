@@ -82,6 +82,23 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
   };
 }
 
+const TIER_REWARDS: Record<string, number> = {
+  bronze: 5_000,
+  silver: 10_000,
+  gold: 25_000,
+  platinum: 50_000,
+  diamond: 100_000,
+};
+
+// Diese Metriken zählen als Einsatz/Verfolgung – hier wird KEIN Casino-Geld
+// gutgeschrieben (die Belohnung erfolgt InGame als echtes Geld / RP-Auszahlung).
+const MISSION_PURSUIT_METRICS = new Set([
+  "missions_total",
+  "pursuits_total",
+  "pursuits_week",
+  "protocols_total",
+]);
+
 export async function awardAchievements(userId: string, userName: string, dienstnummer?: string | null) {
   const [defsRes, ownedRes] = await Promise.all([
     supabase.from("achievement_definitions").select("*").eq("is_active", true),
@@ -103,10 +120,36 @@ export async function awardAchievements(userId: string, userName: string, dienst
   if (toAward.length) {
     await supabase.from("user_achievements").insert(toAward);
 
+    // Casino-Belohnung (nur für nicht-Einsatz/Verfolgungs-Achievements)
+    let totalCasinoReward = 0;
+    for (const award of toAward) {
+      const def = defs.find((d: any) => d.code === award.achievement_code);
+      if (!def) continue;
+      if (MISSION_PURSUIT_METRICS.has(def.metric)) continue;
+      const tier = (def.tier || "").toLowerCase();
+      totalCasinoReward += TIER_REWARDS[tier] || 0;
+    }
+    if (totalCasinoReward > 0) {
+      const { data: balRow } = await supabase
+        .from("casino_balances")
+        .select("balance")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const current = (balRow as any)?.balance ?? 0;
+      const newBal = current + totalCasinoReward;
+      if (balRow) {
+        await supabase.from("casino_balances").update({ balance: newBal }).eq("user_id", userId);
+      } else {
+        await supabase.from("casino_balances").insert({ user_id: userId, balance: newBal });
+      }
+    }
+
     // Fire Discord notification for each newly awarded achievement (DM to user + ping ASD-Leitung in channel)
     for (const award of toAward) {
       const def = defs.find((d: any) => d.code === award.achievement_code);
       if (!def) continue;
+      const tier = (def.tier || "").toLowerCase();
+      const casinoReward = MISSION_PURSUIT_METRICS.has(def.metric) ? 0 : (TIER_REWARDS[tier] || 0);
       try {
         await supabase.functions.invoke("discord-notify", {
           body: {
@@ -119,6 +162,7 @@ export async function awardAchievements(userId: string, userName: string, dienst
               achievement_title: def.title,
               achievement_description: def.description,
               achievement_tier: def.tier,
+              casino_reward: casinoReward,
             },
           },
         });
