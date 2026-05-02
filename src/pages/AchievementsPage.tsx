@@ -1,6 +1,7 @@
 import AchievementsCard from "@/components/AchievementsCard";
 import WeeklyChallengesCard from "@/components/WeeklyChallengesCard";
 import MemberOfMonthCard from "@/components/MemberOfMonthCard";
+import MedalWallCard from "@/components/MedalWallCard";
 
 const AchievementsPage = () => {
   return (
@@ -12,6 +13,7 @@ const AchievementsPage = () => {
         <WeeklyChallengesCard />
       </div>
       <AchievementsCard />
+      <MedalWallCard />
     </div>
   );
 };
