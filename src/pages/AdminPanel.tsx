@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
+import AchievementsManager from "@/components/AchievementsManager";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -629,7 +630,7 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-8 w-full max-w-4xl">
+        <TabsList className="grid grid-cols-9 w-full max-w-5xl">
           <TabsTrigger value="users" className="gap-1.5 text-xs">
             <Shield className="w-3.5 h-3.5" /> Benutzer
           </TabsTrigger>
@@ -654,6 +655,9 @@ const AdminPanel = () => {
           </TabsTrigger>
           <TabsTrigger value="licenses" className="gap-1.5 text-xs">
             <Plane className="w-3.5 h-3.5" /> Lizenzen
+          </TabsTrigger>
+          <TabsTrigger value="achievements" className="gap-1.5 text-xs">
+            <Trophy className="w-3.5 h-3.5" /> Achievements
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-1.5 text-xs">
             <ScrollText className="w-3.5 h-3.5" /> Aktivität
