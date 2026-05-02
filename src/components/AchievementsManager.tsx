@@ -78,11 +78,61 @@ const emptyDef: AchievementDef = {
   is_active: true,
 };
 
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+}
+
+function uniquify(base: string, taken: Set<string>): string {
+  if (!taken.has(base)) return base;
+  let i = 2;
+  while (taken.has(`${base}_${i}`)) i++;
+  return `${base}_${i}`;
+}
+
+function suggestBaseCodes(title: string, metric: string, taken: Set<string>): string[] {
+  const slug = slugifyTitle(title);
+  if (!slug) return [];
+  const metricHints: Record<string, string> = {
+    missions_total: "mission",
+    pursuits_total: "pursuit",
+    pursuits_week: "pursuit_week",
+    protocols_total: "protocol",
+    formations_total: "formation",
+    uebungen_attended: "uebung",
+    theory_passed: "theory",
+    practical_passed: "practical",
+    casino_jackpot: "jackpot",
+    casino_balance: "casino",
+    challenges_total: "challenge",
+  };
+  const hint = metricHints[metric];
+  const variants: string[] = [];
+  variants.push(slug);
+  if (hint && !slug.includes(hint)) variants.push(`${hint}_${slug}`);
+  variants.push(`${slug}_set`);
+  // dedupe + uniquify against taken
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of variants) {
+    const u = uniquify(v, taken);
+    if (!seen.has(u)) { seen.add(u); out.push(u); }
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
 const AchievementsManager = () => {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<AchievementDef | null>(null);
   const [open, setOpen] = useState(false);
   const [setOpen2, setSetOpen2] = useState(false);
+  const [baseCodeTouched, setBaseCodeTouched] = useState(false);
   const [setForm, setSetForm] = useState({
     base_code: "",
     title: "",
@@ -189,6 +239,7 @@ const AchievementsManager = () => {
         base_code: "", title: "", description: "", metric: "missions_total",
         base_threshold: 10, icon: "Trophy", category: "general", sort_order: 0,
       });
+      setBaseCodeTouched(false);
     },
     onError: (e: any) => toast.error(e.message || "Set-Erstellung fehlgeschlagen"),
   });
@@ -411,15 +462,52 @@ const AchievementsManager = () => {
                 <Label>Basis-Code</Label>
                 <Input
                   value={setForm.base_code}
-                  onChange={(e) => setSetForm({ ...setForm, base_code: e.target.value.replace(/\s+/g, "_").toLowerCase() })}
+                  onChange={(e) => {
+                    setBaseCodeTouched(true);
+                    setSetForm({ ...setForm, base_code: e.target.value.replace(/\s+/g, "_").toLowerCase() });
+                  }}
                   placeholder="z.B. mission_master"
                 />
+                {(() => {
+                  const taken = new Set((defs || []).map((d: any) => d.base_code || d.code).filter(Boolean));
+                  const suggestions = suggestBaseCodes(setForm.title, setForm.metric, taken)
+                    .filter((s) => s !== setForm.base_code);
+                  if (suggestions.length === 0) return null;
+                  return (
+                    <div className="mt-1.5 flex flex-wrap gap-1 items-center">
+                      <span className="text-[10px] text-muted-foreground">Vorschläge:</span>
+                      {suggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            setBaseCodeTouched(true);
+                            setSetForm({ ...setForm, base_code: s });
+                          }}
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <Label>Titel</Label>
                 <Input
                   value={setForm.title}
-                  onChange={(e) => setSetForm({ ...setForm, title: e.target.value })}
+                  onChange={(e) => {
+                    const newTitle = e.target.value;
+                    const taken = new Set((defs || []).map((d: any) => d.base_code || d.code).filter(Boolean));
+                    setSetForm((prev) => ({
+                      ...prev,
+                      title: newTitle,
+                      base_code: baseCodeTouched
+                        ? prev.base_code
+                        : (suggestBaseCodes(newTitle, prev.metric, taken)[0] || ""),
+                    }));
+                  }}
                   placeholder="Einsatz-Profi"
                 />
               </div>
