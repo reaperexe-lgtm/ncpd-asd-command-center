@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield, ArrowLeft } from "lucide-react";
+import { Trash2, FileText, Car, Users, Clock, Siren, Image, ChevronDown, Shield, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -47,6 +47,8 @@ const ProtokollePage = () => {
     return t === "mission" || t === "pursuit" ? t : "all";
   });
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   const navState = location.state as { from?: string; writer?: { id: string; name: string; type: "all" | "missions" | "pursuits"; scope: "weekly" | "monthly" }; writerName?: string } | null;
   const cameFromStats = navState?.from === "stats";
@@ -164,6 +166,21 @@ const ProtokollePage = () => {
 
   const totalCount = (missions?.length || 0) + (pursuits?.length || 0);
 
+  const totalPages = Math.max(1, Math.ceil(allEntries.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageEntries = allEntries.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => { setPage(1); }, [filter]);
+
+  // When deep-linking via ?id=, jump to the page containing that entry
+  useEffect(() => {
+    const id = searchParams.get("id");
+    if (!id || allEntries.length === 0) return;
+    const idx = allEntries.findIndex((e) => e.data.id === id);
+    if (idx >= 0) setPage(Math.floor(idx / PAGE_SIZE) + 1);
+  }, [searchParams, allEntries.length]);
+
   return (
     <div className="space-y-6">
       {cameFromStats && (
@@ -225,7 +242,7 @@ const ProtokollePage = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {allEntries.map((entry) => {
+          {pageEntries.map((entry) => {
             if (entry.type === "mission") {
               const m = entry.data;
               const expanded = expandedId === m.id;
@@ -603,6 +620,61 @@ const ProtokollePage = () => {
               );
             }
           })}
+        </div>
+      )}
+
+      {!isLoading && allEntries.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <p className="text-xs text-muted-foreground">
+            Seite {currentPage} von {totalPages} · {allEntries.length} Einträge
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className="gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" /> Zurück
+            </Button>
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const n = i + 1;
+              // Show first, last, current and neighbors
+              if (
+                n === 1 ||
+                n === totalPages ||
+                (n >= currentPage - 1 && n <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={n}
+                    onClick={() => { setPage(n); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`min-w-[2rem] h-8 px-2 text-xs rounded-md font-semibold transition-all ${
+                      n === currentPage
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                        : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                );
+              }
+              if (n === currentPage - 2 || n === currentPage + 2) {
+                return <span key={n} className="text-muted-foreground text-xs px-1">…</span>;
+              }
+              return null;
+            })}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={currentPage === totalPages}
+              onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className="gap-1"
+            >
+              Weiter <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
 
