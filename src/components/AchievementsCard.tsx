@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star } from "lucide-react";
+import { Trophy, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star, Medal, Gem } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { awardAchievements, computeMetrics, MetricSnapshot } from "@/lib/achievements";
 import { toast } from "sonner";
@@ -17,7 +17,22 @@ const TIER_CLS: Record<string, string> = {
   silver: "from-slate-400/30 to-slate-600/20 border-slate-400/50 text-slate-200",
   gold: "from-yellow-500/30 to-yellow-700/20 border-yellow-500/60 text-yellow-300",
   platinum: "from-cyan-300/30 to-purple-500/20 border-cyan-300/60 text-cyan-200",
+  diamond: "from-fuchsia-400/30 to-indigo-500/20 border-fuchsia-300/60 text-fuchsia-200",
 };
+
+const TIER_LABELS: Record<string, string> = {
+  bronze: "Bronze", silver: "Silber", gold: "Gold", platinum: "Platin", diamond: "Diamant",
+};
+
+const TIER_MEDAL_CLS: Record<string, string> = {
+  bronze: "text-amber-500",
+  silver: "text-slate-300",
+  gold: "text-yellow-400",
+  platinum: "text-cyan-300",
+  diamond: "text-fuchsia-300",
+};
+
+const TIER_ORDER = ["bronze", "silver", "gold", "platinum", "diamond"];
 
 const AchievementsCard = () => {
   const { user } = useAuth();
@@ -78,6 +93,35 @@ const AchievementsCard = () => {
   const totalAwarded = ownedSet.size;
   const totalDefs = defs?.length || 0;
 
+  // Group by base_code: tiered achievements share a base_code; standalone ones use their own code as base.
+  type Group = {
+    base: string;
+    title: string;
+    description: string;
+    icon: string;
+    metric: string;
+    tiers: any[]; // sorted by threshold ASC
+  };
+  const groupsMap = new Map<string, Group>();
+  for (const d of (defs || []) as any[]) {
+    const key = d.base_code || d.code;
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, {
+        base: key,
+        title: d.title?.replace(/\s+(Bronze|Silber|Gold|Platin|Diamant)\s*$/i, "").trim() || d.title,
+        description: d.description,
+        icon: d.icon,
+        metric: d.metric,
+        tiers: [],
+      });
+    }
+    groupsMap.get(key)!.tiers.push(d);
+  }
+  const groups = Array.from(groupsMap.values()).map((g) => ({
+    ...g,
+    tiers: g.tiers.sort((a, b) => (a.threshold || 0) - (b.threshold || 0)),
+  }));
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
@@ -87,35 +131,66 @@ const AchievementsCard = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-          {(defs || []).map((d: any) => {
-            const Icon = ICONS[d.icon] || Trophy;
-            const isOwned = ownedSet.has(d.code);
-            const value = metrics ? (metrics as any)[d.metric] || 0 : 0;
-            const pct = Math.min(100, (value / d.threshold) * 100);
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {groups.map((g) => {
+            const Icon = ICONS[g.icon] || Trophy;
+            const value = metrics ? (metrics as any)[g.metric] || 0 : 0;
+            const ownedTiers = g.tiers.filter((t) => ownedSet.has(t.code));
+            const highest = ownedTiers[ownedTiers.length - 1];
+            const next = g.tiers.find((t) => !ownedSet.has(t.code));
+            const targetThreshold = next?.threshold ?? g.tiers[g.tiers.length - 1]?.threshold ?? 1;
+            const pct = Math.min(100, (value / targetThreshold) * 100);
+            const cardCls = highest
+              ? TIER_CLS[highest.tier] || TIER_CLS.bronze
+              : "from-muted/40 to-muted/10 border-border text-muted-foreground";
             return (
               <div
-                key={d.id}
-                className={`relative rounded-lg p-3 border bg-gradient-to-br ${
-                  isOwned ? TIER_CLS[d.tier] || TIER_CLS.bronze : "from-muted/40 to-muted/10 border-border text-muted-foreground opacity-70"
-                }`}
-                title={d.description}
+                key={g.base}
+                className={`relative rounded-lg p-3 border bg-gradient-to-br ${cardCls}`}
+                title={g.description}
               >
-                <div className="flex items-start gap-2 mb-1">
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold leading-tight truncate">{d.title}</p>
-                    <p className="text-[10px] opacity-80 leading-tight">{d.description}</p>
+                <div className="flex items-start gap-2 mb-2">
+                  <Icon className="w-6 h-6 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold leading-tight">{g.title}</p>
+                    <p className="text-[10px] opacity-80 leading-tight">{g.description}</p>
                   </div>
+                  <span className="text-[10px] tabular-nums opacity-90 font-bold shrink-0">
+                    {ownedTiers.length}/{g.tiers.length}
+                  </span>
                 </div>
-                {!isOwned && (
-                  <div className="mt-1">
+
+                {/* Medal row */}
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  {g.tiers.map((t) => {
+                    const ownedTier = ownedSet.has(t.code);
+                    const MedalIcon = t.tier === "diamond" ? Gem : Medal;
+                    return (
+                      <div
+                        key={t.code}
+                        className={`flex flex-col items-center gap-0.5 flex-1 ${
+                          ownedTier ? TIER_MEDAL_CLS[t.tier] || "text-foreground" : "text-muted-foreground/40"
+                        }`}
+                        title={`${TIER_LABELS[t.tier] || t.tier} · ab ${t.threshold}`}
+                      >
+                        <MedalIcon className={`w-5 h-5 ${ownedTier ? "drop-shadow-glow" : ""}`} />
+                        <span className="text-[8px] tabular-nums font-semibold">{t.threshold}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {next ? (
+                  <div>
                     <Progress value={pct} className="h-1" />
-                    <p className="text-[9px] mt-0.5 tabular-nums opacity-80">{value} / {d.threshold}</p>
+                    <p className="text-[9px] mt-0.5 tabular-nums opacity-80">
+                      {value} / {next.threshold} → nächste Medaille: {TIER_LABELS[next.tier] || next.tier}
+                    </p>
                   </div>
-                )}
-                {isOwned && (
-                  <p className="text-[9px] uppercase tracking-wide font-bold opacity-90 mt-1">✓ {d.tier}</p>
+                ) : (
+                  <p className="text-[10px] uppercase tracking-wide font-bold opacity-90">
+                    ✓ Alle Medaillen erreicht
+                  </p>
                 )}
               </div>
             );
