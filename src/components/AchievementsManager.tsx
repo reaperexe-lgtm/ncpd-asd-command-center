@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trophy, Plus, Pencil, Trash2, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star } from "lucide-react";
+import { Trophy, Plus, Pencil, Trash2, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star, Layers } from "lucide-react";
 
 const METRICS: { value: string; label: string }[] = [
   { value: "missions_total", label: "Einsätze gesamt" },
@@ -31,7 +31,13 @@ const METRICS: { value: string; label: string }[] = [
 ];
 
 const ICON_OPTIONS = ["Trophy", "Target", "Car", "FileText", "ClipboardList", "GraduationCap", "BookOpen", "Award", "Zap", "Crown", "Coins", "Star"];
-const TIER_OPTIONS = ["bronze", "silver", "gold", "platinum"];
+const TIER_OPTIONS = ["bronze", "silver", "gold", "platinum", "diamond"];
+const TIER_SEQUENCE = ["bronze", "silver", "gold", "platinum", "diamond"] as const;
+const TIER_LABELS: Record<string, string> = {
+  bronze: "Bronze", silver: "Silber", gold: "Gold", platinum: "Platin", diamond: "Diamant",
+};
+// Multipliers for the auto-generated 5-tier set, applied to base threshold
+const TIER_MULTIPLIERS = [1, 2, 5, 10, 25];
 
 const ICONS: Record<string, any> = {
   Trophy, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star,
@@ -42,6 +48,7 @@ const TIER_CLS: Record<string, string> = {
   silver: "from-slate-400/30 to-slate-600/20 border-slate-400/50 text-slate-200",
   gold: "from-yellow-500/30 to-yellow-700/20 border-yellow-500/60 text-yellow-300",
   platinum: "from-cyan-300/30 to-purple-500/20 border-cyan-300/60 text-cyan-200",
+  diamond: "from-fuchsia-400/30 to-indigo-500/20 border-fuchsia-300/60 text-fuchsia-200",
 };
 
 interface AchievementDef {
@@ -75,6 +82,17 @@ const AchievementsManager = () => {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<AchievementDef | null>(null);
   const [open, setOpen] = useState(false);
+  const [setOpen2, setSetOpen2] = useState(false);
+  const [setForm, setSetForm] = useState({
+    base_code: "",
+    title: "",
+    description: "",
+    metric: "missions_total",
+    base_threshold: 10,
+    icon: "Trophy",
+    category: "general",
+    sort_order: 0,
+  });
 
   const { data: defs, isLoading } = useQuery({
     queryKey: ["achievement-defs-admin"],
@@ -140,6 +158,41 @@ const AchievementsManager = () => {
   const openNew = () => { setEditing({ ...emptyDef }); setOpen(true); };
   const openEdit = (def: AchievementDef) => { setEditing({ ...def }); setOpen(true); };
 
+  const createSetMutation = useMutation({
+    mutationFn: async () => {
+      if (!setForm.base_code.trim() || !setForm.title.trim()) {
+        throw new Error("Basis-Code und Titel sind erforderlich");
+      }
+      const rows = TIER_SEQUENCE.map((tier, i) => ({
+        code: `${setForm.base_code}_t${i + 1}`,
+        base_code: setForm.base_code,
+        tier_level: i + 1,
+        title: `${setForm.title} ${TIER_LABELS[tier]}`,
+        description: setForm.description || `${setForm.title} – ${TIER_LABELS[tier]}`,
+        metric: setForm.metric,
+        threshold: Math.max(1, Math.round(setForm.base_threshold * TIER_MULTIPLIERS[i])),
+        tier,
+        icon: setForm.icon,
+        category: setForm.category,
+        sort_order: setForm.sort_order * 10 + i,
+        is_active: true,
+      }));
+      const { error } = await supabase.from("achievement_definitions").insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("5-Stufen-Set erstellt");
+      qc.invalidateQueries({ queryKey: ["achievement-defs-admin"] });
+      qc.invalidateQueries({ queryKey: ["achievement-defs"] });
+      setSetOpen2(false);
+      setSetForm({
+        base_code: "", title: "", description: "", metric: "missions_total",
+        base_threshold: 10, icon: "Trophy", category: "general", sort_order: 0,
+      });
+    },
+    onError: (e: any) => toast.error(e.message || "Set-Erstellung fehlgeschlagen"),
+  });
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -147,9 +200,14 @@ const AchievementsManager = () => {
           <Trophy className="w-5 h-5" /> Achievements verwalten
           <span className="ml-2 text-xs text-muted-foreground font-normal">{defs?.length || 0}</span>
         </CardTitle>
-        <Button size="sm" onClick={openNew} className="gap-1">
-          <Plus className="w-4 h-4" /> Neu
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="secondary" onClick={() => setSetOpen2(true)} className="gap-1">
+            <Layers className="w-4 h-4" /> 5-Stufen-Set
+          </Button>
+          <Button size="sm" onClick={openNew} className="gap-1">
+            <Plus className="w-4 h-4" /> Einzeln
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
