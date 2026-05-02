@@ -13,6 +13,7 @@ import {
   Plus, ClipboardCheck, CheckCircle2, XCircle, ArrowLeft,
   Trash2, MapPin, AlertTriangle, Trophy, Eye, EyeOff, Pencil
 } from "lucide-react";
+import PracticalExamImages from "./PracticalExamImages";
 
 export const ASD1_LOCATIONS = [
   "V-PD (Start)", "Buntes Parkhaus", "Film Studios", "Tropical Club", "Museum",
@@ -656,6 +657,8 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </Button>
         )}
       </div>
+
+      <PracticalExamImages examType={examType as "ASD1" | "ASD2"} />
 
       {isLoading && <div className="text-center py-12 text-muted-foreground animate-pulse">Laden...</div>}
 
