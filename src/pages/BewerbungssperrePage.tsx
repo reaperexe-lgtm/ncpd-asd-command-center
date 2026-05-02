@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Ban, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Ban, ChevronDown, ChevronRight, Archive } from "lucide-react";
 
 const BewerbungssperrePage = () => {
   const { isAdmin } = useAuth();
@@ -20,6 +20,7 @@ const BewerbungssperrePage = () => {
   const [reason, setReason] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   const toggle = (id: string) => setOpenIds((p) => ({ ...p, [id]: !p[id] }));
 
@@ -52,6 +53,71 @@ const BewerbungssperrePage = () => {
 
   const isActive = (toDate: string) => new Date(toDate) >= new Date();
 
+  const activeBans = bans?.filter((b) => isActive(b.to_date)) || [];
+  const archivedBans = bans?.filter((b) => !isActive(b.to_date)) || [];
+
+  const renderBan = (b: any) => {
+    const active = isActive(b.to_date);
+    const isOpen = !!openIds[b.id];
+    const hasReason = !!b.reason && b.reason.trim().length > 0;
+    return (
+      <Collapsible key={b.id} open={isOpen} onOpenChange={() => toggle(b.id)}>
+        <div className={`bg-card border rounded-lg overflow-hidden transition-colors ${
+          active ? "border-destructive/30" : "border-border opacity-80"
+        }`}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full p-4 flex items-center gap-3 hover:bg-primary/[0.03] transition-colors text-left">
+              <div className="shrink-0">
+                {isOpen ? (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:gap-4 items-center">
+                <p className="font-semibold text-foreground truncate">{b.name}</p>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {new Date(b.from_date).toLocaleDateString("de-DE")} → {new Date(b.to_date).toLocaleDateString("de-DE")}
+                </span>
+                <span className={`justify-self-start md:justify-self-auto text-xs px-2 py-0.5 rounded-full font-medium ${
+                  active ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"
+                }`}>
+                  {active ? "Aktiv" : "Abgelaufen"}
+                </span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {hasReason ? (isOpen ? "Grund einklappen" : "Grund anzeigen") : "Kein Grund"}
+                </span>
+              </div>
+              {isAdmin && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteBan.mutate(b.id); }}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded shrink-0"
+                  aria-label="Löschen"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 pt-1 border-t border-border/50 ml-7">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
+                Grund der Sperre
+              </p>
+              {hasReason ? (
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-background/50 border border-border/50 rounded-md p-3">
+                  {b.reason}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Kein Grund hinterlegt.</p>
+              )}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -60,7 +126,7 @@ const BewerbungssperrePage = () => {
           <div>
             <h1 className="text-2xl font-bold text-primary">Bewerbungssperren</h1>
             <p className="text-xs text-muted-foreground">
-              {bans?.filter((b) => isActive(b.to_date)).length || 0} aktiv · {bans?.length || 0} gesamt
+              {activeBans.length} aktiv · {archivedBans.length} im Archiv
             </p>
           </div>
         </div>
@@ -88,68 +154,36 @@ const BewerbungssperrePage = () => {
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade...</div></div>
       ) : (
-        <div className="space-y-3">
-          {bans?.map((b) => {
-            const active = isActive(b.to_date);
-            const isOpen = !!openIds[b.id];
-            const hasReason = !!b.reason && b.reason.trim().length > 0;
-            return (
-              <Collapsible key={b.id} open={isOpen} onOpenChange={() => toggle(b.id)}>
-                <div className={`bg-card border rounded-lg overflow-hidden transition-colors ${
-                  active ? "border-destructive/30" : "border-border"
-                }`}>
-                  <CollapsibleTrigger asChild>
-                    <button className="w-full p-4 flex items-center gap-3 hover:bg-primary/[0.03] transition-colors text-left">
-                      <div className="shrink-0">
-                        {isOpen ? (
-                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:gap-4 items-center">
-                        <p className="font-semibold text-foreground truncate">{b.name}</p>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {new Date(b.from_date).toLocaleDateString("de-DE")} → {new Date(b.to_date).toLocaleDateString("de-DE")}
-                        </span>
-                        <span className={`justify-self-start md:justify-self-auto text-xs px-2 py-0.5 rounded-full font-medium ${
-                          active ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"
-                        }`}>
-                          {active ? "Aktiv" : "Abgelaufen"}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {hasReason ? (isOpen ? "Grund einklappen" : "Grund anzeigen") : "Kein Grund"}
-                        </span>
-                      </div>
-                      {isAdmin && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteBan.mutate(b.id); }}
-                          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded shrink-0"
-                          aria-label="Löschen"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="px-4 pb-4 pt-1 border-t border-border/50 ml-7">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
-                        Grund der Sperre
-                      </p>
-                      {hasReason ? (
-                        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-background/50 border border-border/50 rounded-md p-3">
-                          {b.reason}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">Kein Grund hinterlegt.</p>
-                      )}
-                    </div>
-                  </CollapsibleContent>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            {activeBans.map(renderBan)}
+            {activeBans.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">Keine aktiven Sperren</p>
+            )}
+          </div>
+
+          {archivedBans.length > 0 && (
+            <Collapsible open={archiveOpen} onOpenChange={setArchiveOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-lg hover:bg-primary/[0.03] transition-colors text-left">
+                  {archiveOpen ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <Archive className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">Archiv</span>
+                  <span className="text-xs text-muted-foreground">({archivedBans.length} abgelaufen)</span>
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-3 mt-3 pl-2 border-l-2 border-border/50">
+                  {archivedBans.map(renderBan)}
                 </div>
-              </Collapsible>
-            );
-          })}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
           {bans?.length === 0 && (
             <p className="text-center text-muted-foreground py-12">Keine Sperren vorhanden</p>
           )}
