@@ -1347,6 +1347,36 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_performance_rewards: {
+        Row: {
+          id: string
+          missions_count: number
+          paid_at: string
+          pursuits_count: number
+          triggered_by: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          id?: string
+          missions_count?: number
+          paid_at?: string
+          pursuits_count?: number
+          triggered_by: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          id?: string
+          missions_count?: number
+          paid_at?: string
+          pursuits_count?: number
+          triggered_by?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
