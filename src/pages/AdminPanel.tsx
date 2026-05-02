@@ -867,6 +867,44 @@ const AdminPanel = () => {
                 </table>
                 </div>
               </div>
+
+              {/* Free internal Dienstnummern (1-18) */}
+              {(() => {
+                const used = new Set<number>();
+                (users || []).forEach((u: any) => {
+                  const m = (u.internal_dienstnummer || "").match(/\d+/);
+                  if (m) used.add(parseInt(m[0], 10));
+                });
+                const free: number[] = [];
+                for (let i = 1; i <= 18; i++) if (!used.has(i)) free.push(i);
+                return (
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Hash className="w-4 h-4 text-primary" />
+                      <h3 className="text-sm font-bold text-primary uppercase tracking-wider">
+                        Freie interne Dienstnummern (1–18)
+                      </h3>
+                      <span className="text-xs text-muted-foreground">
+                        {free.length} von 18 frei
+                      </span>
+                    </div>
+                    {free.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">Alle Dienstnummern von 1 bis 18 sind vergeben.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {free.map((n) => (
+                          <span
+                            key={n}
+                            className="inline-flex items-center justify-center min-w-[3.5rem] px-2.5 py-1 rounded-md bg-primary/10 border border-primary/30 text-primary font-mono text-xs font-semibold"
+                          >
+                            ASD-{String(n).padStart(2, "0")}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </TabsContent>
