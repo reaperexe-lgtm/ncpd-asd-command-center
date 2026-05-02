@@ -392,6 +392,116 @@ const AchievementsManager = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 5-Tier Set Dialog */}
+      <Dialog open={setOpen2} onOpenChange={setSetOpen2}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-primary" /> 5-Stufen-Set erstellen
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Erstellt 5 Achievements (Bronze, Silber, Gold, Platin, Diamant) mit den Schwellen
+              <span className="font-mono"> x1, x2, x5, x10, x25</span> deiner Basis-Schwelle.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Basis-Code</Label>
+                <Input
+                  value={setForm.base_code}
+                  onChange={(e) => setSetForm({ ...setForm, base_code: e.target.value.replace(/\s+/g, "_").toLowerCase() })}
+                  placeholder="z.B. mission_master"
+                />
+              </div>
+              <div>
+                <Label>Titel</Label>
+                <Input
+                  value={setForm.title}
+                  onChange={(e) => setSetForm({ ...setForm, title: e.target.value })}
+                  placeholder="Einsatz-Profi"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Beschreibung</Label>
+              <Textarea
+                rows={2}
+                value={setForm.description}
+                onChange={(e) => setSetForm({ ...setForm, description: e.target.value })}
+                placeholder="Sammle so viele Einsätze wie möglich"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Metrik</Label>
+                <Select value={setForm.metric} onValueChange={(v) => setSetForm({ ...setForm, metric: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {METRICS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Basis-Schwelle (Bronze)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={setForm.base_threshold}
+                  onChange={(e) => setSetForm({ ...setForm, base_threshold: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Icon</Label>
+                <Select value={setForm.icon} onValueChange={(v) => setSetForm({ ...setForm, icon: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ICON_OPTIONS.map((i) => {
+                      const I = ICONS[i];
+                      return (
+                        <SelectItem key={i} value={i}>
+                          <span className="flex items-center gap-2"><I className="w-4 h-4" /> {i}</span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Sortier-Block</Label>
+                <Input
+                  type="number"
+                  value={setForm.sort_order}
+                  onChange={(e) => setSetForm({ ...setForm, sort_order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-2 text-[11px] space-y-1">
+              <p className="font-bold text-foreground">Vorschau Schwellen:</p>
+              {TIER_SEQUENCE.map((t, i) => (
+                <div key={t} className="flex justify-between">
+                  <span className="capitalize">{TIER_LABELS[t]}</span>
+                  <span className="font-mono tabular-nums">
+                    ≥ {Math.max(1, Math.round(setForm.base_threshold * TIER_MULTIPLIERS[i]))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSetOpen2(false)}>Abbrechen</Button>
+            <Button
+              onClick={() => createSetMutation.mutate()}
+              disabled={createSetMutation.isPending || !setForm.base_code || !setForm.title}
+            >
+              {createSetMutation.isPending ? "Erstelle…" : "5 Stufen erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
