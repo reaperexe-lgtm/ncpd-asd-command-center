@@ -395,6 +395,77 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (type === "achievement_unlocked") {
+      const ASD_LEITUNG_ROLE_ID = "1354392542178840686";
+      const channelId = sanitizeDiscordId(
+        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
+        Deno.env.get("DISCORD_CHANNEL_ID")
+      );
+
+      const tierEmoji: Record<string, string> = {
+        bronze: "🥉",
+        silver: "🥈",
+        gold: "🥇",
+        platinum: "💎",
+      };
+      const emoji = tierEmoji[data.achievement_tier] || "🏆";
+
+      // 1) DM to the user (if discord_id set)
+      let dmStatus: any = { sent: false };
+      try {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("discord_id")
+          .eq("id", data.user_id)
+          .maybeSingle();
+
+        if (profile?.discord_id) {
+          const dmMessage = [
+            `${emoji} **Glückwunsch! Neues Achievement freigeschaltet:**`,
+            `**${data.achievement_title}**`,
+            data.achievement_description ? `_${data.achievement_description}_` : "",
+            ``,
+            `💰 **Belohnung: 50.000$**`,
+            `Bitte melde dich bei der **ASD Direction**, um deine Belohnung zu erhalten.`,
+          ].filter(Boolean).join("\n");
+          try {
+            await sendDM(botToken, profile.discord_id, dmMessage);
+            dmStatus = { sent: true, discord_id: profile.discord_id };
+          } catch (e) {
+            dmStatus = { sent: false, error: (e as Error).message };
+          }
+        }
+      } catch (e) {
+        dmStatus = { sent: false, error: (e as Error).message };
+      }
+
+      // 2) Channel ping for ASD Direction
+      let channelStatus: any = { sent: false };
+      if (channelId) {
+        const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
+        const channelContent = [
+          `<@&${ASD_LEITUNG_ROLE_ID}>`,
+          `${emoji} **Achievement freigeschaltet**`,
+          `━━━━━━━━━━━━━━━`,
+          `👤 **Mitglied:** ${data.user_name}${dn}`,
+          `🏆 **Achievement:** ${data.achievement_title}`,
+          data.achievement_description ? `📝 ${data.achievement_description}` : "",
+          ``,
+          `💰 Bitte **50.000$** an das Mitglied auszahlen.`,
+        ].filter(Boolean).join("\n");
+        try {
+          await sendChannelMessage(botToken, channelId, channelContent, undefined, [ASD_LEITUNG_ROLE_ID]);
+          channelStatus = { sent: true, channel_id: channelId };
+        } catch (e) {
+          channelStatus = { sent: false, error: (e as Error).message };
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, dm: dmStatus, channel: channelStatus }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (type === "stats_report") {
       // Send stats report to a Discord CHANNEL (not DMs)
       const channelId = Deno.env.get("DISCORD_CHANNEL_ID");

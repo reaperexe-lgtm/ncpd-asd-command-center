@@ -59,7 +59,10 @@ const AchievementsCard = () => {
       const result = await awardAchievements(user.id, profile.name || "", profile.dienstnummer);
       setMetrics(result.metrics);
       if (result.newlyAwarded > 0) {
-        toast.success(`🏆 ${result.newlyAwarded} neue${result.newlyAwarded === 1 ? "s" : ""} Achievement freigeschaltet!`);
+        toast.success(
+          `🏆 ${result.newlyAwarded} neue${result.newlyAwarded === 1 ? "s" : ""} Achievement freigeschaltet! Melde dich bei der Direction, um deine 50.000$ Belohnung zu erhalten.`,
+          { duration: 10000 }
+        );
         refetchOwned();
       }
     };
