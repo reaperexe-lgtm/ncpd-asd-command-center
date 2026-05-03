@@ -154,28 +154,6 @@ const LeitfadenContent = ({
       {/* Schritt 5 */}
       <Section
         step={5}
-        title="20 Minuten 10-20 Durchgeben"
-        icon={<Clock className="w-5 h-5" />}
-      >
-        <div className="space-y-3 text-sm text-muted-foreground">
-          <p>
-            Im 10-20 Modul werden die Ortskenntnisse in der gesamten Stadt, einschließlich der Highway-Grenzen und des FIB-Hauptquartiers, überprüft.
-          </p>
-          <p>
-            Der Prüfling muss gleichzeitig <strong className="text-foreground">fliegen und funken</strong>.
-          </p>
-          <p>
-            Ein Kollege steuert das sogenannte „TV-Fahrzeug", das während der Prüfung verfolgt wird.
-          </p>
-          <p>
-            Die Verfolgung dauert etwa <strong className="text-foreground">20 Minuten</strong>. Währenddessen sind präzise Funkmeldungen mit korrekter Verwendung der Himmelsrichtungen sowie exakte Durchgaben der Fahrzeug Manöver erforderlich.
-          </p>
-        </div>
-      </Section>
-
-      {/* Schritt 6 */}
-      <Section
-        step={6}
         title="Prüfungsstrecke"
         icon={<Plane className="w-5 h-5" />}
       >
