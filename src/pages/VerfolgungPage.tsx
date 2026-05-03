@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
 import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,14 +22,14 @@ const VerfolgungPage = () => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Form state
-  const [vehicleModel, setVehicleModel] = useState("");
-  const [licensePlate, setLicensePlate] = useState("");
-  const [description, setDescription] = useState("");
-  const [pursuitDate, setPursuitDate] = useState("");
-  const [pilot, setPilot] = useState("");
-  const [coPilot, setCoPilot] = useState("");
-  const [leftGunner, setLeftGunner] = useState("");
-  const [rightGunner, setRightGunner] = useState("");
+  const [vehicleModel, setVehicleModel] = usePersistedState<string>("verfolgung_vehicleModel", "");
+  const [licensePlate, setLicensePlate] = usePersistedState<string>("verfolgung_licensePlate", "");
+  const [description, setDescription] = usePersistedState<string>("verfolgung_description", "");
+  const [pursuitDate, setPursuitDate] = usePersistedState<string>("verfolgung_pursuitDate", "");
+  const [pilot, setPilot] = usePersistedState<string>("verfolgung_pilot", "");
+  const [coPilot, setCoPilot] = usePersistedState<string>("verfolgung_coPilot", "");
+  const [leftGunner, setLeftGunner] = usePersistedState<string>("verfolgung_leftGunner", "");
+  const [rightGunner, setRightGunner] = usePersistedState<string>("verfolgung_rightGunner", "");
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
 
@@ -149,6 +150,11 @@ const VerfolgungPage = () => {
     setVehicleModel(""); setLicensePlate("");
     setDescription(""); setPursuitDate(""); setPilot(""); setCoPilot("");
     setLeftGunner(""); setRightGunner(""); setPhotos([]); setPhotoPreviewUrls([]); setShowForm(false);
+    clearPersistedKeys([
+      "verfolgung_vehicleModel","verfolgung_licensePlate","verfolgung_description",
+      "verfolgung_pursuitDate","verfolgung_pilot","verfolgung_coPilot",
+      "verfolgung_leftGunner","verfolgung_rightGunner",
+    ]);
   };
 
   return (
