@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
 import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,20 +33,20 @@ const emptyVehicle: VehicleForm = {
 const EinsatzPage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [desc, setDesc] = useState("");
-  const [location, setLocation] = useState("");
-  const [customLocation, setCustomLocation] = useState("");
-  const [tatzeit, setTatzeit] = useState("");
-  const [suspects, setSuspects] = useState("1");
-  const [hostages, setHostages] = useState("0");
-  const [gangId, setGangId] = useState("");
-  const [gangInfo, setGangInfo] = useState("");
-  const [protokollschreiber, setProtokollschreiber] = useState("");
-  const [pilot, setPilot] = useState("");
-  const [coPilot, setCoPilot] = useState("");
-  const [leftGunner, setLeftGunner] = useState("");
-  const [rightGunner, setRightGunner] = useState("");
-  const [vehicles, setVehicles] = useState<VehicleForm[]>([]);
+  const [desc, setDesc] = usePersistedState<string>("einsatz_desc", "");
+  const [location, setLocation] = usePersistedState<string>("einsatz_location", "");
+  const [customLocation, setCustomLocation] = usePersistedState<string>("einsatz_customLocation", "");
+  const [tatzeit, setTatzeit] = usePersistedState<string>("einsatz_tatzeit", "");
+  const [suspects, setSuspects] = usePersistedState<string>("einsatz_suspects", "1");
+  const [hostages, setHostages] = usePersistedState<string>("einsatz_hostages", "0");
+  const [gangId, setGangId] = usePersistedState<string>("einsatz_gangId", "");
+  const [gangInfo, setGangInfo] = usePersistedState<string>("einsatz_gangInfo", "");
+  const [protokollschreiber, setProtokollschreiber] = usePersistedState<string>("einsatz_protokollschreiber", "");
+  const [pilot, setPilot] = usePersistedState<string>("einsatz_pilot", "");
+  const [coPilot, setCoPilot] = usePersistedState<string>("einsatz_coPilot", "");
+  const [leftGunner, setLeftGunner] = usePersistedState<string>("einsatz_leftGunner", "");
+  const [rightGunner, setRightGunner] = usePersistedState<string>("einsatz_rightGunner", "");
+  const [vehicles, setVehicles] = usePersistedState<VehicleForm[]>("einsatz_vehicles", []);
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<VehicleForm>({ ...emptyVehicle });
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -119,6 +120,12 @@ const EinsatzPage = () => {
     setPilot(""); setCoPilot(""); setLeftGunner(""); setRightGunner("");
     setVehicles([]); setShowVehicleForm(false); setProtokollschreiber("");
     setCurrentVehicle({ ...emptyVehicle });
+    clearPersistedKeys([
+      "einsatz_desc","einsatz_location","einsatz_customLocation","einsatz_tatzeit",
+      "einsatz_suspects","einsatz_hostages","einsatz_gangId","einsatz_gangInfo",
+      "einsatz_protokollschreiber","einsatz_pilot","einsatz_coPilot",
+      "einsatz_leftGunner","einsatz_rightGunner","einsatz_vehicles",
+    ]);
   };
 
   const addVehicle = () => {
