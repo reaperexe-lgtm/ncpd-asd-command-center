@@ -7,7 +7,7 @@ import leitfadenPruefungsstrecke from "@/assets/leitfaden-pruefungsstrecke.png";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  BookOpen, MapPin, Crosshair, Navigation, Clock, Plane
+  BookOpen, MapPin, Crosshair, Navigation, Plane
 } from "lucide-react";
 
 const LeitfadenContent = ({
