@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ const AufstellungsprotokollPage = () => {
     new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr"
   );
   const [protokollfuehrer, setProtokollfuehrer] = useState("");
-  const [sections, setSections] = useState<ProtocolSection[]>([]);
+  const [sections, setSections] = usePersistedState<ProtocolSection[]>("aufstellung_sections", []);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   const { data: members = [] } = useQuery({
