@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 import AchievementsManager from "@/components/AchievementsManager";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -1034,6 +1035,7 @@ const AdminPanel = () => {
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Gültig bis</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                         <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Registriert</th>
+                        <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Aktionen</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1128,6 +1130,32 @@ const AdminPanel = () => {
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
                             {lic.created_at ? new Date(lic.created_at).toLocaleDateString("de-DE") : "–"}
+                          </td>
+                          <td className="px-4 py-3 text-xs">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive" className="gap-1.5 h-7 text-xs">
+                                  <Trash2 className="w-3.5 h-3.5" /> Löschen
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Fluglizenz-Account löschen?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Möchtest du den Account „{lic.profile?.name || "–"}" endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMutation.mutate(lic.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Endgültig löschen
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </td>
                         </tr>
                         );
