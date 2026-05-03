@@ -80,7 +80,7 @@ const ProtokollePage = () => {
   const { data: missions, isLoading: missionsLoading } = useQuery({
     queryKey: ["missions"],
     queryFn: async () => {
-      const { data } = await supabase.from("missions").select("*, mission_vehicles(*), gangs(name, category, image_url)").order("created_at", { ascending: false });
+      const { data } = await supabase.from("missions").select("*, mission_vehicles(*), gangs(name, category, image_url)").order("created_at", { ascending: false }).limit(300);
       return data || [];
     },
   });
@@ -88,7 +88,7 @@ const ProtokollePage = () => {
   const { data: pursuits, isLoading: pursuitsLoading } = useQuery({
     queryKey: ["pursuits"],
     queryFn: async () => {
-      const { data } = await supabase.from("pursuits").select("*, pursuit_photos(*)").order("pursuit_date", { ascending: false });
+      const { data } = await supabase.from("pursuits").select("*, pursuit_photos(*)").order("pursuit_date", { ascending: false }).limit(300);
       return data || [];
     },
   });
