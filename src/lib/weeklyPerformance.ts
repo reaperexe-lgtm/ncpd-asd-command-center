@@ -13,6 +13,8 @@ export async function checkWeeklyPerformance() {
   if (inFlight) return inFlight;
   inFlight = (async () => {
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
       const { data, error } = await supabase.functions.invoke("weekly-performance-check");
       if (error) return;
       if (data?.qualified) {
