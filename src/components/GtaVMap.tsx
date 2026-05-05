@@ -41,11 +41,10 @@ export default function GtaVMap() {
       wheelPxPerZoomLevel: 80,
     });
 
-    // Tiles cover (0,0) to (256,256) at zoom 0 → at zoom 5 the world is 256*32 = 8192px.
-    // Use simple coord system where tile (0,0) at z=0 = bounds [[-128,-128],[128,128]].
-    const bounds: L.LatLngBoundsLiteral = [[-128, -128], [128, 128]];
+    // CRS.Simple + 256px tiles: tile (0,0) at z=0 covers lng [0,256], lat [-256,0].
+    const bounds: L.LatLngBoundsLiteral = [[-256, 0], [0, 256]];
     map.fitBounds(bounds);
-    map.setMaxBounds([[-200, -200], [200, 200]]);
+    map.setMaxBounds([[-300, -50], [50, 300]]);
 
     L.control.layers(
       { Satellit: satellite, Atlas: atlas, Grid: grid },
