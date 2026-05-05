@@ -10,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect } from "react";
-import PermissionMatrixSection from "@/components/PermissionMatrixSection";
-import AchievementsManager from "@/components/AchievementsManager";
-import NavOrderSection from "@/components/NavOrderSection";
-import HiddenMapPasswordSection from "@/components/HiddenMapPasswordSection";
-import SlideshowImagesSection from "@/components/SlideshowImagesSection";
+import { useState, useEffect, lazy, Suspense } from "react";
+const PermissionMatrixSection = lazy(() => import("@/components/PermissionMatrixSection"));
+const AchievementsManager = lazy(() => import("@/components/AchievementsManager"));
+const NavOrderSection = lazy(() => import("@/components/NavOrderSection"));
+const HiddenMapPasswordSection = lazy(() => import("@/components/HiddenMapPasswordSection"));
+const SlideshowImagesSection = lazy(() => import("@/components/SlideshowImagesSection"));
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
