@@ -133,6 +133,22 @@ export default function OrtskundePage() {
     if (!activeBgId && backgrounds.length > 0) setActiveBgId(backgrounds[0].id);
   }, [backgrounds, activeBgId]);
 
+  // Realtime: live updates for everyone when map data changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("ortskunde-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "map_locations" },
+        () => qc.invalidateQueries({ queryKey: ["map-locations"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "map_areas" },
+        () => qc.invalidateQueries({ queryKey: ["map-areas"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "map_drawings" },
+        () => qc.invalidateQueries({ queryKey: ["map-drawings"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "map_backgrounds" },
+        () => qc.invalidateQueries({ queryKey: ["map-backgrounds"] }))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   const activeBg = backgrounds.find(b => b.id === activeBgId);
   const mapLocations = locations.filter(l => l.background_id === activeBgId);
   const mapAreas = areas.filter(a => a.background_id === activeBgId);
