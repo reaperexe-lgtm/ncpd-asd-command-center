@@ -29,6 +29,7 @@ type MapDrawing = {
 
 const COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4", "#ffffff", "#000000"];
 const EMOJI_PRESETS = ["📍", "🚓", "💊", "🌳", "⭐", "🏠", "🏨", "🍽️", "⚔️", "🛒", "⛽", "🏥", "🏛️", "🅿️", "✈️", "🚁", "🔫", "💰", "💎", "🎰", "🏪", "🚧", "📦", "🎯"];
+const LIVE_MAP_URL = "tiled://gta-v";
 
 const CATEGORIES = [
   { key: "bezirke", label: "Bezirke", icon: "🟧" },
@@ -153,6 +154,7 @@ export default function OrtskundePage() {
   }, [qc]);
 
   const activeBg = backgrounds.find(b => b.id === activeBgId);
+  const liveBg = backgrounds.find(b => b.image_url === LIVE_MAP_URL);
   const mapLocations = locations.filter(l => l.background_id === activeBgId);
   const mapAreas = areas.filter(a => a.background_id === activeBgId);
   const mapDrawings = drawings.filter(d => d.background_id === activeBgId);
@@ -422,10 +424,10 @@ export default function OrtskundePage() {
 
       {backgrounds.length > 0 && (
         <div className="flex gap-1 flex-wrap border-b border-border pb-1">
-          {backgrounds.map((b) => (
+          {backgrounds.filter(b => b.image_url !== LIVE_MAP_URL).map((b) => (
             <span key={b.id} className="contents">
               {b.name.toLowerCase().includes("cayo") && (
-                <button onClick={() => setShowLiveMap(true)}
+                <button onClick={() => { if (liveBg) { setShowLiveMap(true); setActiveBgId(liveBg.id); } }}
                   className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
                   <MapIcon className="w-3.5 h-3.5" /> Narco City
                 </button>
@@ -436,8 +438,8 @@ export default function OrtskundePage() {
               </button>
             </span>
           ))}
-          {!backgrounds.some(b => b.name.toLowerCase().includes("cayo")) && (
-            <button onClick={() => setShowLiveMap(true)}
+          {!backgrounds.some(b => b.name.toLowerCase().includes("cayo")) && liveBg && (
+            <button onClick={() => { setShowLiveMap(true); setActiveBgId(liveBg.id); }}
               className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
               <MapIcon className="w-3.5 h-3.5" /> Narco City
             </button>
@@ -446,7 +448,36 @@ export default function OrtskundePage() {
       )}
 
       {showLiveMap ? (
-        <GtaVMap />
+      <div className="relative">
+        <GtaVMap
+          locations={searched as any}
+          areas={visibleAreas as any}
+          drawings={visibleDrawings as any}
+          mode={mode}
+          drawingPoints={drawingPoints}
+          color={color}
+          canEdit={canEdit}
+          onMapClick={(p) => {
+            if (mode === "marker") { setPendingPos(p); setMode(null); }
+            else if (mode === "area" || mode === "draw") { setDrawingPoints(prev => [...prev, p]); }
+          }}
+          onMarkerClick={(l) => setPopupLoc(l as any)}
+          onAreaClick={(a) => setPopupArea(a as any)}
+          onDrawClick={(d) => { if (canEdit) openEditDraw(d as any); }}
+        />
+        {(mode === "area" || mode === "draw") && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-card border border-border rounded shadow-lg px-3 py-2 flex gap-2 z-[1000] items-center">
+            <span className="text-sm">{mode === "area" ? "Gebiet zeichnen" : "Linie zeichnen"} ({drawingPoints.length} Punkte)</span>
+            <Button size="sm" onClick={finishDrawing}>Fertig</Button>
+            <Button size="sm" variant="outline" onClick={cancelDrawing}>Abbrechen</Button>
+          </div>
+        )}
+        {mode === "marker" && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-primary/90 text-primary-foreground text-sm px-3 py-1.5 rounded shadow z-[1000]">
+            Klicke auf die Karte
+          </div>
+        )}
+      </div>
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
         <div
