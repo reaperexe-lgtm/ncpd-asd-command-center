@@ -52,6 +52,7 @@ export default function OrtskundePage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [activeBgId, setActiveBgId] = useState<string | null>(null);
+  const [imgAspect, setImgAspect] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
   const [showHiddenDialog, setShowHiddenDialog] = useState(false);
@@ -420,7 +421,7 @@ export default function OrtskundePage() {
       {backgrounds.length > 0 && (
         <div className="flex gap-1 flex-wrap border-b border-border pb-1">
           {backgrounds.map((b) => (
-            <button key={b.id} onClick={() => { setActiveBgId(b.id); setZoom(1); setPan({ x: 0, y: 0 }); }}
+            <button key={b.id} onClick={() => { setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
               className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
               {b.name}
             </button>
@@ -432,13 +433,26 @@ export default function OrtskundePage() {
         <div
           ref={containerRef}
           className={`map-canvas relative w-full bg-card border border-border rounded-lg overflow-hidden select-none ${mode ? "placing" : ""} ${dragRef.current ? "dragging" : ""}`}
-          style={{ height: "78vh" }}
+          style={imgAspect
+            ? { aspectRatio: String(imgAspect), maxHeight: "82vh", margin: "0 auto" }
+            : { height: "78vh" }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
           onWheel={onWheel} onClick={handleMapClick}
         >
           <div className="absolute inset-0" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}>
             {activeBg ? (
-              <img src={activeBg.image_url} alt={activeBg.name} className="w-full h-full object-contain pointer-events-none" draggable={false} />
+              <img
+                src={activeBg.image_url}
+                alt={activeBg.name}
+                className="w-full h-full object-fill pointer-events-none"
+                draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth && img.naturalHeight) {
+                    setImgAspect(img.naturalWidth / img.naturalHeight);
+                  }
+                }}
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
                 Keine Karte vorhanden – {canManageMaps ? 'oben "Karten" öffnen.' : "warten bis ein Admin eine hochlädt."}
