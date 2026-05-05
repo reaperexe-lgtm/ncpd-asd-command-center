@@ -446,6 +446,9 @@ export default function OrtskundePage() {
                 return (
                   <g key={d.id} className="pointer-events-auto cursor-pointer"
                     onClick={(e) => { e.stopPropagation(); if (canEdit) openEditDraw(d); }}>
+                    {d.points.length >= 3 && (
+                      <polygon points={pts} fill={d.color} fillOpacity={0.2} stroke="none" />
+                    )}
                     <polyline points={pts} fill="none" stroke={d.color}
                       strokeWidth={d.stroke_width} strokeOpacity={0.35}
                       strokeLinecap="round" strokeLinejoin="round"
