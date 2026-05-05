@@ -481,6 +481,48 @@ export type Database = {
         }
         Relationships: []
       }
+      map_areas: {
+        Row: {
+          background_id: string | null
+          category: string
+          color: string
+          created_at: string
+          created_by: string | null
+          fill_opacity: number
+          id: string
+          is_hidden: boolean
+          name: string
+          points: Json
+          updated_at: string
+        }
+        Insert: {
+          background_id?: string | null
+          category?: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          fill_opacity?: number
+          id?: string
+          is_hidden?: boolean
+          name: string
+          points?: Json
+          updated_at?: string
+        }
+        Update: {
+          background_id?: string | null
+          category?: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          fill_opacity?: number
+          id?: string
+          is_hidden?: boolean
+          name?: string
+          points?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       map_backgrounds: {
         Row: {
           created_at: string
@@ -508,6 +550,60 @@ export type Database = {
         }
         Relationships: []
       }
+      map_drawings: {
+        Row: {
+          background_id: string | null
+          color: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_hidden: boolean
+          name: string
+          points: Json
+          stroke_width: number
+        }
+        Insert: {
+          background_id?: string | null
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          name?: string
+          points?: Json
+          stroke_width?: number
+        }
+        Update: {
+          background_id?: string | null
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          name?: string
+          points?: Json
+          stroke_width?: number
+        }
+        Relationships: []
+      }
+      map_hidden_password: {
+        Row: {
+          id: string
+          password: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          password?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          password?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       map_locations: {
         Row: {
           background_id: string | null
@@ -516,6 +612,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          icon: string | null
+          icon_type: string
           id: string
           is_hidden: boolean
           name: string
@@ -531,6 +629,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          icon?: string | null
+          icon_type?: string
           id?: string
           is_hidden?: boolean
           name: string
@@ -546,6 +646,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          icon?: string | null
+          icon_type?: string
           id?: string
           is_hidden?: boolean
           name?: string
@@ -729,6 +831,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nav_order: {
+        Row: {
+          id: string
+          nav_key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nav_key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          nav_key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       permission_settings: {
         Row: {
@@ -1483,11 +1606,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_delete_map_items: { Args: { _user_id: string }; Returns: boolean }
       can_delete_protocols: { Args: { _user_id: string }; Returns: boolean }
       can_manage_licenses: { Args: { _user_id: string }; Returns: boolean }
       can_manage_map: { Args: { _user_id: string }; Returns: boolean }
       can_reset_stats: { Args: { _user_id: string }; Returns: boolean }
       can_review_exams: { Args: { _user_id: string }; Returns: boolean }
+      can_view_hidden_password: { Args: { _user_id: string }; Returns: boolean }
+      check_map_hidden_password: {
+        Args: { _password: string }
+        Returns: boolean
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
