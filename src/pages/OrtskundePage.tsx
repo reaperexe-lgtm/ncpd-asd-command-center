@@ -166,7 +166,7 @@ export default function OrtskundePage() {
   const searched = search
     ? visibleLocations.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
     : visibleLocations;
-  const labelScaleFactor = Math.pow(zoom, 1.25);
+  const labelScaleFactor = Math.pow(zoom, 0.85);
 
   // ----- Mutations -----
   const saveLoc = useMutation({
