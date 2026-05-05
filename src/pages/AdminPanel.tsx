@@ -1345,6 +1345,8 @@ const AdminPanel = () => {
         {/* Settings Tab */}
         <TabsContent value="settings">
           <div className="space-y-6">
+            <NavOrderSection />
+            <HiddenMapPasswordSection currentRole={currentUserRole} />
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Discord-Server Einladungslink
