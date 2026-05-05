@@ -433,13 +433,26 @@ export default function OrtskundePage() {
         <div
           ref={containerRef}
           className={`map-canvas relative w-full bg-card border border-border rounded-lg overflow-hidden select-none ${mode ? "placing" : ""} ${dragRef.current ? "dragging" : ""}`}
-          style={{ height: "78vh" }}
+          style={imgAspect
+            ? { aspectRatio: String(imgAspect), maxHeight: "82vh", margin: "0 auto" }
+            : { height: "78vh" }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
           onWheel={onWheel} onClick={handleMapClick}
         >
           <div className="absolute inset-0" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}>
             {activeBg ? (
-              <img src={activeBg.image_url} alt={activeBg.name} className="w-full h-full object-contain pointer-events-none" draggable={false} />
+              <img
+                src={activeBg.image_url}
+                alt={activeBg.name}
+                className="w-full h-full object-fill pointer-events-none"
+                draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth && img.naturalHeight) {
+                    setImgAspect(img.naturalWidth / img.naturalHeight);
+                  }
+                }}
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
                 Keine Karte vorhanden – {canManageMaps ? 'oben "Karten" öffnen.' : "warten bis ein Admin eine hochlädt."}
