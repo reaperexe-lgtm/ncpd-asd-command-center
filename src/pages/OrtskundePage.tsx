@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, EyeOff, Search, Upload, Map as MapIcon, ChevronDown, ChevronRight, X, Pen, Square as SquareIcon, Layers, Eye } from "lucide-react";
+import GtaVMap from "@/components/GtaVMap";
 
 type MapBackground = { id: string; name: string; image_url: string; sort_order: number };
 type MapLocation = {
@@ -52,6 +53,7 @@ export default function OrtskundePage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [activeBgId, setActiveBgId] = useState<string | null>(null);
+  const [showLiveMap, setShowLiveMap] = useState(false);
   const [imgAspect, setImgAspect] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
