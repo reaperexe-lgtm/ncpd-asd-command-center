@@ -430,7 +430,7 @@ export default function OrtskundePage() {
           ))}
           <button onClick={() => setShowLiveMap(true)}
             className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
-            <MapIcon className="w-3.5 h-3.5" /> Live GTA V Map
+            <MapIcon className="w-3.5 h-3.5" /> Narco City
           </button>
         </div>
       )}
