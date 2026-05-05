@@ -423,14 +423,21 @@ export default function OrtskundePage() {
       {backgrounds.length > 0 && (
         <div className="flex gap-1 flex-wrap border-b border-border pb-1">
           {backgrounds.map((b) => (
-            <button key={b.id} onClick={() => { setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
-              className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
+            <button key={b.id} onClick={() => { setShowLiveMap(false); setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
+              className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${!showLiveMap && activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
               {b.name}
             </button>
           ))}
+          <button onClick={() => setShowLiveMap(true)}
+            className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
+            <MapIcon className="w-3.5 h-3.5" /> Live GTA V Map
+          </button>
         </div>
       )}
 
+      {showLiveMap ? (
+        <GtaVMap />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
         <div
           ref={containerRef}
