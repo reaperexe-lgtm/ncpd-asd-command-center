@@ -481,8 +481,36 @@ export type Database = {
         }
         Relationships: []
       }
+      map_backgrounds: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       map_locations: {
         Row: {
+          background_id: string | null
           category: string
           color: string
           created_at: string
@@ -491,11 +519,13 @@ export type Database = {
           id: string
           is_hidden: boolean
           name: string
+          sort_order: number
           updated_at: string
           x_percent: number
           y_percent: number
         }
         Insert: {
+          background_id?: string | null
           category?: string
           color?: string
           created_at?: string
@@ -504,11 +534,13 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           name: string
+          sort_order?: number
           updated_at?: string
           x_percent: number
           y_percent: number
         }
         Update: {
+          background_id?: string | null
           category?: string
           color?: string
           created_at?: string
@@ -517,11 +549,20 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           name?: string
+          sort_order?: number
           updated_at?: string
           x_percent?: number
           y_percent?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "map_locations_background_id_fkey"
+            columns: ["background_id"]
+            isOneToOne: false
+            referencedRelation: "map_backgrounds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       map_settings: {
         Row: {
