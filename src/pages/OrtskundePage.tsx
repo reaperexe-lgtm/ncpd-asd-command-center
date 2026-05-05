@@ -444,11 +444,16 @@ export default function OrtskundePage() {
               {visibleDrawings.map(d => {
                 const pts = d.points.map(p => `${p.x},${p.y}`).join(" ");
                 return (
-                  <polyline key={d.id} points={pts} fill="none" stroke={d.color}
-                    strokeWidth={d.stroke_width / 4} strokeLinecap="round" strokeLinejoin="round"
-                    vectorEffect="non-scaling-stroke" className="pointer-events-auto cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); if (canEdit) openEditDraw(d); }}
-                  />
+                  <g key={d.id} className="pointer-events-auto cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); if (canEdit) openEditDraw(d); }}>
+                    <polyline points={pts} fill="none" stroke={d.color}
+                      strokeWidth={d.stroke_width} strokeOpacity={0.35}
+                      strokeLinecap="round" strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke" />
+                    <polyline points={pts} fill="none" stroke={d.color}
+                      strokeWidth={d.stroke_width / 3} strokeLinecap="round" strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke" />
+                  </g>
                 );
               })}
               {/* Live drawing preview */}
