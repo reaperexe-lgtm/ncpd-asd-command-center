@@ -154,6 +154,7 @@ export default function OrtskundePage() {
   }, [qc]);
 
   const activeBg = backgrounds.find(b => b.id === activeBgId);
+  const liveBg = backgrounds.find(b => b.image_url === LIVE_MAP_URL);
   const mapLocations = locations.filter(l => l.background_id === activeBgId);
   const mapAreas = areas.filter(a => a.background_id === activeBgId);
   const mapDrawings = drawings.filter(d => d.background_id === activeBgId);
