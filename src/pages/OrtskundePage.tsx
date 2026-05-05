@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, EyeOff, Search, Upload, Map as MapIcon, ChevronDown, ChevronRight, X, Pen, Square as SquareIcon, Layers, Eye } from "lucide-react";
+import GtaVMap from "@/components/GtaVMap";
 
 type MapBackground = { id: string; name: string; image_url: string; sort_order: number };
 type MapLocation = {
@@ -52,6 +53,7 @@ export default function OrtskundePage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [activeBgId, setActiveBgId] = useState<string | null>(null);
+  const [showLiveMap, setShowLiveMap] = useState(false);
   const [imgAspect, setImgAspect] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
@@ -421,14 +423,21 @@ export default function OrtskundePage() {
       {backgrounds.length > 0 && (
         <div className="flex gap-1 flex-wrap border-b border-border pb-1">
           {backgrounds.map((b) => (
-            <button key={b.id} onClick={() => { setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
-              className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
+            <button key={b.id} onClick={() => { setShowLiveMap(false); setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
+              className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${!showLiveMap && activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
               {b.name}
             </button>
           ))}
+          <button onClick={() => setShowLiveMap(true)}
+            className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
+            <MapIcon className="w-3.5 h-3.5" /> Live GTA V Map
+          </button>
         </div>
       )}
 
+      {showLiveMap ? (
+        <GtaVMap />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
         <div
           ref={containerRef}
@@ -642,6 +651,7 @@ export default function OrtskundePage() {
           {knownCats.length === 0 && customCats.length === 0 && <p className="text-xs text-muted-foreground">Noch keine Einträge.</p>}
         </div>
       </div>
+      )}
 
       {/* Add/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
