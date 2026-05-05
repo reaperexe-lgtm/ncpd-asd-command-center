@@ -449,12 +449,23 @@ export default function OrtskundePage() {
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
               {visibleAreas.map(a => {
                 const pts = a.points.map(p => `${p.x},${p.y}`).join(" ");
+                const cx = a.points.reduce((s, p) => s + p.x, 0) / a.points.length;
+                const cy = a.points.reduce((s, p) => s + p.y, 0) / a.points.length;
                 return (
-                  <polygon key={a.id} points={pts} fill={a.color} fillOpacity={a.fill_opacity}
-                    stroke={a.color} strokeWidth={0.2} vectorEffect="non-scaling-stroke"
-                    className="pointer-events-auto cursor-pointer hover:fill-opacity-50"
-                    onClick={(e) => { e.stopPropagation(); if (canEdit && (e as any).shiftKey) openEditArea(a); else setPopupArea(a); }}
-                  />
+                  <g key={a.id}>
+                    <polygon points={pts} fill={a.color} fillOpacity={a.fill_opacity}
+                      stroke={a.color} strokeWidth={0.2} vectorEffect="non-scaling-stroke"
+                      className="pointer-events-auto cursor-pointer hover:fill-opacity-50"
+                      onClick={(e) => { e.stopPropagation(); if (canEdit && (e as any).shiftKey) openEditArea(a); else setPopupArea(a); }}
+                    />
+                    {a.name && (
+                      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+                        fontSize={1.6} fontWeight={700} fill="#fff" stroke="#000" strokeWidth={0.35}
+                        paintOrder="stroke" style={{ pointerEvents: "none", userSelect: "none" }}>
+                        {a.name}
+                      </text>
+                    )}
+                  </g>
                 );
               })}
               {visibleDrawings.map(d => {
