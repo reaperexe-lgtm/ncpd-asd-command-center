@@ -425,25 +425,11 @@ export default function OrtskundePage() {
       {backgrounds.length > 0 && (
         <div className="flex gap-1 flex-wrap border-b border-border pb-1">
           {backgrounds.filter(b => b.image_url !== LIVE_MAP_URL).map((b) => (
-            <span key={b.id} className="contents">
-              {b.name.toLowerCase().includes("cayo") && (
-                <button onClick={() => { if (liveBg) { setShowLiveMap(true); setActiveBgId(liveBg.id); } }}
-                  className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
-                  <MapIcon className="w-3.5 h-3.5" /> Narco City
-                </button>
-              )}
-              <button onClick={() => { setShowLiveMap(false); setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
-                className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${!showLiveMap && activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
-                {b.name}
-              </button>
-            </span>
-          ))}
-          {!backgrounds.some(b => b.name.toLowerCase().includes("cayo")) && liveBg && (
-            <button onClick={() => { setShowLiveMap(true); setActiveBgId(liveBg.id); }}
-              className={`px-3 py-1.5 text-sm rounded-t-md transition-colors gap-1.5 inline-flex items-center ${showLiveMap ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
-              <MapIcon className="w-3.5 h-3.5" /> Narco City
+            <button key={b.id} onClick={() => { setShowLiveMap(false); setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
+              className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${!showLiveMap && activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
+              {b.name}
             </button>
-          )}
+          ))}
         </div>
       )}
 
