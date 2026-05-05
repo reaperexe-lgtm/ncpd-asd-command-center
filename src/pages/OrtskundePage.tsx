@@ -455,8 +455,8 @@ export default function OrtskundePage() {
                   <g key={a.id}>
                     <polygon points={pts} fill={a.color} fillOpacity={a.fill_opacity}
                       stroke={a.color} strokeWidth={0.2} vectorEffect="non-scaling-stroke"
-                      className="pointer-events-auto cursor-pointer hover:fill-opacity-50"
-                      onClick={(e) => { e.stopPropagation(); if (canEdit && (e as any).shiftKey) openEditArea(a); else setPopupArea(a); }}
+                      className={`${mode ? "pointer-events-none" : "pointer-events-auto cursor-pointer"} hover:fill-opacity-50`}
+                      onClick={(e) => { if (mode) return; e.stopPropagation(); if (canEdit && (e as any).shiftKey) openEditArea(a); else setPopupArea(a); }}
                     />
                     {a.name && (
                       <g style={{ pointerEvents: "none" }}>
@@ -473,8 +473,8 @@ export default function OrtskundePage() {
               {visibleDrawings.map(d => {
                 const pts = d.points.map(p => `${p.x},${p.y}`).join(" ");
                 return (
-                  <g key={d.id} className="pointer-events-auto cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); if (canEdit) openEditDraw(d); }}>
+                  <g key={d.id} className={mode ? "pointer-events-none" : "pointer-events-auto cursor-pointer"}
+                    onClick={(e) => { if (mode) return; e.stopPropagation(); if (canEdit) openEditDraw(d); }}>
                     {d.points.length >= 3 && (
                       <polygon points={pts} fill={d.color} fillOpacity={0.2} stroke="none" />
                     )}
@@ -503,8 +503,8 @@ export default function OrtskundePage() {
             {searched.map((loc) => (
               <button
                 key={loc.id}
-                onClick={(e) => { e.stopPropagation(); setPopupLoc(loc); }}
-                className="absolute -translate-x-1/2 -translate-y-full"
+                onClick={(e) => { if (mode) return; e.stopPropagation(); setPopupLoc(loc); }}
+                className={`absolute -translate-x-1/2 -translate-y-full ${mode ? "pointer-events-none" : ""}`}
                 style={{ left: `${loc.x_percent}%`, top: `${loc.y_percent}%` }}
               >
                 <div className="flex flex-col items-center" style={{ transform: `scale(${1 / zoom})`, transformOrigin: "bottom center" }}>
