@@ -481,6 +481,66 @@ export type Database = {
         }
         Relationships: []
       }
+      map_locations: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_hidden: boolean
+          name: string
+          updated_at: string
+          x_percent: number
+          y_percent: number
+        }
+        Insert: {
+          category?: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_hidden?: boolean
+          name: string
+          updated_at?: string
+          x_percent: number
+          y_percent: number
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_hidden?: boolean
+          name?: string
+          updated_at?: string
+          x_percent?: number
+          y_percent?: number
+        }
+        Relationships: []
+      }
+      map_settings: {
+        Row: {
+          background_url: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          background_url?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          background_url?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_of_month: {
         Row: {
           created_at: string
@@ -1384,6 +1444,7 @@ export type Database = {
     Functions: {
       can_delete_protocols: { Args: { _user_id: string }; Returns: boolean }
       can_manage_licenses: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_map: { Args: { _user_id: string }; Returns: boolean }
       can_reset_stats: { Args: { _user_id: string }; Returns: boolean }
       can_review_exams: { Args: { _user_id: string }; Returns: boolean }
       get_user_role: {

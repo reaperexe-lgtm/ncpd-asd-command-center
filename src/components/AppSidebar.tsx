@@ -34,11 +34,12 @@ const navItems = [
   { to: "/lernen", label: "Lernen", emoji: "📚" },
   { to: "/achievements", label: "Achievements", emoji: "🏆" },
   { to: "/search-rescue", label: "Search & Rescue", emoji: "🚁" },
+  { to: "/ortskunde", label: "Ortskunde", emoji: "🗺️" },
 ];
 
 const FLIGHT_LICENSE_VISIBLE = new Set([
   "/", "/gambling", "/verfolgung", "/einsatz", "/protokolle",
-  "/familien", "/statistik", "/member", "/fluglizenz-member", "/uebungen", "/lernen", "/achievements",
+  "/familien", "/statistik", "/member", "/fluglizenz-member", "/uebungen", "/lernen", "/achievements", "/ortskunde",
 ]);
 
 export function AppSidebar() {

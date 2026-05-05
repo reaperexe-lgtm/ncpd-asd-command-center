@@ -31,6 +31,7 @@ const FlightApplicantDashboard = lazy(() => import("./pages/FlightApplicantDashb
 const LernenPage = lazy(() => import("./pages/LernenPage"));
 const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
 const SearchRescuePage = lazy(() => import("./pages/SearchRescuePage"));
+const OrtskundePage = lazy(() => import("./pages/OrtskundePage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +89,7 @@ const ProtectedRoutes = () => {
         <Route path="/lernen" element={<LernenPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="/search-rescue" element={<SearchRescuePage />} />
+        <Route path="/ortskunde" element={<OrtskundePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
