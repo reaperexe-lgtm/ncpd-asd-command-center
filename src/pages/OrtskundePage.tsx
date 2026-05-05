@@ -447,7 +447,22 @@ export default function OrtskundePage() {
       )}
 
       {showLiveMap ? (
-        <GtaVMap />
+        <GtaVMap
+          locations={searched as any}
+          areas={visibleAreas as any}
+          drawings={visibleDrawings as any}
+          mode={mode}
+          drawingPoints={drawingPoints}
+          color={color}
+          canEdit={canEdit}
+          onMapClick={(p) => {
+            if (mode === "marker") { setPendingPos(p); setMode(null); }
+            else if (mode === "area" || mode === "draw") { setDrawingPoints(prev => [...prev, p]); }
+          }}
+          onMarkerClick={(l) => setPopupLoc(l as any)}
+          onAreaClick={(a) => setPopupArea(a as any)}
+          onDrawClick={(d) => { if (canEdit) openEditDraw(d as any); }}
+        />
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
         <div
