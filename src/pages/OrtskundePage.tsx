@@ -651,6 +651,7 @@ export default function OrtskundePage() {
           {knownCats.length === 0 && customCats.length === 0 && <p className="text-xs text-muted-foreground">Noch keine Einträge.</p>}
         </div>
       </div>
+      )}
 
       {/* Add/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
