@@ -230,7 +230,7 @@ const VerfolgungPage = () => {
           </div>
 
           <div>
-            <Label className="flex items-center gap-1.5"><Image className="w-4 h-4" /> Fotos (z.B. Kennzeichen)</Label>
+            <Label className="flex items-center gap-1.5"><Image className="w-4 h-4" /> Fotos (z.B. Kennzeichen) <span className="text-[10px] text-muted-foreground font-normal">– Strg+V zum Einfügen aus Zwischenablage</span></Label>
             <Input type="file" multiple accept="image/*" className="mt-1 bg-background border-border" onChange={(e) => handlePhotoSelect(e.target.files)} />
             {photoPreviewUrls.length > 0 && (
               <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-2">
