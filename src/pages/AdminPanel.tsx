@@ -121,38 +121,47 @@ const AdminPanel = () => {
   // Load discord invite link
   useEffect(() => {
     if (!isAdmin) return;
-    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
-      if (data?.role) setDiscordInviteLink(data.role);
-    });
-    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
-      if (data?.role) setDiscordInviteDescription(data.role);
-    });
-    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["aufstellung_next_at", "aufstellung_ort", "aufstellung_auto_enabled"]).then(({ data }) => {
-      for (const r of data || []) {
-        if (r.permission_key === "aufstellung_next_at" && r.role) {
-          // datetime-local needs format YYYY-MM-DDTHH:mm
-          try {
-            const d = new Date(r.role);
-            if (!isNaN(d.getTime())) {
-              const pad = (n: number) => String(n).padStart(2, "0");
-              setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    if (activeTab !== "settings") return;
+    const KEYS = [
+      "discord_invite_link",
+      "discord_invite_description",
+      "aufstellung_next_at",
+      "aufstellung_ort",
+      "aufstellung_auto_enabled",
+      "stats_ping_director_id",
+      "stats_ping_codirector_id",
+      "sr_max_attempts",
+    ];
+    supabase
+      .from("permission_settings")
+      .select("permission_key, role")
+      .in("permission_key", KEYS)
+      .then(({ data }) => {
+        for (const r of data || []) {
+          const v = r.role;
+          if (!v && r.permission_key !== "aufstellung_auto_enabled") continue;
+          switch (r.permission_key) {
+            case "discord_invite_link": setDiscordInviteLink(v); break;
+            case "discord_invite_description": setDiscordInviteDescription(v); break;
+            case "aufstellung_next_at": {
+              try {
+                const d = new Date(v);
+                if (!isNaN(d.getTime())) {
+                  const pad = (n: number) => String(n).padStart(2, "0");
+                  setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+                }
+              } catch {}
+              break;
             }
-          } catch {}
+            case "aufstellung_ort": setAufstellungOrt(v); break;
+            case "aufstellung_auto_enabled": setAufstellungAuto(v === "true"); break;
+            case "stats_ping_director_id": setStatsPingDirector(v); break;
+            case "stats_ping_codirector_id": setStatsPingCoDirector(v); break;
+            case "sr_max_attempts": setSrMaxAttempts(v); break;
+          }
         }
-        if (r.permission_key === "aufstellung_ort" && r.role) setAufstellungOrt(r.role);
-        if (r.permission_key === "aufstellung_auto_enabled") setAufstellungAuto(r.role === "true");
-      }
-    });
-    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["stats_ping_director_id", "stats_ping_codirector_id"]).then(({ data }) => {
-      for (const r of data || []) {
-        if (r.permission_key === "stats_ping_director_id" && r.role) setStatsPingDirector(r.role);
-        if (r.permission_key === "stats_ping_codirector_id" && r.role) setStatsPingCoDirector(r.role);
-      }
-    });
-    supabase.from("permission_settings").select("role").eq("permission_key", "sr_max_attempts").maybeSingle().then(({ data }) => {
-      if (data?.role) setSrMaxAttempts(data.role);
-    });
-  }, [isAdmin]);
+      });
+  }, [isAdmin, activeTab]);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -190,7 +199,8 @@ const AdminPanel = () => {
       return map;
     },
     enabled: isAdmin,
-    refetchInterval: 60_000,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   const { data: logs, isLoading: logsLoading } = useQuery({
