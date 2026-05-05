@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
 import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
@@ -140,6 +140,30 @@ const VerfolgungPage = () => {
     setPhotos((prev) => [...prev, ...arr]);
     setPhotoPreviewUrls((prev) => [...prev, ...arr.map((f) => URL.createObjectURL(f))]);
   };
+
+  // Paste images from clipboard (works while form is open OR on existing pursuit when expanded)
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      if (!e.clipboardData) return;
+      const items = Array.from(e.clipboardData.items).filter((it) => it.type.startsWith("image/"));
+      if (items.length === 0) return;
+      const files = items
+        .map((it) => it.getAsFile())
+        .filter((f): f is File => !!f)
+        .map((f) => new File([f], `paste_${Date.now()}.${f.type.split("/")[1] || "png"}`, { type: f.type }));
+      if (files.length === 0) return;
+      e.preventDefault();
+      if (showForm) {
+        setPhotos((prev) => [...prev, ...files]);
+        setPhotoPreviewUrls((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+        toast.success(`${files.length} Bild(er) eingefügt`);
+      } else if (expandedId) {
+        addPhotosToExisting.mutate({ pursuitId: expandedId, files });
+      }
+    };
+    window.addEventListener("paste", handler);
+    return () => window.removeEventListener("paste", handler);
+  }, [showForm, expandedId]);
 
   const removePreviewPhoto = (idx: number) => {
     setPhotos((p) => p.filter((_, i) => i !== idx));
