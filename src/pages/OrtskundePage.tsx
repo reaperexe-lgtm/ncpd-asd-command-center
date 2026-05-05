@@ -421,7 +421,7 @@ export default function OrtskundePage() {
       {backgrounds.length > 0 && (
         <div className="flex gap-1 flex-wrap border-b border-border pb-1">
           {backgrounds.map((b) => (
-            <button key={b.id} onClick={() => { setActiveBgId(b.id); setZoom(1); setPan({ x: 0, y: 0 }); }}
+            <button key={b.id} onClick={() => { setActiveBgId(b.id); setImgAspect(null); setZoom(1); setPan({ x: 0, y: 0 }); }}
               className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${activeBgId === b.id ? "bg-primary/15 text-primary border-b-2 border-primary -mb-[2px]" : "text-muted-foreground hover:text-primary hover:bg-secondary/50"}`}>
               {b.name}
             </button>
