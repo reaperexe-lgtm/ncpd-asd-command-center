@@ -1,6 +1,8 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Shield, User as UserIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -49,9 +51,26 @@ export function AppSidebar() {
   const { isAdmin, signOut, role } = useAuth();
   const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
   const isFlightLicense = role === "flight_license";
-  const visibleNavItems = isFlightLicense
-    ? navItems.filter((i) => FLIGHT_LICENSE_VISIBLE.has(i.to))
-    : navItems;
+
+  const { data: navOrder } = useQuery({
+    queryKey: ["nav-order"],
+    queryFn: async () => {
+      const { data } = await supabase.from("nav_order").select("nav_key, sort_order").order("sort_order");
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
+
+  const baseItems = isFlightLicense ? navItems.filter(i => FLIGHT_LICENSE_VISIBLE.has(i.to)) : navItems;
+  const visibleNavItems = (() => {
+    if (!navOrder || navOrder.length === 0) return baseItems;
+    const orderMap = new Map(navOrder.map(o => [o.nav_key, o.sort_order]));
+    return [...baseItems].sort((a, b) => {
+      const ao = orderMap.has(a.to) ? orderMap.get(a.to)! : 9999;
+      const bo = orderMap.has(b.to) ? orderMap.get(b.to)! : 9999;
+      return ao - bo;
+    });
+  })();
 
   const [time, setTime] = useState(new Date());
   useEffect(() => {
