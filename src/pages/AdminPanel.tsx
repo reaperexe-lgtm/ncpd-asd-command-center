@@ -15,6 +15,7 @@ import PermissionMatrixSection from "@/components/PermissionMatrixSection";
 import AchievementsManager from "@/components/AchievementsManager";
 import NavOrderSection from "@/components/NavOrderSection";
 import HiddenMapPasswordSection from "@/components/HiddenMapPasswordSection";
+import SlideshowImagesSection from "@/components/SlideshowImagesSection";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
@@ -1347,6 +1348,7 @@ const AdminPanel = () => {
           <div className="space-y-6">
             <NavOrderSection />
             <HiddenMapPasswordSection currentRole={currentUserRole} />
+            <SlideshowImagesSection />
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Discord-Server Einladungslink
