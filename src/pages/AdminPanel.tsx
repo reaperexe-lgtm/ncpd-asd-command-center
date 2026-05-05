@@ -10,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect } from "react";
-import PermissionMatrixSection from "@/components/PermissionMatrixSection";
-import AchievementsManager from "@/components/AchievementsManager";
-import NavOrderSection from "@/components/NavOrderSection";
-import HiddenMapPasswordSection from "@/components/HiddenMapPasswordSection";
-import SlideshowImagesSection from "@/components/SlideshowImagesSection";
+import { useState, useEffect, lazy, Suspense } from "react";
+const PermissionMatrixSection = lazy(() => import("@/components/PermissionMatrixSection"));
+const AchievementsManager = lazy(() => import("@/components/AchievementsManager"));
+const NavOrderSection = lazy(() => import("@/components/NavOrderSection"));
+const HiddenMapPasswordSection = lazy(() => import("@/components/HiddenMapPasswordSection"));
+const SlideshowImagesSection = lazy(() => import("@/components/SlideshowImagesSection"));
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
@@ -121,38 +121,47 @@ const AdminPanel = () => {
   // Load discord invite link
   useEffect(() => {
     if (!isAdmin) return;
-    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
-      if (data?.role) setDiscordInviteLink(data.role);
-    });
-    supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_description").single().then(({ data }) => {
-      if (data?.role) setDiscordInviteDescription(data.role);
-    });
-    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["aufstellung_next_at", "aufstellung_ort", "aufstellung_auto_enabled"]).then(({ data }) => {
-      for (const r of data || []) {
-        if (r.permission_key === "aufstellung_next_at" && r.role) {
-          // datetime-local needs format YYYY-MM-DDTHH:mm
-          try {
-            const d = new Date(r.role);
-            if (!isNaN(d.getTime())) {
-              const pad = (n: number) => String(n).padStart(2, "0");
-              setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    if (activeTab !== "settings") return;
+    const KEYS = [
+      "discord_invite_link",
+      "discord_invite_description",
+      "aufstellung_next_at",
+      "aufstellung_ort",
+      "aufstellung_auto_enabled",
+      "stats_ping_director_id",
+      "stats_ping_codirector_id",
+      "sr_max_attempts",
+    ];
+    supabase
+      .from("permission_settings")
+      .select("permission_key, role")
+      .in("permission_key", KEYS)
+      .then(({ data }) => {
+        for (const r of data || []) {
+          const v = r.role;
+          if (!v && r.permission_key !== "aufstellung_auto_enabled") continue;
+          switch (r.permission_key) {
+            case "discord_invite_link": setDiscordInviteLink(v); break;
+            case "discord_invite_description": setDiscordInviteDescription(v); break;
+            case "aufstellung_next_at": {
+              try {
+                const d = new Date(v);
+                if (!isNaN(d.getTime())) {
+                  const pad = (n: number) => String(n).padStart(2, "0");
+                  setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+                }
+              } catch {}
+              break;
             }
-          } catch {}
+            case "aufstellung_ort": setAufstellungOrt(v); break;
+            case "aufstellung_auto_enabled": setAufstellungAuto(v === "true"); break;
+            case "stats_ping_director_id": setStatsPingDirector(v); break;
+            case "stats_ping_codirector_id": setStatsPingCoDirector(v); break;
+            case "sr_max_attempts": setSrMaxAttempts(v); break;
+          }
         }
-        if (r.permission_key === "aufstellung_ort" && r.role) setAufstellungOrt(r.role);
-        if (r.permission_key === "aufstellung_auto_enabled") setAufstellungAuto(r.role === "true");
-      }
-    });
-    supabase.from("permission_settings").select("permission_key, role").in("permission_key", ["stats_ping_director_id", "stats_ping_codirector_id"]).then(({ data }) => {
-      for (const r of data || []) {
-        if (r.permission_key === "stats_ping_director_id" && r.role) setStatsPingDirector(r.role);
-        if (r.permission_key === "stats_ping_codirector_id" && r.role) setStatsPingCoDirector(r.role);
-      }
-    });
-    supabase.from("permission_settings").select("role").eq("permission_key", "sr_max_attempts").maybeSingle().then(({ data }) => {
-      if (data?.role) setSrMaxAttempts(data.role);
-    });
-  }, [isAdmin]);
+      });
+  }, [isAdmin, activeTab]);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -190,7 +199,8 @@ const AdminPanel = () => {
       return map;
     },
     enabled: isAdmin,
-    refetchInterval: 60_000,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   const { data: logs, isLoading: logsLoading } = useQuery({
@@ -1005,7 +1015,9 @@ const AdminPanel = () => {
         </TabsContent>
 
         <TabsContent value="permissions">
-          <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
+          <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade...</div>}>
+            <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="licenses">
@@ -1172,7 +1184,9 @@ const AdminPanel = () => {
         </TabsContent>
 
         <TabsContent value="achievements">
-          <AchievementsManager />
+          <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade...</div>}>
+            <AchievementsManager />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="logs">
@@ -1346,9 +1360,11 @@ const AdminPanel = () => {
         {/* Settings Tab */}
         <TabsContent value="settings">
           <div className="space-y-6">
-            <NavOrderSection />
-            <HiddenMapPasswordSection currentRole={currentUserRole} />
-            <SlideshowImagesSection />
+            <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade Einstellungen...</div>}>
+              <NavOrderSection />
+              <HiddenMapPasswordSection currentRole={currentUserRole} />
+              <SlideshowImagesSection />
+            </Suspense>
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Discord-Server Einladungslink
