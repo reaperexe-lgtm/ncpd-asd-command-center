@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
 
@@ -49,6 +50,8 @@ const Blackjack = ({ balance, setBalance }: Props) => {
   const [bet, setBet] = useState(500);
   const [phase, setPhase] = useState<"bet" | "play" | "reveal">("bet");
   const [message, setMessage] = useState("");
+  const [showCustomBet, setShowCustomBet] = useState(false);
+  const [customBetInput, setCustomBetInput] = useState("");
 
   const deal = useCallback(async () => {
     if (balance < bet) { toast.error("Nicht genug Guthaben."); return; }
@@ -108,13 +111,51 @@ const Blackjack = ({ balance, setBalance }: Props) => {
             <label className="text-xs text-muted-foreground">Einsatz</label>
             <div className="flex gap-2 flex-wrap mt-1">
               {[100, 500, 1000, 5000, 10000].map((v) => (
-                <Button key={v} size="sm" variant={bet === v ? "default" : "outline"} onClick={() => setBet(v)}>
+                <Button key={v} size="sm" variant={bet === v && !showCustomBet ? "default" : "outline"} onClick={() => { setBet(v); setShowCustomBet(false); }}>
                   ${v.toLocaleString()}
                 </Button>
               ))}
+              <Button
+                size="sm"
+                variant={showCustomBet ? "default" : "outline"}
+                onClick={() => { setShowCustomBet(!showCustomBet); setCustomBetInput(String(bet)); }}
+              >
+                ✏️ Wunsch
+              </Button>
             </div>
+            {showCustomBet && (
+              <div className="flex items-center gap-2 mt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={balance}
+                  value={customBetInput}
+                  onChange={(e) => setCustomBetInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const val = Math.max(1, Math.min(balance, parseInt(customBetInput) || 0));
+                      setBet(val);
+                      setCustomBetInput(String(val));
+                    }
+                  }}
+                  className="w-32 text-center tabular-nums"
+                  placeholder="Betrag"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const val = Math.max(1, Math.min(balance, parseInt(customBetInput) || 0));
+                    setBet(val);
+                    setCustomBetInput(String(val));
+                  }}
+                >
+                  OK
+                </Button>
+              </div>
+            )}
           </div>
-          <Button className="w-full" onClick={deal}>Karten geben</Button>
+          <Button className="w-full" onClick={deal} disabled={bet < 1 || balance < bet}>Karten geben (${bet.toLocaleString()})</Button>
         </div>
       )}
 
