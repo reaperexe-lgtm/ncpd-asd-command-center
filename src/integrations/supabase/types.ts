@@ -1137,6 +1137,36 @@ export type Database = {
         }
         Relationships: []
       }
+      slideshow_images: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          name?: string | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
       sr_theory_exam_results: {
         Row: {
           answers: Json
