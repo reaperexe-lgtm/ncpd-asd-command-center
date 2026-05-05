@@ -54,6 +54,7 @@ export default function OrtskundePage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [activeBgId, setActiveBgId] = useState<string | null>(null);
+  const [showLiveMap, setShowLiveMap] = useState(false);
   const [imgAspect, setImgAspect] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
