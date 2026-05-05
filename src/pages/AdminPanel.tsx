@@ -1015,7 +1015,9 @@ const AdminPanel = () => {
         </TabsContent>
 
         <TabsContent value="permissions">
-          <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
+          <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade...</div>}>
+            <PermissionMatrixSection approved={approved} roleMutation={roleMutation} />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="licenses">
@@ -1182,7 +1184,9 @@ const AdminPanel = () => {
         </TabsContent>
 
         <TabsContent value="achievements">
-          <AchievementsManager />
+          <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade...</div>}>
+            <AchievementsManager />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="logs">
@@ -1356,9 +1360,11 @@ const AdminPanel = () => {
         {/* Settings Tab */}
         <TabsContent value="settings">
           <div className="space-y-6">
-            <NavOrderSection />
-            <HiddenMapPasswordSection currentRole={currentUserRole} />
-            <SlideshowImagesSection />
+            <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade Einstellungen...</div>}>
+              <NavOrderSection />
+              <HiddenMapPasswordSection currentRole={currentUserRole} />
+              <SlideshowImagesSection />
+            </Suspense>
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Discord-Server Einladungslink
