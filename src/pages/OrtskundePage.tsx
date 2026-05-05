@@ -511,8 +511,8 @@ export default function OrtskundePage() {
                     {a.name && (
                       <g style={{ pointerEvents: "none" }}>
                         <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                          fontSize={0.9} fontWeight={600} fill="#fff"
-                          style={{ userSelect: "none", paintOrder: "stroke", stroke: "rgba(0,0,0,0.85)", strokeWidth: 0.35, strokeLinejoin: "round" }}>
+                          fontSize={0.9 / zoom} fontWeight={600} fill="#fff"
+                          style={{ userSelect: "none", paintOrder: "stroke", stroke: "rgba(0,0,0,0.85)", strokeWidth: 0.35 / zoom, strokeLinejoin: "round" }}>
                           {a.name}
                         </text>
                       </g>
