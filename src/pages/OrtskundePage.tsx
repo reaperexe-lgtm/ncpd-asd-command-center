@@ -29,6 +29,7 @@ type MapDrawing = {
 
 const COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4", "#ffffff", "#000000"];
 const EMOJI_PRESETS = ["📍", "🚓", "💊", "🌳", "⭐", "🏠", "🏨", "🍽️", "⚔️", "🛒", "⛽", "🏥", "🏛️", "🅿️", "✈️", "🚁", "🔫", "💰", "💎", "🎰", "🏪", "🚧", "📦", "🎯"];
+const LIVE_MAP_URL = "tiled://gta-v";
 
 const CATEGORIES = [
   { key: "bezirke", label: "Bezirke", icon: "🟧" },
@@ -53,7 +54,6 @@ export default function OrtskundePage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [activeBgId, setActiveBgId] = useState<string | null>(null);
-  const [showLiveMap, setShowLiveMap] = useState(false);
   const [imgAspect, setImgAspect] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
