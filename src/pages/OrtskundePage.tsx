@@ -448,6 +448,7 @@ export default function OrtskundePage() {
       )}
 
       {showLiveMap ? (
+      <div className="relative">
         <GtaVMap
           locations={searched as any}
           areas={visibleAreas as any}
@@ -464,6 +465,19 @@ export default function OrtskundePage() {
           onAreaClick={(a) => setPopupArea(a as any)}
           onDrawClick={(d) => { if (canEdit) openEditDraw(d as any); }}
         />
+        {(mode === "area" || mode === "draw") && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-card border border-border rounded shadow-lg px-3 py-2 flex gap-2 z-[1000] items-center">
+            <span className="text-sm">{mode === "area" ? "Gebiet zeichnen" : "Linie zeichnen"} ({drawingPoints.length} Punkte)</span>
+            <Button size="sm" onClick={finishDrawing}>Fertig</Button>
+            <Button size="sm" variant="outline" onClick={cancelDrawing}>Abbrechen</Button>
+          </div>
+        )}
+        {mode === "marker" && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-primary/90 text-primary-foreground text-sm px-3 py-1.5 rounded shadow z-[1000]">
+            Klicke auf die Karte
+          </div>
+        )}
+      </div>
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
         <div
