@@ -459,11 +459,13 @@ export default function OrtskundePage() {
                       onClick={(e) => { e.stopPropagation(); if (canEdit && (e as any).shiftKey) openEditArea(a); else setPopupArea(a); }}
                     />
                     {a.name && (
-                      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                        fontSize={1.6} fontWeight={700} fill="#fff" stroke="#000" strokeWidth={0.35}
-                        paintOrder="stroke" style={{ pointerEvents: "none", userSelect: "none" }}>
-                        {a.name}
-                      </text>
+                      <g style={{ pointerEvents: "none" }}>
+                        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+                          fontSize={0.9} fontWeight={600} fill="#fff"
+                          style={{ userSelect: "none", paintOrder: "stroke", stroke: "rgba(0,0,0,0.85)", strokeWidth: 0.35, strokeLinejoin: "round" }}>
+                          {a.name}
+                        </text>
+                      </g>
                     )}
                   </g>
                 );
