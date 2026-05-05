@@ -511,8 +511,8 @@ export default function OrtskundePage() {
                     {a.name && (
                       <g style={{ pointerEvents: "none" }}>
                         <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                          fontSize={0.9 / zoom} fontWeight={600} fill="#fff"
-                          style={{ userSelect: "none", paintOrder: "stroke", stroke: "rgba(0,0,0,0.85)", strokeWidth: 0.35 / zoom, strokeLinejoin: "round" }}>
+                          fontSize={0.9 / Math.pow(zoom, 0.5)} fontWeight={600} fill="#fff"
+                          style={{ userSelect: "none", paintOrder: "stroke", stroke: "rgba(0,0,0,0.85)", strokeWidth: 0.35 / Math.pow(zoom, 0.5), strokeLinejoin: "round" }}>
                           {a.name}
                         </text>
                       </g>
@@ -557,7 +557,7 @@ export default function OrtskundePage() {
                 className={`absolute -translate-x-1/2 -translate-y-full ${mode ? "pointer-events-none" : ""}`}
                 style={{ left: `${loc.x_percent}%`, top: `${loc.y_percent}%` }}
               >
-                <div className="flex flex-col items-center" style={{ transform: `scale(${1 / zoom})`, transformOrigin: "bottom center" }}>
+                <div className="flex flex-col items-center" style={{ transform: `scale(${1 / Math.pow(zoom, 0.5)})`, transformOrigin: "bottom center" }}>
                   <div className="px-2 py-0.5 rounded bg-background/95 border text-[11px] font-medium whitespace-nowrap mb-0.5 shadow-sm"
                     style={{ borderColor: loc.color, color: loc.color }}>
                     {loc.name}{loc.is_hidden && " 🔒"}
