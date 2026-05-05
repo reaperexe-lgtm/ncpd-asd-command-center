@@ -55,7 +55,18 @@ export default function GtaVMap() {
 
     leafletRef.current = map;
 
+    // Container may not have final size on first render → recalc + recenter.
+    const recenter = () => {
+      map.invalidateSize();
+      map.fitBounds(bounds);
+    };
+    requestAnimationFrame(recenter);
+    setTimeout(recenter, 200);
+    const ro = new ResizeObserver(recenter);
+    ro.observe(mapRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       leafletRef.current = null;
     };
