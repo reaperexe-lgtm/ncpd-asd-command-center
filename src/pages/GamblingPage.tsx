@@ -14,6 +14,7 @@ import asdLogo from "@/assets/asd-logo.png";
 import swatLogo from "@/assets/swat-logo.png";
 import ncpdLogo from "@/assets/ncpd-logo.png";
 import Blackjack from "@/components/Blackjack";
+import Roulette from "@/components/Roulette";
 
 const DEFAULT_MULTIPLIERS = { ncpd: 5, asd: 4, swat: 3, hp: 2 };
 const PAIR_MULT_KEY = "casino_pair_mult";
@@ -772,6 +773,14 @@ const GamblingPage = () => {
 
         <div className="w-full">
           <Blackjack
+            balance={balance}
+            setBalance={async (val) => {
+              await persistCasinoState(val, lastDailyGiftRef.current);
+            }}
+          />
+        </div>
+        <div className="w-full">
+          <Roulette
             balance={balance}
             setBalance={async (val) => {
               await persistCasinoState(val, lastDailyGiftRef.current);
