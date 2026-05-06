@@ -11,6 +11,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, EyeOff, Search, Upload, Map as MapIcon, ChevronDown, ChevronRight, X, Pen, Square as SquareIcon, Layers, Eye } from "lucide-react";
 import GtaVMap from "@/components/GtaVMap";
+import { Slider } from "@/components/ui/slider";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 type MapBackground = { id: string; name: string; image_url: string; sort_order: number };
 type MapLocation = {
@@ -75,6 +77,9 @@ export default function OrtskundePage() {
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  // User-controlled label/icon size multiplier (persisted per device)
+  const [labelSize, setLabelSize] = usePersistedState<number>("ortskunde-label-size", 1);
+  const [showSizePanel, setShowSizePanel] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; px: number; py: number; moved: boolean } | null>(null);
 
   // Form
@@ -170,7 +175,7 @@ export default function OrtskundePage() {
   // at every zoom level. Clamped so they never get too tiny when zoomed
   // in nor too huge when zoomed out.
   const rawCompensation = 1 / Math.pow(zoom, 0.65);
-  const markerScale = Math.min(1.35, Math.max(0.5, rawCompensation));
+  const markerScale = Math.min(1.35, Math.max(0.5, rawCompensation)) * labelSize;
   // Kept for backwards compat with existing usages (SVG label fontSize, etc.)
   const labelScaleFactor = 1 / markerScale;
 
@@ -596,7 +601,36 @@ export default function OrtskundePage() {
             <button className="w-8 h-8 hover:bg-secondary rounded text-lg" onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(8, z + 0.5)); }}>+</button>
             <button className="w-8 h-8 hover:bg-secondary rounded text-lg" onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(0.5, z - 0.5)); }}>−</button>
             <button className="w-8 h-8 hover:bg-secondary rounded text-xs" onClick={(e) => { e.stopPropagation(); setZoom(1); setPan({ x: 0, y: 0 }); }}>⤾</button>
+            <button
+              className={`w-8 h-8 hover:bg-secondary rounded text-sm ${showSizePanel ? "bg-secondary" : ""}`}
+              title="Label-/Icon-Größe"
+              onClick={(e) => { e.stopPropagation(); setShowSizePanel(s => !s); }}
+            >Aa</button>
           </div>
+
+          {/* Label size panel */}
+          {showSizePanel && (
+            <div
+              className="absolute bottom-3 right-14 bg-card/95 border border-border rounded-md shadow-lg p-3 backdrop-blur z-10 w-56"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium">Label-/Icon-Größe</span>
+                <span className="text-xs text-muted-foreground tabular-nums">{Math.round(labelSize * 100)}%</span>
+              </div>
+              <Slider
+                min={0.5}
+                max={2}
+                step={0.05}
+                value={[labelSize]}
+                onValueChange={(v) => setLabelSize(v[0] ?? 1)}
+              />
+              <button
+                className="mt-2 w-full text-xs px-2 py-1 rounded border border-border hover:bg-secondary"
+                onClick={() => setLabelSize(1)}
+              >Zurücksetzen</button>
+            </div>
+          )}
 
           {/* Marker popup */}
           {popupLoc && (
