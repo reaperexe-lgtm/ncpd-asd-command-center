@@ -547,6 +547,10 @@ export default function OrtskundePage() {
                     <polyline points={pts} fill="none" stroke={d.color}
                       strokeWidth={d.stroke_width / 3} strokeLinecap="round" strokeLinejoin="round"
                       vectorEffect="non-scaling-stroke" />
+                    {/* Invisible thick hit area for easier clicking */}
+                    <polyline points={pts} fill="none" stroke="transparent"
+                      strokeWidth={Math.max(d.stroke_width, 18)} strokeLinecap="round" strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke" style={{ pointerEvents: "stroke" }} />
                   </g>
                 );
               })}
