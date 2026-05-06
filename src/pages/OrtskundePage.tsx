@@ -601,7 +601,36 @@ export default function OrtskundePage() {
             <button className="w-8 h-8 hover:bg-secondary rounded text-lg" onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(8, z + 0.5)); }}>+</button>
             <button className="w-8 h-8 hover:bg-secondary rounded text-lg" onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(0.5, z - 0.5)); }}>−</button>
             <button className="w-8 h-8 hover:bg-secondary rounded text-xs" onClick={(e) => { e.stopPropagation(); setZoom(1); setPan({ x: 0, y: 0 }); }}>⤾</button>
+            <button
+              className={`w-8 h-8 hover:bg-secondary rounded text-sm ${showSizePanel ? "bg-secondary" : ""}`}
+              title="Label-/Icon-Größe"
+              onClick={(e) => { e.stopPropagation(); setShowSizePanel(s => !s); }}
+            >Aa</button>
           </div>
+
+          {/* Label size panel */}
+          {showSizePanel && (
+            <div
+              className="absolute bottom-3 right-14 bg-card/95 border border-border rounded-md shadow-lg p-3 backdrop-blur z-10 w-56"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium">Label-/Icon-Größe</span>
+                <span className="text-xs text-muted-foreground tabular-nums">{Math.round(labelSize * 100)}%</span>
+              </div>
+              <Slider
+                min={0.5}
+                max={2}
+                step={0.05}
+                value={[labelSize]}
+                onValueChange={(v) => setLabelSize(v[0] ?? 1)}
+              />
+              <button
+                className="mt-2 w-full text-xs px-2 py-1 rounded border border-border hover:bg-secondary"
+                onClick={() => setLabelSize(1)}
+              >Zurücksetzen</button>
+            </div>
+          )}
 
           {/* Marker popup */}
           {popupLoc && (
