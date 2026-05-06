@@ -481,7 +481,7 @@ export default function OrtskundePage() {
               <img
                 src={activeBg.image_url}
                 alt={activeBg.name}
-                className="w-full h-full object-fill pointer-events-none"
+                className="w-full h-full object-contain pointer-events-none"
                 draggable={false}
                 onLoad={(e) => {
                   const img = e.currentTarget;
