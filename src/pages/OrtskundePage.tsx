@@ -11,6 +11,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, EyeOff, Search, Upload, Map as MapIcon, ChevronDown, ChevronRight, X, Pen, Square as SquareIcon, Layers, Eye } from "lucide-react";
 import GtaVMap from "@/components/GtaVMap";
+import { Slider } from "@/components/ui/slider";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 type MapBackground = { id: string; name: string; image_url: string; sort_order: number };
 type MapLocation = {
