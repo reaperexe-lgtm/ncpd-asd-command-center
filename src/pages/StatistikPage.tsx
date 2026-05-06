@@ -307,9 +307,6 @@ const StatistikPage = () => {
   weeklyMissions.forEach((m) => {
     if (m.protokollschreiber) weeklyCounts[m.protokollschreiber] = (weeklyCounts[m.protokollschreiber] || 0) + 1;
   });
-  weeklyPursuits.forEach((p) => {
-    weeklyCounts[p.created_by] = (weeklyCounts[p.created_by] || 0) + 1;
-  });
   const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
 
   // --- Monthly leaderboard ---
@@ -343,9 +340,6 @@ const StatistikPage = () => {
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
     if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
-  });
-  monthlyPursuits.forEach((p) => {
-    allTimeCounts[p.created_by] = (allTimeCounts[p.created_by] || 0) + 1;
   });
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
@@ -447,12 +441,10 @@ const StatistikPage = () => {
   // Top-Schreiber (Lizenz-Inhaber): Missionen + Verfolgungen
   const flWeeklyWriterCounts: Record<string, number> = {};
   flWeeklyMissions.forEach((m: any) => { if (m.protokollschreiber) flWeeklyWriterCounts[m.protokollschreiber] = (flWeeklyWriterCounts[m.protokollschreiber] || 0) + 1; });
-  flWeeklyPursuits.forEach((p: any) => { flWeeklyWriterCounts[p.created_by] = (flWeeklyWriterCounts[p.created_by] || 0) + 1; });
   const flWeeklyWriterRanking = Object.entries(flWeeklyWriterCounts).sort((a, b) => b[1] - a[1]);
 
   const flMonthlyWriterCounts: Record<string, number> = {};
   flMonthlyMissions.forEach((m: any) => { if (m.protokollschreiber) flMonthlyWriterCounts[m.protokollschreiber] = (flMonthlyWriterCounts[m.protokollschreiber] || 0) + 1; });
-  flMonthlyPursuits.forEach((p: any) => { flMonthlyWriterCounts[p.created_by] = (flMonthlyWriterCounts[p.created_by] || 0) + 1; });
   const flMonthlyWriterRanking = Object.entries(flMonthlyWriterCounts).sort((a, b) => b[1] - a[1]);
 
   // 10-80 Verfolgungen (nur Lizenz-Inhaber)
@@ -537,7 +529,7 @@ const StatistikPage = () => {
                     width: `${Math.max((count / max) * 100, 20)}%`,
                     backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
                   }}
-                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: scope === "weekly" ? "missions" : "all", scope })}
+                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: "missions", scope })}
                 >
                   <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                 </button>
