@@ -166,7 +166,13 @@ export default function OrtskundePage() {
   const searched = search
     ? visibleLocations.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
     : visibleLocations;
-  const labelScaleFactor = Math.pow(zoom, 0.5);
+  // Compensate marker/label size for current zoom so they remain readable
+  // at every zoom level. Clamped so they never get too tiny when zoomed
+  // in nor too huge when zoomed out.
+  const rawCompensation = 1 / Math.pow(zoom, 0.65);
+  const markerScale = Math.min(1.35, Math.max(0.5, rawCompensation));
+  // Kept for backwards compat with existing usages (SVG label fontSize, etc.)
+  const labelScaleFactor = 1 / markerScale;
 
   // ----- Mutations -----
   const saveLoc = useMutation({
