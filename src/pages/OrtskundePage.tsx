@@ -564,14 +564,14 @@ export default function OrtskundePage() {
                 className={`absolute -translate-x-1/2 -translate-y-full ${mode ? "pointer-events-none" : ""}`}
                 style={{ left: `${loc.x_percent}%`, top: `${loc.y_percent}%` }}
               >
-                <div className="flex flex-col items-center" style={{ transform: `scale(${1 / labelScaleFactor})`, transformOrigin: "bottom center" }}>
-                  <div className="px-1.5 py-0 rounded bg-background/95 border text-[8px] font-medium whitespace-nowrap mb-0.5 shadow-sm"
+                <div className="flex flex-col items-center" style={{ transform: `scale(${markerScale})`, transformOrigin: "bottom center" }}>
+                  <div className="px-1.5 py-0 rounded bg-background/95 border text-[10px] font-medium whitespace-nowrap mb-0.5 shadow-sm"
                     style={{ borderColor: loc.color, color: loc.color }}>
                     {loc.name}{loc.is_hidden && " 🔒"}
                   </div>
                   {loc.icon_type === "emoji" && loc.icon
-                    ? <span className="text-base drop-shadow-md leading-none">{loc.icon}</span>
-                    : <MapPin className="w-4 h-4 drop-shadow-md" style={{ color: loc.color, fill: loc.color }} />}
+                    ? <span className="text-lg drop-shadow-md leading-none">{loc.icon}</span>
+                    : <MapPin className="w-5 h-5 drop-shadow-md" style={{ color: loc.color, fill: loc.color }} />}
                 </div>
               </button>
             ))}
