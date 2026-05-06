@@ -529,7 +529,7 @@ const StatistikPage = () => {
                     width: `${Math.max((count / max) * 100, 20)}%`,
                     backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
                   }}
-                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: scope === "weekly" ? "missions" : "all", scope })}
+                  onClick={() => setSelectedWriter({ id, name: profileName(id), type: "missions", scope })}
                 >
                   <span className="text-xs font-bold text-white truncate drop-shadow-md">{profileName(id)}</span>
                 </button>
