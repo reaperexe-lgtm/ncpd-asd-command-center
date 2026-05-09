@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,7 +6,6 @@ import { X, Plane } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
 import MemberOfMonthCard from "@/components/MemberOfMonthCard";
 import OnlineUsersCard from "@/components/OnlineUsersCard";
-import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
@@ -25,10 +24,6 @@ const LOCATION_TYPE_LABELS: Record<string, string> = {
 const Index = () => {
   const [easterEgg, setEasterEgg] = useState(false);
   const [missionDialog, setMissionDialog] = useState<"all" | "today" | null>(null);
-
-  useEffect(() => {
-    checkWeeklyPerformance();
-  }, []);
 
   const { data: members } = useQuery({
     queryKey: ["home-members"],

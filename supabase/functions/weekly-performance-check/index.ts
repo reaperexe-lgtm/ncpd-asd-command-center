@@ -17,7 +17,9 @@ function getASDWeekStart(): Date {
   if (berlinNow < sunday) sunday.setDate(sunday.getDate() - 7);
   // convert berlin-time wallclock back to absolute by computing offset
   const offsetMs = berlinNow.getTime() - now.getTime();
-  return new Date(sunday.getTime() - offsetMs);
+  const weekStart = new Date(sunday.getTime() - offsetMs);
+  weekStart.setUTCSeconds(0, 0);
+  return weekStart;
 }
 
 Deno.serve(async (req) => {
@@ -45,13 +47,14 @@ Deno.serve(async (req) => {
     }
 
     const weekStart = getASDWeekStart();
+    const normalizedWeekStart = weekStart.toISOString();
 
     // Already paid?
     const { data: existing } = await supabase
       .from("weekly_performance_rewards")
       .select("id")
       .eq("user_id", user.id)
-      .eq("week_start", weekStart.toISOString())
+      .eq("week_start", normalizedWeekStart)
       .maybeSingle();
 
     if (existing) {
@@ -100,7 +103,7 @@ Deno.serve(async (req) => {
       .from("weekly_performance_rewards")
       .insert({
         user_id: user.id,
-        week_start: weekStart.toISOString(),
+        week_start: normalizedWeekStart,
         missions_count: missions,
         pursuits_count: pursuits,
         triggered_by: triggeredBy,
