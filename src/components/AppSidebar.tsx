@@ -49,7 +49,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const { isAdmin, signOut, role } = useAuth();
-  const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
   const isFlightLicense = role === "flight_license";
 
   const { data: navOrder } = useQuery({

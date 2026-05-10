@@ -14,8 +14,8 @@ import { toast } from "sonner";
 
 const LernenPage = () => {
   const { role } = useAuth();
-  const canManage = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
-  const canEditTheory = ["admin", "director", "co_director", "supervisor"].includes(role || "");
+  const canManage = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
+  const canEditTheory = ["admin", "director", "co_director", "supervisor", "team_red"].includes(role || "");
 
   return (
     <div className="space-y-4">

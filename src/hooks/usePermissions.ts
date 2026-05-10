@@ -26,19 +26,19 @@ export type PermissionKey =
   | "create_pursuits";
 
 export const DEFAULT_PERMISSIONS: { key: PermissionKey; label: string; description: string; defaultRoles: string[] }[] = [
-  { key: "admin_access", label: "Admin-Bereich", description: "Zugriff auf den Admin-Bereich", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "approve_users", label: "Benutzer freischalten", description: "Neue Registrierungen genehmigen/ablehnen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "change_roles", label: "Rollen ändern", description: "Benutzerrollen zuweisen und ändern", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "delete_users", label: "Benutzer löschen", description: "Benutzerkonten endgültig entfernen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "manage_licenses", label: "Fluglizenzen verwalten", description: "Fluglizenzen erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"] },
-  { key: "review_exams", label: "Prüfungen bewerten", description: "Theorie- und Praxisprüfungen bewerten", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"] },
-  { key: "delete_protocols", label: "Protokolle löschen", description: "Einsatz- und Verfolgungsprotokolle löschen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "edit_protocols", label: "Protokolle bearbeiten", description: "Gespeicherte Protokolle nachträglich anpassen (Protokollschreiber etc.)", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
+  { key: "admin_access", label: "Admin-Bereich", description: "Zugriff auf den Admin-Bereich", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "approve_users", label: "Benutzer freischalten", description: "Neue Registrierungen genehmigen/ablehnen", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "change_roles", label: "Rollen ändern", description: "Benutzerrollen zuweisen und ändern", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "delete_users", label: "Benutzer löschen", description: "Benutzerkonten endgültig entfernen", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "manage_licenses", label: "Fluglizenzen verwalten", description: "Fluglizenzen erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"] },
+  { key: "review_exams", label: "Prüfungen bewerten", description: "Theorie- und Praxisprüfungen bewerten", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"] },
+  { key: "delete_protocols", label: "Protokolle löschen", description: "Einsatz- und Verfolgungsprotokolle löschen", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "edit_protocols", label: "Protokolle bearbeiten", description: "Gespeicherte Protokolle nachträglich anpassen (Protokollschreiber etc.)", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
   { key: "reset_stats", label: "Statistik zurücksetzen", description: "Statistiken zurücksetzen (mit Antrag)", defaultRoles: ["admin", "director", "co_director", "ausbilder"] },
-  { key: "manage_gangs", label: "Familien/Gangs verwalten", description: "Familien und Gangs erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "edit_questions", label: "Fragen bearbeiten", description: "Theorie-Prüfungsfragen erstellen und bearbeiten", defaultRoles: ["admin", "director", "co_director", "supervisor"] },
-  { key: "create_missions", label: "Einsätze erstellen", description: "Neue Einsatzprotokolle anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] },
-  { key: "create_pursuits", label: "Verfolgungen erstellen", description: "Neue 10-80 Verfolgungen anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] },
+  { key: "manage_gangs", label: "Familien/Gangs verwalten", description: "Familien und Gangs erstellen, bearbeiten, löschen", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "edit_questions", label: "Fragen bearbeiten", description: "Theorie-Prüfungsfragen erstellen und bearbeiten", defaultRoles: ["admin", "director", "co_director", "supervisor", "team_red"] },
+  { key: "create_missions", label: "Einsätze erstellen", description: "Neue Einsatzprotokolle anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] },
+  { key: "create_pursuits", label: "Verfolgungen erstellen", description: "Neue 10-80 Verfolgungen anlegen", defaultRoles: ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] },
 ];
 
 // Rechte die NIEMAND einem Director / Admin entziehen kann
