@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type AppRole = "admin" | "director" | "co_director" | "supervisor" | "ausbilder" | "trial_ausbilder" | "member" | "trial_member" | "asd_applicant" | "flight_applicant" | "flight_license";
+type AppRole = "admin" | "director" | "co_director" | "supervisor" | "ausbilder" | "trial_ausbilder" | "member" | "trial_member" | "asd_applicant" | "flight_applicant" | "flight_license" | "team_red";
 
 interface AuthContextType {
   session: Session | null;
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const isAdmin = role === "director" || role === "co_director" || role === "admin" || role === "supervisor";
+  const isAdmin = role === "director" || role === "co_director" || role === "admin" || role === "supervisor" || role === "team_red";
 
   return (
     <AuthContext.Provider value={{ session, user, role, isApproved, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => {}), profile }}>
