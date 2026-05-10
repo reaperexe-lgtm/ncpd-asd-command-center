@@ -33,7 +33,7 @@ const ProtokollePage = () => {
   const { can } = usePermissions();
   const canDelete = can("delete_protocols");
   const canEdit = can("edit_protocols");
-  const canFullEdit = role === "director" || role === "admin" || role === "co_director";
+  const canFullEdit = role === "director" || role === "admin" || role === "co_director" || role === "team_red";
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
