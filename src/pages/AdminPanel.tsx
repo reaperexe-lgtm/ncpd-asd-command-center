@@ -20,14 +20,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] as const;
 const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+  admin: "Admin", team_red: "Team Red", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
   flight_license: "Fluglizenz",
 };
 
 // Hierarchie: niedrigerer Index = höherer Rang
 const ROLE_HIERARCHY: Record<string, number> = {
-  admin: 0, director: 1, co_director: 2, supervisor: 3,
+  admin: 0, team_red: 0, director: 1, co_director: 2, supervisor: 3,
   ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7, flight_license: 7,
 };
 
@@ -38,14 +38,16 @@ const ROLE_HIERARCHY: Record<string, number> = {
  */
 function getAssignableRoles(currentRole: string | null): readonly string[] {
   if (!currentRole) return [];
-  if (currentRole === "admin") return ROLES;
+  if (currentRole === "admin" || currentRole === "team_red") return ROLES;
+  if (currentRole === "director") return ROLES.filter((r) => r !== "admin");
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
   return ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
 }
 
 function canEditUser(currentRole: string | null, targetRole: string): boolean {
   if (!currentRole) return false;
-  if (currentRole === "admin") return true;
+  if (currentRole === "admin" || currentRole === "team_red") return true;
+  if (currentRole === "director") return targetRole !== "admin";
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
   const targetLevel = ROLE_HIERARCHY[targetRole] ?? 999;
   return targetLevel > myLevel;
