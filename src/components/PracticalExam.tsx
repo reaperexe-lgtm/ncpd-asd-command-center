@@ -112,7 +112,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
   const [ten33Deduction, setTen33Deduction] = useState(0);
   const [notes, setNotes] = useState("");
 
-  const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const canEdit = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
 
   // Bewerber & Fluglizenz-Accounts zur Auswahl
   const { data: applicants } = useQuery({
@@ -607,7 +607,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </div>
         )}
 
-        {["admin", "director", "co_director"].includes(role || "") && (
+        {["admin", "director", "co_director", "team_red"].includes(role || "") && (
           <div className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
@@ -627,7 +627,7 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
             </Button>
           </div>
         )}
-        {canEdit && !["admin", "director", "co_director"].includes(role || "") && (
+        {canEdit && !["admin", "director", "co_director", "team_red"].includes(role || "") && (
           <Button
             variant="secondary"
             size="sm"

@@ -44,8 +44,8 @@ const STATUS_META: Record<string, { label: string; color: string; icon: any }> =
 
 export default function UebungenPage() {
   const { user, profile, role } = useAuth();
-  const canCreate = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
-  const isAdmin = ["admin", "director", "co_director", "supervisor"].includes(role || "");
+  const canCreate = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
+  const isAdmin = ["admin", "director", "co_director", "supervisor", "team_red"].includes(role || "");
 
   const [uebungen, setUebungen] = useState<Uebung[]>([]);
   const [teilnahmen, setTeilnahmen] = useState<Teilnahme[]>([]);

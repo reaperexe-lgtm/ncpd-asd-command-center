@@ -18,16 +18,16 @@ const HiddenMapPasswordSection = lazy(() => import("@/components/HiddenMapPasswo
 const SlideshowImagesSection = lazy(() => import("@/components/SlideshowImagesSection"));
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license"] as const;
+const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] as const;
 const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
+  admin: "Admin", team_red: "Team Red", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
   flight_license: "Fluglizenz",
 };
 
 // Hierarchie: niedrigerer Index = höherer Rang
 const ROLE_HIERARCHY: Record<string, number> = {
-  admin: 0, director: 1, co_director: 2, supervisor: 3,
+  admin: 0, team_red: 0, director: 1, co_director: 2, supervisor: 3,
   ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7, flight_license: 7,
 };
 
@@ -38,14 +38,16 @@ const ROLE_HIERARCHY: Record<string, number> = {
  */
 function getAssignableRoles(currentRole: string | null): readonly string[] {
   if (!currentRole) return [];
-  if (currentRole === "admin") return ROLES;
+  if (currentRole === "admin" || currentRole === "team_red") return ROLES;
+  if (currentRole === "director") return ROLES.filter((r) => r !== "admin");
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
   return ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
 }
 
 function canEditUser(currentRole: string | null, targetRole: string): boolean {
   if (!currentRole) return false;
-  if (currentRole === "admin") return true;
+  if (currentRole === "admin" || currentRole === "team_red") return true;
+  if (currentRole === "director") return targetRole !== "admin";
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
   const targetLevel = ROLE_HIERARCHY[targetRole] ?? 999;
   return targetLevel > myLevel;
@@ -644,11 +646,11 @@ const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-9 w-full max-w-5xl">
-          <TabsTrigger value="users" className="gap-1.5 text-xs">
+        <TabsList className="flex md:grid md:grid-cols-9 w-full max-w-5xl overflow-x-auto md:overflow-visible no-scrollbar h-auto md:h-10 p-1 gap-1 md:gap-0 justify-start">
+          <TabsTrigger value="users" className="gap-1.5 text-xs shrink-0 md:shrink">
             <Shield className="w-3.5 h-3.5" /> Benutzer
           </TabsTrigger>
-          <TabsTrigger value="applicants" className="gap-1.5 text-xs relative">
+          <TabsTrigger value="applicants" className="gap-1.5 text-xs relative shrink-0 md:shrink">
             <UserPlus className="w-3.5 h-3.5" /> Bewerber
             {applicants.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
@@ -656,7 +658,7 @@ const AdminPanel = () => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="blocked" className="gap-1.5 text-xs relative">
+          <TabsTrigger value="blocked" className="gap-1.5 text-xs relative shrink-0 md:shrink">
             <Ban className="w-3.5 h-3.5" /> Gesperrt
             {blocked.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
@@ -664,19 +666,19 @@ const AdminPanel = () => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-1.5 text-xs">
+          <TabsTrigger value="permissions" className="gap-1.5 text-xs shrink-0 md:shrink">
             <Lock className="w-3.5 h-3.5" /> Rechte
           </TabsTrigger>
-          <TabsTrigger value="licenses" className="gap-1.5 text-xs">
+          <TabsTrigger value="licenses" className="gap-1.5 text-xs shrink-0 md:shrink">
             <Plane className="w-3.5 h-3.5" /> Lizenzen
           </TabsTrigger>
-          <TabsTrigger value="achievements" className="gap-1.5 text-xs">
+          <TabsTrigger value="achievements" className="gap-1.5 text-xs shrink-0 md:shrink">
             <Trophy className="w-3.5 h-3.5" /> Achievements
           </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-1.5 text-xs">
+          <TabsTrigger value="logs" className="gap-1.5 text-xs shrink-0 md:shrink">
             <ScrollText className="w-3.5 h-3.5" /> Aktivität
           </TabsTrigger>
-          <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
+          <TabsTrigger value="requests" className="gap-1.5 text-xs relative shrink-0 md:shrink">
             <Bell className="w-3.5 h-3.5" /> Anfragen
             {pendingRequestCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
@@ -684,7 +686,7 @@ const AdminPanel = () => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-1.5 text-xs">
+          <TabsTrigger value="settings" className="gap-1.5 text-xs shrink-0 md:shrink">
             <Settings className="w-3.5 h-3.5" /> Einstellungen
           </TabsTrigger>
         </TabsList>

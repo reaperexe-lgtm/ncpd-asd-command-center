@@ -37,7 +37,7 @@ const TopNav = () => {
   const [time, setTime] = useState(new Date());
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin, signOut, profile, role } = useAuth();
-  const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
   const isFlightLicense = role === "flight_license";
   const visibleNavItems = isFlightLicense
     ? navItems.filter((i) => FLIGHT_LICENSE_VISIBLE.has(i.to))

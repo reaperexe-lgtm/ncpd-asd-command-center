@@ -16,7 +16,7 @@ import SRMemberProgress from "@/components/SRMemberProgress";
 const AusbilderPage = () => {
   const { role } = useAuth();
   const [activeTab, setActiveTab] = useState("pruefungen");
-  const canAccess = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
+  const canAccess = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
 
   if (!canAccess) {
     return <div className="text-center py-12 text-muted-foreground">Keine Berechtigung.</div>;

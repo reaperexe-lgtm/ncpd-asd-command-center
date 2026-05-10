@@ -36,8 +36,8 @@ const MemberPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
 
-  const canManageLicenses = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"].includes(role || "");
-  const isAdmin = ["admin", "director", "co_director", "supervisor"].includes(role || "");
+  const canManageLicenses = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
+  const isAdmin = ["admin", "director", "co_director", "supervisor", "team_red"].includes(role || "");
   const [editingDates, setEditingDates] = useState(false);
   const [editBirthday, setEditBirthday] = useState("");
   const [editJoinDate, setEditJoinDate] = useState("");

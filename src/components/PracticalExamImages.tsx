@@ -23,7 +23,7 @@ type ExamImage = {
   created_at: string;
 };
 
-const CAN_EDIT_ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder"];
+const CAN_EDIT_ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"];
 
 const PracticalExamImages = ({ examType }: Props) => {
   const { role, user, profile } = useAuth();
