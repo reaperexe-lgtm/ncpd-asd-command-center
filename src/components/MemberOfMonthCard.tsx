@@ -116,7 +116,7 @@ const MemberOfMonthCard = () => {
 
         {jubileesThisMonth.length > 0 && (
           <div>
-            <p className="text-xs font-bold flex items-center gap-1 mb-1.5 text-purple-400"><PartyPopper className="w-4 h-4" /> Jubiläum diesen Monat</p>
+            <p className="text-xs font-bold flex items-center gap-1 mb-1.5 text-purple-400"><PartyPopper className="w-4 h-4" /> Jubiläen diesen Monat</p>
             <div className="flex flex-wrap gap-1.5">
               {jubileesThisMonth.map((p: any) => (
                 <span key={p.id} className="text-[11px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300">
@@ -128,7 +128,7 @@ const MemberOfMonthCard = () => {
         )}
 
         {birthdaysThisMonth.length === 0 && jubileesThisMonth.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">Keine Geburtstage / Jubiläum diesen Monat.</p>
+          <p className="text-[11px] text-muted-foreground">Keine Geburtstage / Jubiläen diesen Monat.</p>
         )}
       </CardContent>
     </Card>
