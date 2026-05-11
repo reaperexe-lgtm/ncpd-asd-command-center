@@ -364,23 +364,26 @@ const Auth = () => {
                     type="button"
                     size="sm"
                     onClick={() =>
-                      window.open(`https://discord.com/users/${c.discordId}`, "_blank", "noopener")
+                      {
+                        // Discord-Desktop-App per Custom-URI öffnen — umgeht Netzwerk-Sperren von discord.com
+                        window.location.href = `discord://-/users/${c.discordId}`;
+                      }
                     }
                     className="h-8 gap-1.5 shrink-0"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Profil öffnen
+                    In Discord öffnen
                   </Button>
                 </div>
               </div>
             ))}
 
             <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
-              Tipp: „Profil öffnen" leitet dich zum Discord-Profil. Falls Discord
-              fragt, klicke auf <span className="text-foreground">„Freund hinzufügen"</span>{" "}
-              oder schicke direkt eine Nachricht. Alternativ kannst du die ID
-              kopieren und in Discord unter <span className="text-foreground">
-              Freunde → Freund hinzufügen</span> einfügen.
+              Tipp: „In Discord öffnen" startet direkt deine Discord-Desktop-App
+              (umgeht Netzwerk-Sperren von discord.com). Falls das nicht
+              funktioniert, kopiere einfach die ID und füge sie in Discord unter{" "}
+              <span className="text-foreground">Freunde → Freund hinzufügen</span>{" "}
+              ein.
             </p>
           </div>
 
