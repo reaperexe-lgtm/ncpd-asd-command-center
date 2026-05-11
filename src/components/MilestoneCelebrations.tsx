@@ -93,7 +93,7 @@ const MilestoneCelebrations = () => {
         }
 
         if (Object.keys(updates).length > 0) {
-          const { error } = await supabase
+          const { error } = await (supabase as any)
             .from("casino_balances")
             .update(updates)
             .eq("user_id", user.id);
