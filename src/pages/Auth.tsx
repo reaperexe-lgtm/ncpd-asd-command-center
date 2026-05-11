@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 import { Shield, User, Lock, Hash, Plane, GraduationCap } from "lucide-react";
 import TheoryExam from "@/components/TheoryExam";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const toEmail = (dienstnummer: string) => `${dienstnummer.toLowerCase()}@asd.local`;
 
@@ -25,6 +26,7 @@ const Auth = () => {
   const [vorname, setVorname] = useState("");
   const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
+  const [duplicateDn, setDuplicateDn] = useState<string | null>(null);
 
   if (user && !authLoading) {
     if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
@@ -55,7 +57,7 @@ const Auth = () => {
           .ilike("dienstnummer", dn)
           .maybeSingle();
         if (existing) {
-          toast.error(`Die Dienstnummer ${dn} ist bereits vergeben.`);
+          setDuplicateDn(dn);
           setLoading(false);
           return;
         }
@@ -73,12 +75,17 @@ const Auth = () => {
           },
         });
         if (error) {
+          const msg = (error.message || "").toLowerCase();
           if (
-            error.message?.toLowerCase().includes("already") ||
-            error.message?.toLowerCase().includes("dienstnummer") ||
-            error.message?.toLowerCase().includes("unique")
+            msg.includes("already") ||
+            msg.includes("dienstnummer") ||
+            msg.includes("unique") ||
+            msg.includes("duplicate") ||
+            msg.includes("registered")
           ) {
-            throw new Error(`Die Dienstnummer ${dn} ist bereits vergeben.`);
+            setDuplicateDn(dn);
+            setLoading(false);
+            return;
           }
           throw error;
         }
@@ -231,6 +238,52 @@ const Auth = () => {
         <Changelog />
       </div>
       </div>
+
+      {/* Hilfe-Dialog bei doppelter Dienstnummer */}
+      <AlertDialog open={!!duplicateDn} onOpenChange={(open) => !open && setDuplicateDn(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-primary flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Dienstnummer bereits vergeben
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 text-left">
+              <span className="block">
+                Die Dienstnummer <span className="font-semibold text-foreground">{duplicateDn}</span> ist
+                bereits registriert. Eine neue Anmeldung mit derselben Nummer ist nicht möglich.
+              </span>
+              <span className="block font-medium text-foreground">Was du jetzt tun kannst:</span>
+              <span className="block">
+                <span className="font-medium">1. Du hast diesen Account schon selbst erstellt?</span><br />
+                Melde dich einfach mit deiner Dienstnummer und deinem Passwort an. Du musst dich nicht erneut registrieren.
+              </span>
+              <span className="block">
+                <span className="font-medium">2. Passwort vergessen?</span><br />
+                Wende dich bitte an einen Director, Co-Director oder Admin im Discord. Diese können dein Passwort über das Admin-Panel zurücksetzen.
+              </span>
+              <span className="block">
+                <span className="font-medium">3. Du bist sicher, dass das nicht dein Account ist?</span><br />
+                Kontaktiere bitte einen Director im Discord — möglicherweise ist deine Dienstnummer falsch oder ein alter Account muss bereinigt werden.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDuplicateDn(null);
+                setIsLogin(true);
+                setIsASDSignup(false);
+                setIsFlightSignup(false);
+              }}
+            >
+              Zur Anmeldung
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => setDuplicateDn(null)}>
+              Andere Dienstnummer eingeben
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

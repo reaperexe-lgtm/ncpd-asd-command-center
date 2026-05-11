@@ -119,6 +119,7 @@ const AdminPanel = () => {
   const [savingStatsPings, setSavingStatsPings] = useState(false);
   const [srMaxAttempts, setSrMaxAttempts] = useState("3");
   const [savingSrAttempts, setSavingSrAttempts] = useState(false);
+  const [applicantFilter, setApplicantFilter] = useState<"all" | "asd_applicant" | "flight_applicant">("all");
 
   // Load discord invite link
   useEffect(() => {
@@ -934,13 +935,51 @@ const AdminPanel = () => {
             <p className="text-xs text-muted-foreground">
               ASD- und Flugbewerber werden hier separat verwaltet und erscheinen nicht in der regulären Benutzerliste.
             </p>
-            {applicants.length === 0 ? (
+            {/* Filter / Sortierung */}
+            {applicants.length > 0 && (() => {
+              const asdCount = applicants.filter((u) => u.role === "asd_applicant").length;
+              const flightCount = applicants.filter((u) => u.role === "flight_applicant").length;
+              const btn = (
+                key: "all" | "asd_applicant" | "flight_applicant",
+                label: string,
+                count: number,
+                Icon: any,
+              ) => (
+                <button
+                  onClick={() => setApplicantFilter(key)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    applicantFilter === key
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-background/40 text-[10px]">
+                    {count}
+                  </span>
+                </button>
+              );
+              return (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                  {btn("all", "Alle", applicants.length, UserPlus)}
+                  {btn("asd_applicant", "ASD-Bewerber", asdCount, Shield)}
+                  {btn("flight_applicant", "Flug-Bewerber", flightCount, Plane)}
+                </div>
+              );
+            })()}
+            {(() => {
+              const filtered = applicants.filter((u) =>
+                applicantFilter === "all" ? true : u.role === applicantFilter,
+              );
+              return filtered.length === 0 ? (
               <div className="text-center py-12 text-sm text-muted-foreground bg-card border border-border rounded-lg">
-                Keine Bewerber vorhanden
+                Keine {applicantFilter === "asd_applicant" ? "ASD-" : applicantFilter === "flight_applicant" ? "Flug-" : ""}Bewerber vorhanden
               </div>
             ) : (
               <div className="space-y-3">
-                {applicants.map((u) => (
+                {filtered.map((u) => (
                   <div key={u.id} className="bg-card border border-primary/20 rounded-lg px-4 py-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
@@ -976,7 +1015,8 @@ const AdminPanel = () => {
                   </div>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </div>
         </TabsContent>
 
