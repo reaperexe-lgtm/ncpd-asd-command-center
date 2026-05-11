@@ -47,20 +47,41 @@ const Auth = () => {
         toast.success("Erfolgreich angemeldet!");
       } else {
         const fullName = `${vorname} ${nachname}`.trim();
+        const dn = dienstnummer.trim();
+        // Pre-check: ist die Dienstnummer schon vergeben?
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("dienstnummer", dn)
+          .maybeSingle();
+        if (existing) {
+          toast.error(`Die Dienstnummer ${dn} ist bereits vergeben.`);
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               name: fullName,
-              dienstnummer,
+              dienstnummer: dn,
               ...(isASDSignup ? { is_asd_applicant: true } : {}),
               ...(isFlightSignup ? { is_flight_applicant: true } : {}),
             },
             emailRedirectTo: window.location.origin,
           },
         });
-        if (error) throw error;
+        if (error) {
+          if (
+            error.message?.toLowerCase().includes("already") ||
+            error.message?.toLowerCase().includes("dienstnummer") ||
+            error.message?.toLowerCase().includes("unique")
+          ) {
+            throw new Error(`Die Dienstnummer ${dn} ist bereits vergeben.`);
+          }
+          throw error;
+        }
         toast.success(
           isASDSignup || isFlightSignup
             ? "Registrierung erfolgreich! Du kannst dich jetzt anmelden."
