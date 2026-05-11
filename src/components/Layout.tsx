@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import QuickActionFAB from "./QuickActionFAB";
 import MiniGamesEasterEgg from "./MiniGamesEasterEgg";
+import MilestoneCelebrations from "./MilestoneCelebrations";
 
 const Layout = ({ children }: { children: ReactNode }) => {
   return (
@@ -24,6 +25,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
         </div>
         <QuickActionFAB />
         <MiniGamesEasterEgg />
+        <MilestoneCelebrations />
       </div>
     </SidebarProvider>
   );

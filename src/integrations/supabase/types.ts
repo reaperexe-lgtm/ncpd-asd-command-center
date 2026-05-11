@@ -206,6 +206,8 @@ export type Database = {
         Row: {
           balance: number
           id: string
+          last_anniversary_gift_year: number | null
+          last_birthday_gift_year: number | null
           last_daily_gift: string | null
           updated_at: string
           user_id: string
@@ -213,6 +215,8 @@ export type Database = {
         Insert: {
           balance?: number
           id?: string
+          last_anniversary_gift_year?: number | null
+          last_birthday_gift_year?: number | null
           last_daily_gift?: string | null
           updated_at?: string
           user_id: string
@@ -220,6 +224,8 @@ export type Database = {
         Update: {
           balance?: number
           id?: string
+          last_anniversary_gift_year?: number | null
+          last_birthday_gift_year?: number | null
           last_daily_gift?: string | null
           updated_at?: string
           user_id?: string
