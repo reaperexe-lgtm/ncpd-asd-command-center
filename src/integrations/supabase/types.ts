@@ -771,7 +771,7 @@ export type Database = {
         Row: {
           co_pilot: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           custom_location: string | null
           description: string | null
           gang_id: string | null
@@ -789,7 +789,7 @@ export type Database = {
         Insert: {
           co_pilot?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           custom_location?: string | null
           description?: string | null
           gang_id?: string | null
@@ -807,7 +807,7 @@ export type Database = {
         Update: {
           co_pilot?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           custom_location?: string | null
           description?: string | null
           gang_id?: string | null
