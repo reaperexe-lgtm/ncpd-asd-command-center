@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
-import { Shield, User, Lock, Hash, Plane, GraduationCap } from "lucide-react";
+import { Shield, User, Lock, Hash, Plane, GraduationCap, LifeBuoy, Copy, ExternalLink } from "lucide-react";
 import TheoryExam from "@/components/TheoryExam";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -27,6 +27,31 @@ const Auth = () => {
   const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
   const [duplicateDn, setDuplicateDn] = useState<string | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
+
+  const SUPPORT_CONTACTS = [
+    {
+      name: "Dilara Black",
+      role: "Support",
+      discordId: "1043083208041967666",
+      tag: "dilara_black",
+    },
+    {
+      name: "Pablo Morales",
+      role: "ASD Direction",
+      discordId: "672776342034579457",
+      tag: "pablo_morales",
+    },
+  ];
+
+  const copyDiscordId = async (id: string, name: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      toast.success(`Discord-ID von ${name} kopiert`);
+    } catch {
+      toast.error("Kopieren fehlgeschlagen");
+    }
+  };
 
   if (user && !authLoading) {
     if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
@@ -215,6 +240,13 @@ const Auth = () => {
             <Plane className="w-4 h-4" />
             Fluglizenz-Bewerber Registrierung
           </button>
+          <button
+            onClick={() => setSupportOpen(true)}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors border border-border hover:border-primary/40 rounded-lg px-4 py-2 bg-card/30 backdrop-blur-sm mt-1"
+          >
+            <LifeBuoy className="w-4 h-4" />
+            Probleme bei der Anmeldung? Support kontaktieren
+          </button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
@@ -280,6 +312,81 @@ const Auth = () => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => setDuplicateDn(null)}>
               Andere Dienstnummer eingeben
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Support-Dialog */}
+      <AlertDialog open={supportOpen} onOpenChange={setSupportOpen}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-primary flex items-center gap-2">
+              <LifeBuoy className="w-4 h-4" />
+              Support kontaktieren
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left">
+              Du hast Probleme bei der Anmeldung oder Registrierung? Schreib uns
+              direkt auf Discord — wir fügen dich hinzu und helfen dir weiter.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            {SUPPORT_CONTACTS.map((c) => (
+              <div
+                key={c.discordId}
+                className="rounded-lg border border-border bg-background/40 p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">{c.role}</p>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider text-primary/80 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                    Discord
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-background border border-border rounded px-2 py-1.5 text-muted-foreground truncate">
+                    {c.discordId}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyDiscordId(c.discordId, c.name)}
+                    className="h-8 gap-1.5 shrink-0"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Kopieren
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() =>
+                      window.open(`https://discord.com/users/${c.discordId}`, "_blank", "noopener")
+                    }
+                    className="h-8 gap-1.5 shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Profil öffnen
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+              Tipp: „Profil öffnen" leitet dich zum Discord-Profil. Falls Discord
+              fragt, klicke auf <span className="text-foreground">„Freund hinzufügen"</span>{" "}
+              oder schicke direkt eine Nachricht. Alternativ kannst du die ID
+              kopieren und in Discord unter <span className="text-foreground">
+              Freunde → Freund hinzufügen</span> einfügen.
+            </p>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setSupportOpen(false)}>
+              Schließen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
