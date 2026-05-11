@@ -155,7 +155,7 @@ const MilestoneCelebrations = () => {
         )}
         <span className="text-xs font-semibold tracking-wide">
           {state.isAnniversary
-            ? `${state.anniversaryYears} Jahr${state.anniversaryYears === 1 ? "" : "e"} im ASD — wir feiern dich heute! 🎉`
+            ? `${state.anniversaryYears} Jahr${state.anniversaryYears === 1 ? "" : "e"} in der ASD — wir feiern dich heute! 🎉`
             : "Heute hast du Geburtstag — viel Spaß beim Feiern! 🎂"}
         </span>
       </div>

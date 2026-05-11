@@ -242,7 +242,7 @@ const ProfilePage = () => {
         <div className="space-y-2">
           <Label className="text-xs flex items-center gap-1.5"><PartyPopper className="w-3.5 h-3.5 text-purple-400" /> ASD-Beitrittsdatum</Label>
           <Input type="date" value={asdJoinDate} onChange={(e) => setAsdJoinDate(e.target.value)} className="bg-background border-border" />
-          <p className="text-[10px] text-muted-foreground">Wird für Jubiläums-Reminder genutzt (z.B. „1 Jahr im ASD")</p>
+          <p className="text-[10px] text-muted-foreground">Wird für Jubiläums-Reminder genutzt (z.B. „1 Jahr in der ASD")</p>
         </div>
         <Button onClick={handleSave} disabled={saving} variant="outline" className="w-full gap-2">
           <Save className="w-4 h-4" /> Speichern

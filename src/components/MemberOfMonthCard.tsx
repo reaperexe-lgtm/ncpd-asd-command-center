@@ -120,7 +120,7 @@ const MemberOfMonthCard = () => {
             <div className="flex flex-wrap gap-1.5">
               {jubileesThisMonth.map((p: any) => (
                 <span key={p.id} className="text-[11px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300">
-                  🎉 {p.name} – {p.years} Jahr{p.years === 1 ? "" : "e"} im ASD
+                  🎉 {p.name} – {p.years} Jahr{p.years === 1 ? "" : "e"} in der ASD
                 </span>
               ))}
             </div>
