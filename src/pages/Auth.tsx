@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
-import { Shield, User, Lock, Hash, Plane, GraduationCap } from "lucide-react";
+import { Shield, User, Lock, Hash, Plane, GraduationCap, LifeBuoy, Copy, ExternalLink } from "lucide-react";
 import TheoryExam from "@/components/TheoryExam";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -27,6 +27,31 @@ const Auth = () => {
   const [nachname, setNachname] = useState("");
   const [loading, setLoading] = useState(false);
   const [duplicateDn, setDuplicateDn] = useState<string | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
+
+  const SUPPORT_CONTACTS = [
+    {
+      name: "Dilara Black",
+      role: "Support",
+      discordId: "1043083208041967666",
+      tag: "dilara_black",
+    },
+    {
+      name: "Pablo Morales",
+      role: "ASD Direction",
+      discordId: "672776342034579457",
+      tag: "pablo_morales",
+    },
+  ];
+
+  const copyDiscordId = async (id: string, name: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      toast.success(`Discord-ID von ${name} kopiert`);
+    } catch {
+      toast.error("Kopieren fehlgeschlagen");
+    }
+  };
 
   if (user && !authLoading) {
     if (role === "asd_applicant") return <Navigate to="/asd-dashboard" replace />;
@@ -214,6 +239,13 @@ const Auth = () => {
           >
             <Plane className="w-4 h-4" />
             Fluglizenz-Bewerber Registrierung
+          </button>
+          <button
+            onClick={() => setSupportOpen(true)}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors border border-border hover:border-primary/40 rounded-lg px-4 py-2 bg-card/30 backdrop-blur-sm mt-1"
+          >
+            <LifeBuoy className="w-4 h-4" />
+            Probleme bei der Anmeldung? Support kontaktieren
           </button>
         </div>
 
