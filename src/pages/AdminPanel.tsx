@@ -487,6 +487,42 @@ const AdminPanel = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const nameMutation = useMutation({
+    mutationFn: async ({ userId, name }: { userId: string; name: string }) => {
+      const value = name.trim();
+      if (!value) throw new Error("Name darf nicht leer sein");
+      const { error } = await supabase.from("profiles").update({ name: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Name gespeichert");
+      logActivity("Name geändert", "admin", { target_user_id: vars.userId, name: vars.name });
+      setEditingName((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const dnMutation = useMutation({
+    mutationFn: async ({ userId, dn }: { userId: string; dn: string }) => {
+      const value = dn.trim() || null;
+      const { error } = await supabase.from("profiles").update({ dienstnummer: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Dienstnummer gespeichert");
+      logActivity("Dienstnummer geändert", "admin", { target_user_id: vars.userId, dienstnummer: vars.dn });
+      setEditingDn((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => {
+      const msg = e?.message?.includes("unique") ? "Diese Dienstnummer ist bereits vergeben" : e.message;
+      toast.error(msg);
+    },
+  });
+
   const handleResetRequest = useMutation({
     mutationFn: async ({ requestId, approve, request }: { requestId: string; approve: boolean; request: any }) => {
       const { error } = await supabase
