@@ -783,9 +783,29 @@ const AdminPanel = () => {
                 {approved.map((u) => (
                   <div key={u.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{u.name || "–"}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
+                      <div className="flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingName[u.id] ?? u.name ?? ""}
+                            onChange={(e) => setEditingName({ ...editingName, [u.id]: e.target.value })}
+                            placeholder="Name"
+                            className="h-7 text-xs bg-background border-border flex-1"
+                          />
+                          {editingName[u.id] !== undefined && editingName[u.id] !== (u.name ?? "") && (
+                            <Button size="sm" className="h-7 text-xs px-2" onClick={() => nameMutation.mutate({ userId: u.id, name: editingName[u.id] })}>✓</Button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingDn[u.id] ?? u.dienstnummer ?? ""}
+                            onChange={(e) => setEditingDn({ ...editingDn, [u.id]: e.target.value })}
+                            placeholder="Dienstnummer (PD)"
+                            className="h-7 text-xs bg-background border-border flex-1 font-mono"
+                          />
+                          {editingDn[u.id] !== undefined && editingDn[u.id] !== (u.dienstnummer ?? "") && (
+                            <Button size="sm" className="h-7 text-xs px-2" onClick={() => dnMutation.mutate({ userId: u.id, dn: editingDn[u.id] })}>✓</Button>
+                          )}
+                        </div>
                       </div>
                       {renderActivityBadge(u)}
                     </div>
