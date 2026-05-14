@@ -878,7 +878,19 @@ const AdminPanel = () => {
                   <tbody>
                     {approved.map((u) => (
                       <tr key={u.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
-                        <td className="px-4 py-3 font-medium">{u.name || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingName[u.id] ?? u.name ?? ""}
+                              onChange={(e) => setEditingName({ ...editingName, [u.id]: e.target.value })}
+                              placeholder="Name"
+                              className="h-7 text-xs bg-background border-border w-40"
+                            />
+                            {editingName[u.id] !== undefined && editingName[u.id] !== (u.name ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => nameMutation.mutate({ userId: u.id, name: editingName[u.id] })}>✓</Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
                             <Input
@@ -894,7 +906,19 @@ const AdminPanel = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.dienstnummer || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingDn[u.id] ?? u.dienstnummer ?? ""}
+                              onChange={(e) => setEditingDn({ ...editingDn, [u.id]: e.target.value })}
+                              placeholder="PD-DN"
+                              className="h-7 text-xs bg-background border-border w-28 font-mono"
+                            />
+                            {editingDn[u.id] !== undefined && editingDn[u.id] !== (u.dienstnummer ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => dnMutation.mutate({ userId: u.id, dn: editingDn[u.id] })}>✓</Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
                             <Input
