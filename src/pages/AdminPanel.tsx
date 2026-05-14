@@ -105,6 +105,8 @@ const AdminPanel = () => {
   const [logFilter, setLogFilter] = useState("all");
   const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
   const [editingInternalDn, setEditingInternalDn] = useState<Record<string, string>>({});
+  const [editingName, setEditingName] = useState<Record<string, string>>({});
+  const [editingDn, setEditingDn] = useState<Record<string, string>>({});
   const [discordInviteLink, setDiscordInviteLink] = useState("");
   const [savingLink, setSavingLink] = useState(false);
   const [discordInviteDescription, setDiscordInviteDescription] = useState("");
@@ -485,6 +487,42 @@ const AdminPanel = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const nameMutation = useMutation({
+    mutationFn: async ({ userId, name }: { userId: string; name: string }) => {
+      const value = name.trim();
+      if (!value) throw new Error("Name darf nicht leer sein");
+      const { error } = await supabase.from("profiles").update({ name: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Name gespeichert");
+      logActivity("Name geändert", "admin", { target_user_id: vars.userId, name: vars.name });
+      setEditingName((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const dnMutation = useMutation({
+    mutationFn: async ({ userId, dn }: { userId: string; dn: string }) => {
+      const value = dn.trim() || null;
+      const { error } = await supabase.from("profiles").update({ dienstnummer: value } as any).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Dienstnummer gespeichert");
+      logActivity("Dienstnummer geändert", "admin", { target_user_id: vars.userId, dienstnummer: vars.dn });
+      setEditingDn((prev) => { const next = { ...prev }; delete next[vars.userId]; return next; });
+    },
+    onError: (e: any) => {
+      const msg = e?.message?.includes("unique") ? "Diese Dienstnummer ist bereits vergeben" : e.message;
+      toast.error(msg);
+    },
+  });
+
   const handleResetRequest = useMutation({
     mutationFn: async ({ requestId, approve, request }: { requestId: string; approve: boolean; request: any }) => {
       const { error } = await supabase
@@ -745,9 +783,29 @@ const AdminPanel = () => {
                 {approved.map((u) => (
                   <div key={u.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{u.name || "–"}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{u.dienstnummer || "–"}</p>
+                      <div className="flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingName[u.id] ?? u.name ?? ""}
+                            onChange={(e) => setEditingName({ ...editingName, [u.id]: e.target.value })}
+                            placeholder="Name"
+                            className="h-7 text-xs bg-background border-border flex-1"
+                          />
+                          {editingName[u.id] !== undefined && editingName[u.id] !== (u.name ?? "") && (
+                            <Button size="sm" className="h-7 text-xs px-2" onClick={() => nameMutation.mutate({ userId: u.id, name: editingName[u.id] })}>✓</Button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingDn[u.id] ?? u.dienstnummer ?? ""}
+                            onChange={(e) => setEditingDn({ ...editingDn, [u.id]: e.target.value })}
+                            placeholder="Dienstnummer (PD)"
+                            className="h-7 text-xs bg-background border-border flex-1 font-mono"
+                          />
+                          {editingDn[u.id] !== undefined && editingDn[u.id] !== (u.dienstnummer ?? "") && (
+                            <Button size="sm" className="h-7 text-xs px-2" onClick={() => dnMutation.mutate({ userId: u.id, dn: editingDn[u.id] })}>✓</Button>
+                          )}
+                        </div>
                       </div>
                       {renderActivityBadge(u)}
                     </div>
@@ -820,7 +878,19 @@ const AdminPanel = () => {
                   <tbody>
                     {approved.map((u) => (
                       <tr key={u.id} className="border-b border-border/30 hover:bg-primary/[0.02] transition-colors">
-                        <td className="px-4 py-3 font-medium">{u.name || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingName[u.id] ?? u.name ?? ""}
+                              onChange={(e) => setEditingName({ ...editingName, [u.id]: e.target.value })}
+                              placeholder="Name"
+                              className="h-7 text-xs bg-background border-border w-40"
+                            />
+                            {editingName[u.id] !== undefined && editingName[u.id] !== (u.name ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => nameMutation.mutate({ userId: u.id, name: editingName[u.id] })}>✓</Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
                             <Input
@@ -836,7 +906,19 @@ const AdminPanel = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.dienstnummer || "–"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editingDn[u.id] ?? u.dienstnummer ?? ""}
+                              onChange={(e) => setEditingDn({ ...editingDn, [u.id]: e.target.value })}
+                              placeholder="PD-DN"
+                              className="h-7 text-xs bg-background border-border w-28 font-mono"
+                            />
+                            {editingDn[u.id] !== undefined && editingDn[u.id] !== (u.dienstnummer ?? "") && (
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => dnMutation.mutate({ userId: u.id, dn: editingDn[u.id] })}>✓</Button>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
                             <Input
