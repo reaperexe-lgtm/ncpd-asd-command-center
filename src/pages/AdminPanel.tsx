@@ -105,6 +105,8 @@ const AdminPanel = () => {
   const [logFilter, setLogFilter] = useState("all");
   const [editingDiscord, setEditingDiscord] = useState<Record<string, string>>({});
   const [editingInternalDn, setEditingInternalDn] = useState<Record<string, string>>({});
+  const [editingName, setEditingName] = useState<Record<string, string>>({});
+  const [editingDn, setEditingDn] = useState<Record<string, string>>({});
   const [discordInviteLink, setDiscordInviteLink] = useState("");
   const [savingLink, setSavingLink] = useState(false);
   const [discordInviteDescription, setDiscordInviteDescription] = useState("");
