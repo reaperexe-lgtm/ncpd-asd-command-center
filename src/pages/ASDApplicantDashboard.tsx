@@ -203,24 +203,27 @@ const ASDApplicantDashboard = () => {
     },
   });
 
-  const completedCount = progress?.filter((p) => p.completed).length ?? 0;
-  const totalCount = modules?.length ?? 0;
+  // "Fluglizenz" Kategorie wird auf der Bewerber-Seite ausgeblendet
+  const visibleModules = modules?.filter((m) => m.category?.toLowerCase() !== "fluglizenz");
+  const visibleModuleIds = new Set(visibleModules?.map((m) => m.id));
+  const completedCount = progress?.filter((p) => p.completed && visibleModuleIds.has(p.module_id)).length ?? 0;
+  const totalCount = visibleModules?.length ?? 0;
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const getProgressForModule = (moduleId: string) => {
     return progress?.find((p) => p.module_id === moduleId);
   };
 
-  const groupedModules = modules?.reduce((acc, mod) => {
+  const groupedModules = visibleModules?.reduce((acc, mod) => {
     if (!acc[mod.category]) acc[mod.category] = [];
     acc[mod.category].push(mod);
     return acc;
-  }, {} as Record<string, typeof modules>);
+  }, {} as Record<string, typeof visibleModules>);
 
   // Lock screen: both practical exams failed → 2-week application ban
   if (bothFailed) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 normal-cursor">
         <div className="max-w-lg w-full border border-red-500/30 bg-card rounded-2xl p-8 text-center space-y-6 shadow-2xl">
           <div className="mx-auto w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
             <Lock className="w-10 h-10 text-red-500" />
@@ -249,7 +252,7 @@ const ASDApplicantDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background normal-cursor">
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
