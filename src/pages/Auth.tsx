@@ -133,7 +133,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden normal-cursor">
       <SlideshowBackground />
 
       <div className="w-full max-w-5xl flex flex-col lg:flex-row items-start justify-center gap-8 relative">
