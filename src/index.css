@@ -62,6 +62,19 @@
   }
 }
 
+/* Normal cursor override (e.g. ASD applicant dashboard) */
+.normal-cursor,
+.normal-cursor * {
+  cursor: auto !important;
+}
+.normal-cursor a,
+.normal-cursor button,
+.normal-cursor [role="button"],
+.normal-cursor input[type="submit"],
+.normal-cursor select {
+  cursor: pointer !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
