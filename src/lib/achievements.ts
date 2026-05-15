@@ -118,11 +118,26 @@ export async function awardAchievements(userId: string, userName: string, dienst
   }
 
   if (toAward.length) {
-    await supabase.from("user_achievements").insert(toAward);
+    // Use upsert with ignoreDuplicates so concurrent calls don't both
+    // succeed in sending notifications. Only rows actually inserted are
+    // returned in `inserted` – duplicates are skipped silently.
+    const { data: inserted } = await supabase
+      .from("user_achievements")
+      .upsert(toAward, {
+        onConflict: "user_id,achievement_code",
+        ignoreDuplicates: true,
+      })
+      .select("achievement_code");
+
+    const insertedCodes = new Set((inserted || []).map((r: any) => r.achievement_code));
+    if (insertedCodes.size === 0) {
+      return { newlyAwarded: 0, metrics };
+    }
+    const actuallyAwarded = toAward.filter((a) => insertedCodes.has(a.achievement_code));
 
     // Casino-Belohnung (nur für nicht-Einsatz/Verfolgungs-Achievements)
     let totalCasinoReward = 0;
-    for (const award of toAward) {
+    for (const award of actuallyAwarded) {
       const def = defs.find((d: any) => d.code === award.achievement_code);
       if (!def) continue;
       if (MISSION_PURSUIT_METRICS.has(def.metric)) continue;
@@ -145,7 +160,7 @@ export async function awardAchievements(userId: string, userName: string, dienst
     }
 
     // Fire Discord notification for each newly awarded achievement (DM to user + ping ASD-Leitung in channel)
-    for (const award of toAward) {
+    for (const award of actuallyAwarded) {
       const def = defs.find((d: any) => d.code === award.achievement_code);
       if (!def) continue;
       const tier = (def.tier || "").toLowerCase();
@@ -170,6 +185,7 @@ export async function awardAchievements(userId: string, userName: string, dienst
         console.error("Failed to send achievement Discord notification:", e);
       }
     }
+    return { newlyAwarded: actuallyAwarded.length, metrics };
   }
   return { newlyAwarded: toAward.length, metrics };
 }
