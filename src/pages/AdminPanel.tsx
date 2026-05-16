@@ -993,9 +993,32 @@ const AdminPanel = () => {
                         </td>
                         <td className="px-4 py-3">
                           {canEditUser(currentUserRole, u.role) ? (
-                            <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
-                              <Ban className="w-3 h-3" /> Sperren
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                              <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                                <Ban className="w-3 h-3" /> Sperren
+                              </Button>
+                              {canResetPasswords && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" title="Passwort auf asd123 zurücksetzen">
+                                      <KeyRound className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Passwort zurücksetzen?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">asd123</code> zurückgesetzt.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => resetPasswordMutation.mutate(u.id)}>Zurücksetzen</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-[10px] text-muted-foreground italic">Geschützt</span>
                           )}
