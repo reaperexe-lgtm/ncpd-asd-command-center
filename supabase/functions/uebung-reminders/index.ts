@@ -38,6 +38,33 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Test mode: send a test DM to a specific user
+    let body: any = {};
+    try { body = await req.json(); } catch { /* no body */ }
+    if (body?.test_user_id) {
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("id, name, discord_id")
+        .eq("id", body.test_user_id)
+        .maybeSingle();
+      if (!p?.discord_id) {
+        return new Response(JSON.stringify({ success: false, error: "No discord_id for user", profile: p }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const msg = `⏰ **Test: Übungs-Erinnerung**\nHi ${p.name}, das ist ein Test der 24h-Erinnerungs-DM. ✅`;
+      try {
+        await sendDM(botToken, p.discord_id, msg);
+        return new Response(JSON.stringify({ success: true, test: true, sent_to: p.name, discord_id: p.discord_id }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ success: false, test: true, error: e.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const now = new Date();
     const in23h = new Date(now.getTime() + 23 * 3600 * 1000).toISOString();
     const in25h = new Date(now.getTime() + 25 * 3600 * 1000).toISOString();
