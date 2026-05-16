@@ -49,6 +49,7 @@ export default function UebungenPage() {
 
   const [uebungen, setUebungen] = useState<Uebung[]>([]);
   const [teilnahmen, setTeilnahmen] = useState<Teilnahme[]>([]);
+  const [allMembers, setAllMembers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showPast, setShowPast] = useState(false);
@@ -65,10 +66,12 @@ export default function UebungenPage() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [{ data: ueb }, { data: tn }] = await Promise.all([
+    const [{ data: ueb }, { data: tn }, { data: members }] = await Promise.all([
       supabase.from("uebungen").select("*").order("start_at", { ascending: true }),
       supabase.from("uebung_teilnahmen").select("*"),
+      supabase.from("profiles").select("id, name").eq("is_approved", true).order("name"),
     ]);
+    if (members) setAllMembers(members as any);
     if (ueb) {
       const creatorIds = [...new Set(ueb.map((u: any) => u.created_by))];
       const { data: profs } = await supabase.from("profiles").select("id, name").in("id", creatorIds);
