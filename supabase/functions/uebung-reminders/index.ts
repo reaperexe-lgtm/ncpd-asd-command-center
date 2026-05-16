@@ -52,7 +52,14 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const msg = `⏰ **Test: Übungs-Erinnerung**\nHi ${p.name}, das ist ein Test der 24h-Erinnerungs-DM. ✅`;
+      const url = `https://asd-ncpd.lovable.app/uebungen`;
+      const msg =
+        `⏰ **Erinnerung: Übung in 24h** _(Test)_\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `🎯 **Beispiel-Übung**\n` +
+        `📅 Test-Termin\n` +
+        `\nDu hast bisher noch nicht auf diese Übung reagiert.\n` +
+        `Bitte hole das schnellstmöglich nach und trage deine Zu- oder Absage im Dashboard ein:\n${url}`;
       try {
         await sendDM(botToken, p.discord_id, msg);
         return new Response(JSON.stringify({ success: true, test: true, sent_to: p.name, discord_id: p.discord_id }), {
