@@ -240,6 +240,26 @@ Deno.serve(async (req) => {
         : lines.join("\n");
 
       try {
+        // Optionally delete prior bot announcement(s) for this Übung
+        if (data.delete_previous && data.id) {
+          try {
+            const recentRes = await fetch(
+              `${DISCORD_API}/channels/${channelId}/messages?limit=50`,
+              { headers: { Authorization: `Bot ${botToken}` } },
+            );
+            if (recentRes.ok) {
+              const msgs = await recentRes.json();
+              for (const m of msgs) {
+                if (m.author?.bot && typeof m.content === "string" && m.content.includes(data.id)) {
+                  await fetch(`${DISCORD_API}/channels/${channelId}/messages/${m.id}`, {
+                    method: "DELETE",
+                    headers: { Authorization: `Bot ${botToken}` },
+                  });
+                }
+              }
+            }
+          } catch (_e) { /* ignore */ }
+        }
         await sendChannelMessage(botToken, channelId, content, mentionRoleId);
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
