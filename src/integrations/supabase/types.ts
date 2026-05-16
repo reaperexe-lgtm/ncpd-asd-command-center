@@ -1457,6 +1457,7 @@ export type Database = {
           kategorie: string
           max_teilnehmer: number | null
           ort: string | null
+          reminder_sent_at: string | null
           start_at: string
           status: string
           titel: string
@@ -1470,6 +1471,7 @@ export type Database = {
           kategorie?: string
           max_teilnehmer?: number | null
           ort?: string | null
+          reminder_sent_at?: string | null
           start_at: string
           status?: string
           titel: string
@@ -1483,6 +1485,7 @@ export type Database = {
           kategorie?: string
           max_teilnehmer?: number | null
           ort?: string | null
+          reminder_sent_at?: string | null
           start_at?: string
           status?: string
           titel?: string
