@@ -205,11 +205,8 @@ Deno.serve(async (req) => {
     }
 
     if (type === "uebung_announcement") {
-      const channelId = sanitizeDiscordId(
-        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
-        Deno.env.get("DISCORD_CHANNEL_ID")
-      );
-      if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
+      // Fixed channel for Übungen announcements
+      const channelId = "1374418517968945243";
 
       const startDate = new Date(data.start_at);
       const dateStr = startDate.toLocaleString("de-DE", {
