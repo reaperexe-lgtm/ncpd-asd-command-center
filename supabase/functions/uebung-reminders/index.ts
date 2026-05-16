@@ -128,8 +128,8 @@ Deno.serve(async (req) => {
         `🎯 **${u.titel}**\n` +
         `📅 ${dateStr} Uhr\n` +
         (u.ort ? `📍 ${u.ort}\n` : "") +
-        `\nDu hast noch nicht geantwortet.\n` +
-        `Bitte trage Zu- oder Absage im Dashboard ein:\n${url}`;
+        `\nDu hast bisher noch nicht auf diese Übung reagiert.\n` +
+        `Bitte hole das schnellstmöglich nach und trage deine Zu- oder Absage im Dashboard ein:\n${url}`;
 
       let sent = 0;
       let failed = 0;
