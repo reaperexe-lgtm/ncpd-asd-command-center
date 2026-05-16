@@ -232,8 +232,7 @@ Deno.serve(async (req) => {
         ? `https://asd-ncpd.lovable.app/uebungen#${data.id}`
         : `https://asd-ncpd.lovable.app/uebungen`;
       lines.push(`\n🔗 **Übung im ASD Dashboard:** ${uebungUrl}`);
-      lines.push(`\n✅ Zusage   ❓ Vielleicht   ❌ Absage`);
-      lines.push(`_Bitte unten auf diese Nachricht reagieren!_`);
+      lines.push(`\n_Zu- und Absagen bitte direkt im Dashboard eintragen._`);
 
       const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
       const content = mentionRoleId
@@ -241,19 +240,7 @@ Deno.serve(async (req) => {
         : lines.join("\n");
 
       try {
-        const msg = await sendChannelMessage(botToken, channelId, content, mentionRoleId);
-        // Add reaction options so members can react quickly
-        const reactions = ["✅", "❓", "❌"];
-        for (const emoji of reactions) {
-          try {
-            await fetch(
-              `${DISCORD_API}/channels/${sanitizeDiscordId(channelId)}/messages/${msg.id}/reactions/${encodeURIComponent(emoji)}/@me`,
-              { method: "PUT", headers: { Authorization: `Bot ${botToken}` } },
-            );
-          } catch (_e) {
-            // ignore reaction errors
-          }
-        }
+        await sendChannelMessage(botToken, channelId, content, mentionRoleId);
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
