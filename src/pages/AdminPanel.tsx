@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy, KeyRound } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, lazy, Suspense } from "react";
 const PermissionMatrixSection = lazy(() => import("@/components/PermissionMatrixSection"));
@@ -409,6 +409,25 @@ const AdminPanel = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (_, userId) => {
+      toast.success("Passwort wurde auf 'asd123' zurückgesetzt");
+      const targetName = users?.find((u) => u.id === userId)?.name || "Unbekannt";
+      logActivity("Passwort zurückgesetzt", "admin", { target_user_id: userId, target_name: targetName });
+    },
+    onError: (e: any) => toast.error(e.message || "Fehler beim Zurücksetzen"),
+  });
+
+  const canResetPasswords = currentUserRole === "admin" || currentUserRole === "director" || currentUserRole === "co_director";
 
   const licenseValidityMutation = useMutation({
     mutationFn: async ({ userId, validUntil, issuedAt }: { userId: string; validUntil: string | null; issuedAt?: string | null }) => {
@@ -847,6 +866,27 @@ const AdminPanel = () => {
                           <Ban className="w-3 h-3" /> Sperren
                         </Button>
                       )}
+                      {canResetPasswords && canEditUser(currentUserRole, u.role) && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
+                              <KeyRound className="w-3 h-3" /> Passwort
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Passwort zurücksetzen?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">asd123</code> zurückgesetzt.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => resetPasswordMutation.mutate(u.id)}>Zurücksetzen</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                     <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                       <Checkbox
@@ -953,9 +993,32 @@ const AdminPanel = () => {
                         </td>
                         <td className="px-4 py-3">
                           {canEditUser(currentUserRole, u.role) ? (
-                            <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
-                              <Ban className="w-3 h-3" /> Sperren
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                              <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
+                                <Ban className="w-3 h-3" /> Sperren
+                              </Button>
+                              {canResetPasswords && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" title="Passwort auf asd123 zurücksetzen">
+                                      <KeyRound className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Passwort zurücksetzen?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">asd123</code> zurückgesetzt.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => resetPasswordMutation.mutate(u.id)}>Zurücksetzen</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-[10px] text-muted-foreground italic">Geschützt</span>
                           )}
