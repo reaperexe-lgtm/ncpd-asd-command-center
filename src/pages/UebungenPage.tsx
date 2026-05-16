@@ -66,12 +66,14 @@ export default function UebungenPage() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [{ data: ueb }, { data: tn }, { data: members }] = await Promise.all([
+    const [{ data: ueb }, { data: tn }, { data: members }, { data: rolesData }] = await Promise.all([
       supabase.from("uebungen").select("*").order("start_at", { ascending: true }),
       supabase.from("uebung_teilnahmen").select("*"),
       supabase.from("profiles").select("id, name").eq("is_approved", true).order("name"),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "team_red"]),
     ]);
-    if (members) setAllMembers(members as any);
+    const hiddenIds = new Set((rolesData || []).map((r: any) => r.user_id));
+    if (members) setAllMembers((members as any[]).filter((m) => !hiddenIds.has(m.id)));
     if (ueb) {
       const creatorIds = [...new Set(ueb.map((u: any) => u.created_by))];
       const { data: profs } = await supabase.from("profiles").select("id, name").in("id", creatorIds);
@@ -79,10 +81,11 @@ export default function UebungenPage() {
       setUebungen(ueb.map((u: any) => ({ ...u, creator_name: nameMap[u.created_by] || "Unbekannt" })));
     }
     if (tn) {
-      const userIds = [...new Set(tn.map((t: any) => t.user_id))];
+      const filteredTn = (tn as any[]).filter((t) => !hiddenIds.has(t.user_id));
+      const userIds = [...new Set(filteredTn.map((t: any) => t.user_id))];
       const { data: profs } = await supabase.from("profiles").select("id, name").in("id", userIds);
       const nameMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
-      setTeilnahmen(tn.map((t: any) => ({ ...t, user_name: nameMap[t.user_id] || "Unbekannt" })));
+      setTeilnahmen(filteredTn.map((t: any) => ({ ...t, user_name: nameMap[t.user_id] || "Unbekannt" })));
     }
     setLoading(false);
   };
