@@ -160,9 +160,27 @@ export async function awardAchievements(userId: string, userName: string, dienst
     }
 
     // Fire Discord notification for each newly awarded achievement (DM to user + ping ASD-Leitung in channel)
+    // Hierarchie: Wenn ein "<metric>_week"-Achievement gleichzeitig mit dem
+    // entsprechenden "<metric>_total"-Achievement (gleicher Threshold) freigeschaltet
+    // wird, unterdrücken wir die Discord-Benachrichtigung für das _total-Achievement,
+    // da das wöchentliche Achievement die Gesamt-Bedingung bereits impliziert.
+    // Beide Badges bleiben weiterhin im Profil gespeichert.
+    const weekKeysAwarded = new Set<string>(); // z.B. "pursuits|10"
     for (const award of actuallyAwarded) {
       const def = defs.find((d: any) => d.code === award.achievement_code);
       if (!def) continue;
+      const m = String(def.metric).match(/^(.+)_week$/);
+      if (m) weekKeysAwarded.add(`${m[1]}|${def.threshold}`);
+    }
+
+    for (const award of actuallyAwarded) {
+      const def = defs.find((d: any) => d.code === award.achievement_code);
+      if (!def) continue;
+      // Skip notification if a matching weekly variant was awarded in same batch
+      const tm = String(def.metric).match(/^(.+)_total$/);
+      if (tm && weekKeysAwarded.has(`${tm[1]}|${def.threshold}`)) {
+        continue;
+      }
       const tier = (def.tier || "").toLowerCase();
       const casinoReward = MISSION_PURSUIT_METRICS.has(def.metric) ? 0 : (TIER_REWARDS[tier] || 0);
       try {
