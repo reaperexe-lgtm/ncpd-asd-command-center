@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy, KeyRound } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, lazy, Suspense } from "react";
 const PermissionMatrixSection = lazy(() => import("@/components/PermissionMatrixSection"));
@@ -409,6 +409,25 @@ const AdminPanel = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (_, userId) => {
+      toast.success("Passwort wurde auf 'asd123' zurückgesetzt");
+      const targetName = users?.find((u) => u.id === userId)?.name || "Unbekannt";
+      logActivity("Passwort zurückgesetzt", "admin", { target_user_id: userId, target_name: targetName });
+    },
+    onError: (e: any) => toast.error(e.message || "Fehler beim Zurücksetzen"),
+  });
+
+  const canResetPasswords = currentUserRole === "admin" || currentUserRole === "director" || currentUserRole === "co_director";
 
   const licenseValidityMutation = useMutation({
     mutationFn: async ({ userId, validUntil, issuedAt }: { userId: string; validUntil: string | null; issuedAt?: string | null }) => {
