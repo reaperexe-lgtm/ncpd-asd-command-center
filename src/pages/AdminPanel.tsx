@@ -866,6 +866,27 @@ const AdminPanel = () => {
                           <Ban className="w-3 h-3" /> Sperren
                         </Button>
                       )}
+                      {canResetPasswords && canEditUser(currentUserRole, u.role) && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
+                              <KeyRound className="w-3 h-3" /> Passwort
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Passwort zurücksetzen?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">asd123</code> zurückgesetzt.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => resetPasswordMutation.mutate(u.id)}>Zurücksetzen</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                     <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                       <Checkbox
