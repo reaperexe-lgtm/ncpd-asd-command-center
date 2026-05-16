@@ -81,10 +81,11 @@ export default function UebungenPage() {
       setUebungen(ueb.map((u: any) => ({ ...u, creator_name: nameMap[u.created_by] || "Unbekannt" })));
     }
     if (tn) {
-      const userIds = [...new Set(tn.map((t: any) => t.user_id))];
+      const filteredTn = (tn as any[]).filter((t) => !hiddenIds.has(t.user_id));
+      const userIds = [...new Set(filteredTn.map((t: any) => t.user_id))];
       const { data: profs } = await supabase.from("profiles").select("id, name").in("id", userIds);
       const nameMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
-      setTeilnahmen(tn.map((t: any) => ({ ...t, user_name: nameMap[t.user_id] || "Unbekannt" })));
+      setTeilnahmen(filteredTn.map((t: any) => ({ ...t, user_name: nameMap[t.user_id] || "Unbekannt" })));
     }
     setLoading(false);
   };
