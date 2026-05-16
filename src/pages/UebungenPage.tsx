@@ -331,19 +331,31 @@ export default function UebungenPage() {
                     </span>
                   </div>
 
-                  {(zusagen.length > 0 || vielleicht.length > 0 || absagen.length > 0) && (
-                    <div className="space-y-1.5 text-xs border-t border-border pt-2">
-                      {zusagen.length > 0 && (
-                        <div><span className="text-primary font-semibold">✓ Zusagen:</span> {zusagen.map(t => t.user_name).join(", ")}</div>
-                      )}
-                      {vielleicht.length > 0 && (
-                        <div><span className="text-muted-foreground font-semibold">? Vielleicht:</span> {vielleicht.map(t => t.user_name).join(", ")}</div>
-                      )}
-                      {absagen.length > 0 && (
-                        <div><span className="text-destructive font-semibold">✗ Absagen:</span> {absagen.map(t => t.user_name).join(", ")}</div>
-                      )}
-                    </div>
-                  )}
+                  {(() => {
+                    const respondedIds = new Set(tns.map(t => t.user_id));
+                    const keineAntwort = allMembers.filter(m => !respondedIds.has(m.id));
+                    return (
+                      <div className="space-y-2 text-xs border-t border-border pt-2">
+                        <div className="font-semibold text-sm text-foreground mb-1">Status aller Mitglieder ({allMembers.length})</div>
+                        <div>
+                          <span className="text-primary font-semibold">✓ Zusagen ({zusagen.length}):</span>{" "}
+                          {zusagen.length > 0 ? zusagen.map(t => t.user_name).join(", ") : <span className="text-muted-foreground">—</span>}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground font-semibold">? Vielleicht ({vielleicht.length}):</span>{" "}
+                          {vielleicht.length > 0 ? vielleicht.map(t => t.user_name).join(", ") : <span className="text-muted-foreground">—</span>}
+                        </div>
+                        <div>
+                          <span className="text-destructive font-semibold">✗ Absagen ({absagen.length}):</span>{" "}
+                          {absagen.length > 0 ? absagen.map(t => t.user_name).join(", ") : <span className="text-muted-foreground">—</span>}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground font-semibold">… Keine Antwort ({keineAntwort.length}):</span>{" "}
+                          {keineAntwort.length > 0 ? keineAntwort.map(m => m.name).join(", ") : <span className="text-muted-foreground">—</span>}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {!isPast && (
                     <div className="flex gap-2 pt-2">
