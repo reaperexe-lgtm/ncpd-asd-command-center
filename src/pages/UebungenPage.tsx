@@ -130,7 +130,7 @@ export default function UebungenPage() {
         const { data: notifyResult, error: notifyError } = await supabase.functions.invoke("discord-notify", {
           body: {
             type: "uebung_announcement",
-            data: { ...payload, created_by_name: profile?.name },
+            data: { ...payload, id: data?.id, created_by_name: profile?.name },
           },
         });
 
