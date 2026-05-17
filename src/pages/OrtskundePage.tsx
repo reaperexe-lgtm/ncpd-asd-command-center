@@ -482,7 +482,12 @@ export default function OrtskundePage({ readOnly = false }: { readOnly?: boolean
           ref={containerRef}
           className={`map-canvas relative w-full bg-card border border-border rounded-lg overflow-hidden select-none ${mode ? "placing" : ""} ${dragRef.current ? "dragging" : ""}`}
           style={imgAspect
-            ? { aspectRatio: String(imgAspect), maxHeight: "82vh", margin: "0 auto" }
+            ? {
+                aspectRatio: String(imgAspect),
+                width: "100%",
+                maxWidth: `calc(82vh * ${imgAspect})`,
+                margin: "0 auto",
+              }
             : { height: "78vh" }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
           onWheel={onWheel} onClick={handleMapClick}
