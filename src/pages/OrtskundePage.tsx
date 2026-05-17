@@ -47,10 +47,10 @@ const CATEGORIES = [
   { key: "immobilien", label: "Immobilien", icon: "🏠" },
 ];
 
-export default function OrtskundePage() {
+export default function OrtskundePage({ readOnly = false }: { readOnly?: boolean } = {}) {
   const { user, role } = useAuth();
-  const canEdit = !!role; // any approved user
-  const canDelete = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
+  const canEdit = !readOnly && !!role; // any approved user
+  const canDelete = !readOnly && ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
   const canManageMaps = canDelete;
   const qc = useQueryClient();
   const containerRef = useRef<HTMLDivElement>(null);
