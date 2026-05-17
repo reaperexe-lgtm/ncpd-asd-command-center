@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
 import TheoryExam from "@/components/TheoryExam";
+import OrtskundePage from "@/pages/OrtskundePage";
 import { ASD1_LOCATIONS, ASD2_LOCATIONS } from "@/components/PracticalExam";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
@@ -327,7 +328,7 @@ const ASDApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-6 bg-secondary/50 border border-border">
+          <TabsList className="w-full grid grid-cols-7 bg-secondary/50 border border-border">
             <TabsTrigger value="vorab" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <Plane className="w-4 h-4" />
               Vorabprüfung
@@ -359,6 +360,11 @@ const ASDApplicantDashboard = () => {
             <TabsTrigger value="theorie" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <BookOpen className="w-4 h-4" />
               Theorieausbildung
+              {examInProgress && <Lock className="w-3 h-3" />}
+            </TabsTrigger>
+            <TabsTrigger value="ortskunde" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
+              <MapPin className="w-4 h-4" />
+              Ortskunde
               {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
           </TabsList>
@@ -692,6 +698,10 @@ const ASDApplicantDashboard = () => {
 
           <TabsContent value="theorie" className="mt-6">
             <TheorieausbildungContent />
+          </TabsContent>
+
+          <TabsContent value="ortskunde" className="mt-6">
+            <OrtskundePage readOnly />
           </TabsContent>
         </Tabs>
       </div>
