@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export type Metric =
   | "missions_total"
+  | "missions_week"
   | "pursuits_total"
   | "pursuits_week"
   | "protocols_total"
@@ -20,6 +21,7 @@ export type Metric =
 
 export interface MetricSnapshot {
   missions_total: number;
+  missions_week: number;
   pursuits_total: number;
   pursuits_week: number;
   protocols_total: number;
@@ -43,8 +45,9 @@ const startOfWeek = () => {
 export async function computeMetrics(userId: string, userName: string, dienstnummer?: string | null): Promise<MetricSnapshot> {
   const weekStart = startOfWeek().toISOString();
 
-  const [missionsRes, pursuitsRes, pursuitsWeekRes, protocolsRes, formationsRes, uebungenRes, theoryRes, practicalRes, balanceRes, challengesRes] = await Promise.all([
+  const [missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes, protocolsRes, formationsRes, uebungenRes, theoryRes, practicalRes, balanceRes, challengesRes] = await Promise.all([
     supabase.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId),
+    supabase.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
     supabase.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
     supabase.from("missions").select("id", { count: "exact", head: true }).eq("protokollschreiber", userId),
@@ -69,6 +72,7 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
 
   return {
     missions_total: missionsRes.count || 0,
+    missions_week: missionsWeekRes.count || 0,
     pursuits_total: pursuitsRes.count || 0,
     pursuits_week: pursuitsWeekRes.count || 0,
     protocols_total: protocolsRes.count || 0,
@@ -159,28 +163,16 @@ export async function awardAchievements(userId: string, userName: string, dienst
       }
     }
 
-    // Fire Discord notification for each newly awarded achievement (DM to user + ping ASD-Leitung in channel)
-    // Hierarchie: Wenn ein "<metric>_week"-Achievement gleichzeitig mit dem
-    // entsprechenden "<metric>_total"-Achievement (gleicher Threshold) freigeschaltet
-    // wird, unterdrücken wir die Discord-Benachrichtigung für das _total-Achievement,
-    // da das wöchentliche Achievement die Gesamt-Bedingung bereits impliziert.
-    // Beide Badges bleiben weiterhin im Profil gespeichert.
-    const weekKeysAwarded = new Set<string>(); // z.B. "pursuits|10"
-    for (const award of actuallyAwarded) {
-      const def = defs.find((d: any) => d.code === award.achievement_code);
-      if (!def) continue;
-      const m = String(def.metric).match(/^(.+)_week$/);
-      if (m) weekKeysAwarded.add(`${m[1]}|${def.threshold}`);
-    }
+    // Discord-Benachrichtigungen werden NUR für diese beiden wöchentlichen
+    // Achievements verschickt: 5 Einsätze/Woche ODER 10 Verfolgungen/Woche.
+    // Alle anderen Achievements werden weiterhin freigeschaltet und gespeichert,
+    // lösen aber keine Discord-Nachricht (weder DM noch Direction-Ping) aus.
+    const NOTIFY_CODES = new Set(["missions_week_5", "pursuits_week_10"]);
 
     for (const award of actuallyAwarded) {
+      if (!NOTIFY_CODES.has(award.achievement_code)) continue;
       const def = defs.find((d: any) => d.code === award.achievement_code);
       if (!def) continue;
-      // Skip notification if a matching weekly variant was awarded in same batch
-      const tm = String(def.metric).match(/^(.+)_total$/);
-      if (tm && weekKeysAwarded.has(`${tm[1]}|${def.threshold}`)) {
-        continue;
-      }
       const tier = (def.tier || "").toLowerCase();
       const casinoReward = MISSION_PURSUIT_METRICS.has(def.metric) ? 0 : (TIER_REWARDS[tier] || 0);
       try {
