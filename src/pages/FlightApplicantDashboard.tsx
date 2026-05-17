@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, Circle, Plane, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle } from "lucide-react";
+import { CheckCircle, Circle, Plane, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import LeitfadenContent from "@/components/LeitfadenContent";
 import TheorieausbildungContent from "@/components/TheorieausbildungContent";
 import TheoryExam from "@/components/TheoryExam";
+import OrtskundePage from "@/pages/OrtskundePage";
 import { toast } from "sonner";
 import asdLogo from "@/assets/asd-logo.png";
 
@@ -206,7 +207,7 @@ const FlightApplicantDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-5 bg-secondary/50 border border-border">
+          <TabsList className="w-full grid grid-cols-6 bg-secondary/50 border border-border">
             <TabsTrigger value="pruefung" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
               <ClipboardCheck className="w-4 h-4" />
               Theorieprüfung
@@ -229,6 +230,11 @@ const FlightApplicantDashboard = () => {
             <TabsTrigger value="theorie" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
               <BookOpen className="w-4 h-4" />
               Theorieausbildung
+              {examInProgress && <Lock className="w-3 h-3" />}
+            </TabsTrigger>
+            <TabsTrigger value="ortskunde" disabled={examInProgress} className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs disabled:opacity-40">
+              <MapPin className="w-4 h-4" />
+              Ortskunde
               {examInProgress && <Lock className="w-3 h-3" />}
             </TabsTrigger>
           </TabsList>
@@ -394,6 +400,10 @@ const FlightApplicantDashboard = () => {
 
           <TabsContent value="theorie" className="mt-6">
             <TheorieausbildungContent />
+          </TabsContent>
+
+          <TabsContent value="ortskunde" className="mt-6">
+            <OrtskundePage readOnly />
           </TabsContent>
         </Tabs>
       </div>
