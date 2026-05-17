@@ -1,0 +1,1 @@
+DELETE FROM public.asd_training_modules WHERE category = 'Fluglizenz';
