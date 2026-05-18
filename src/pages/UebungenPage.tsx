@@ -46,6 +46,8 @@ export default function UebungenPage() {
   const { user, profile, role } = useAuth();
   const canCreate = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
   const isAdmin = ["admin", "director", "co_director", "supervisor", "team_red"].includes(role || "");
+  const ASD_MEMBER_ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member"];
+  const canRsvp = ASD_MEMBER_ROLES.includes(role || "");
 
   const [uebungen, setUebungen] = useState<Uebung[]>([]);
   const [teilnahmen, setTeilnahmen] = useState<Teilnahme[]>([]);
@@ -70,10 +72,15 @@ export default function UebungenPage() {
       supabase.from("uebungen").select("*").order("start_at", { ascending: true }),
       supabase.from("uebung_teilnahmen").select("*"),
       supabase.from("profiles").select("id, name").eq("is_approved", true).order("name"),
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "team_red"]),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
-    const hiddenIds = new Set((rolesData || []).map((r: any) => r.user_id));
-    if (members) setAllMembers((members as any[]).filter((m) => !hiddenIds.has(m.id)));
+    // Only "feste ASD Mitglieder" (exclude admin, team_red, applicants, flight_license)
+    const asdMemberIds = new Set(
+      (rolesData || [])
+        .filter((r: any) => ASD_MEMBER_ROLES.includes(r.role))
+        .map((r: any) => r.user_id),
+    );
+    if (members) setAllMembers((members as any[]).filter((m) => asdMemberIds.has(m.id)));
     if (ueb) {
       const creatorIds = [...new Set(ueb.map((u: any) => u.created_by))];
       const { data: profs } = await supabase.from("profiles").select("id, name").in("id", creatorIds);
@@ -81,7 +88,7 @@ export default function UebungenPage() {
       setUebungen(ueb.map((u: any) => ({ ...u, creator_name: nameMap[u.created_by] || "Unbekannt" })));
     }
     if (tn) {
-      const filteredTn = (tn as any[]).filter((t) => !hiddenIds.has(t.user_id));
+      const filteredTn = (tn as any[]).filter((t) => asdMemberIds.has(t.user_id));
       const userIds = [...new Set(filteredTn.map((t: any) => t.user_id))];
       const { data: profs } = await supabase.from("profiles").select("id, name").in("id", userIds);
       const nameMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.name]));
