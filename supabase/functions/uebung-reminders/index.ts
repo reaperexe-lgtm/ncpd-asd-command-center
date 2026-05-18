@@ -100,9 +100,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Get only actual ASD members (exclude applicants, flight-only & team_red)
+      // Only "feste ASD-Mitglieder" — excludes admin, team_red, applicants, flight-only
       const ASD_ROLES = [
-        "admin",
         "director",
         "co_director",
         "supervisor",
