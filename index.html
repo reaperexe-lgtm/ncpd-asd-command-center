@@ -29,5 +29,21 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Auto-recover from stale chunk errors after a new deploy
+      window.addEventListener('error', function (e) {
+        var msg = e && e.message ? String(e.message) : '';
+        if (msg.indexOf('Importing a module script failed') !== -1 ||
+            msg.indexOf('Failed to fetch dynamically imported module') !== -1) {
+          if (!sessionStorage.getItem('__chunk_reloaded__')) {
+            sessionStorage.setItem('__chunk_reloaded__', '1');
+            location.reload();
+          }
+        }
+      });
+      window.addEventListener('load', function () {
+        setTimeout(function () { sessionStorage.removeItem('__chunk_reloaded__'); }, 5000);
+      });
+    </script>
   </body>
 </html>
