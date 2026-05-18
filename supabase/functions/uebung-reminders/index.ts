@@ -100,12 +100,31 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Get all approved members with discord_id
-      const { data: members } = await supabase
-        .from("profiles")
-        .select("id, name, discord_id")
-        .eq("is_approved", true)
-        .not("discord_id", "is", null);
+      // Get only actual ASD members (exclude applicants, flight-only & team_red)
+      const ASD_ROLES = [
+        "admin",
+        "director",
+        "co_director",
+        "supervisor",
+        "ausbilder",
+        "trial_ausbilder",
+        "member",
+        "trial_member",
+      ];
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ASD_ROLES);
+      const asdUserIds = Array.from(new Set((roleRows || []).map((r: any) => r.user_id)));
+
+      const { data: members } = asdUserIds.length
+        ? await supabase
+            .from("profiles")
+            .select("id, name, discord_id")
+            .eq("is_approved", true)
+            .not("discord_id", "is", null)
+            .in("id", asdUserIds)
+        : { data: [] as any[] };
 
       // Get members who already responded
       const { data: tns } = await supabase
@@ -135,8 +154,10 @@ Deno.serve(async (req) => {
         `🎯 **${u.titel}**\n` +
         `📅 ${dateStr} Uhr\n` +
         (u.ort ? `📍 ${u.ort}\n` : "") +
+        `\n⚠️ **REAKTIONSPFLICHT!** ⚠️\n` +
+        `Jedes ASD-Mitglied ist verpflichtet, auf jede Übung mit Zu- oder Absage zu reagieren.\n` +
         `\nDu hast bisher noch nicht auf diese Übung reagiert.\n` +
-        `Bitte hole das schnellstmöglich nach und trage deine Zu- oder Absage im Dashboard ein:\n${url}`;
+        `Bitte hole das **umgehend** nach und trage deine Zu- oder Absage im Dashboard ein:\n${url}`;
 
       let sent = 0;
       let failed = 0;
