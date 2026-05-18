@@ -232,6 +232,8 @@ Deno.serve(async (req) => {
         ? `https://asd-ncpd.lovable.app/uebungen#${data.id}`
         : `https://asd-ncpd.lovable.app/uebungen`;
       lines.push(`\n🔗 **Übung im ASD Dashboard:** ${uebungUrl}`);
+      lines.push(`\n⚠️ **REAKTIONSPFLICHT!** ⚠️`);
+      lines.push(`Jedes ASD-Mitglied ist **verpflichtet**, auf jede Übung mit Zu- oder Absage zu reagieren.`);
       lines.push(`\n_Zu- und Absagen bitte direkt im Dashboard eintragen._`);
 
       const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
@@ -240,6 +242,29 @@ Deno.serve(async (req) => {
         : lines.join("\n");
 
       try {
+        // Edit existing announcement(s) for this Übung instead of posting new
+        if (data.edit_existing && data.id) {
+          const recentRes = await fetch(
+            `${DISCORD_API}/channels/${channelId}/messages?limit=100`,
+            { headers: { Authorization: `Bot ${botToken}` } },
+          );
+          if (!recentRes.ok) throw new Error(`fetch messages failed: ${await recentRes.text()}`);
+          const msgs = await recentRes.json();
+          let edited = 0;
+          for (const m of msgs) {
+            if (m.author?.bot && typeof m.content === "string" && m.content.includes(data.id)) {
+              const patchRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${m.id}`, {
+                method: "PATCH",
+                headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ content }),
+              });
+              if (patchRes.ok) edited++;
+            }
+          }
+          return new Response(JSON.stringify({ success: true, edited }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         // Optionally delete prior bot announcement(s) for this Übung
         if (data.delete_previous && data.id) {
           try {
