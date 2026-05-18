@@ -367,7 +367,7 @@ export default function UebungenPage() {
                     );
                   })()}
 
-                  {!isPast && (
+                  {!isPast && canRsvp && (
                     <div className="flex gap-2 pt-2">
                       {(["zusage", "vielleicht", "absage"] as const).map((s) => {
                         const meta = STATUS_META[s];
