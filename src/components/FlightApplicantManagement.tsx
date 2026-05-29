@@ -232,10 +232,18 @@ const FlightApplicantManagement = () => {
                 <div className="border-t border-border p-4 space-y-2">
                   {modules.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      Noch keine Fluglizenz-Module angelegt. Wechsle zum Tab „Module verwalten" und lege Module mit der Kategorie „Fluglizenz" an.
+                      Noch keine Module angelegt.
                     </p>
                   ) : (
-                    modules.map((mod) => {
+                    Object.entries(
+                      modules.reduce((acc: Record<string, typeof modules>, m) => {
+                        (acc[m.category] ||= []).push(m);
+                        return acc;
+                      }, {})
+                    ).map(([category, mods]) => (
+                      <div key={category} className="space-y-2">
+                        <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">{category}</h4>
+                        {mods.map((mod) => {
                       const prog = allProgress?.find(
                         (p) => p.applicant_id === applicant.id && p.module_id === mod.id,
                       );
