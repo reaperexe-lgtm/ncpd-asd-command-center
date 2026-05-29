@@ -27,7 +27,6 @@ const FlightApplicantManagement = () => {
       const { data, error } = await supabase
         .from("asd_training_modules")
         .select("*")
-        .in("category", ["Fluglizenz", "Ausbildung"])
         .order("sort_order");
       if (error) throw error;
       return data;
