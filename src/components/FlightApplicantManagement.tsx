@@ -293,7 +293,9 @@ const FlightApplicantManagement = () => {
                           )}
                         </div>
                       );
-                    })
+                        })}
+                      </div>
+                    ))
                   )}
                 </div>
               )}
