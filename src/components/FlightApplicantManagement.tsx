@@ -29,7 +29,7 @@ const FlightApplicantManagement = () => {
         .select("*")
         .order("sort_order");
       if (error) throw error;
-      return data;
+      return (data ?? []).filter((m) => !/20\s*minuten.*10[-\s]?20/i.test(m.name));
     },
   });
 
