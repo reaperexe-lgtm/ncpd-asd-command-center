@@ -21,14 +21,13 @@ const FlightApplicantManagement = () => {
   const queryClient = useQueryClient();
   const [expandedApplicant, setExpandedApplicant] = useState<string | null>(null);
 
-  // Only "Fluglizenz" category modules
   const { data: modules } = useQuery({
     queryKey: ["flight-modules"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("asd_training_modules")
         .select("*")
-        .eq("category", "Fluglizenz")
+        .in("category", ["Fluglizenz", "Ausbildung"])
         .order("sort_order");
       if (error) throw error;
       return data;
@@ -102,13 +101,18 @@ const FlightApplicantManagement = () => {
 
   const updateTimeMutation = useMutation({
     mutationFn: async ({ applicantId, moduleId, timeValue }: { applicantId: string; moduleId: string; timeValue: string }) => {
+      const existing = allProgress?.find(
+        (p) => p.applicant_id === applicantId && p.module_id === moduleId
+      );
       const { error } = await supabase
         .from("asd_applicant_progress")
         .upsert(
           {
             applicant_id: applicantId,
             module_id: moduleId,
-            completed: false,
+            completed: existing?.completed ?? false,
+            completed_by: existing?.completed_by ?? null,
+            completed_at: existing?.completed_at ?? null,
             time_value: timeValue,
           },
           { onConflict: "applicant_id,module_id" },
