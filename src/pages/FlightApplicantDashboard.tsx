@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, Circle, Plane, LogOut, BookOpen, Clock, Phone, Copy, ClipboardCheck, Lock, AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const ROLE_BADGE_COLORS: Record<string, string> = {
 
 const FlightApplicantDashboard = () => {
   const { user, profile, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pruefung");
   const [examInProgress, setExamInProgress] = useState(false);
 
@@ -53,6 +54,19 @@ const FlightApplicantDashboard = () => {
   const handleExamStepChange = useCallback((step: "info" | "quiz" | "done") => {
     setExamInProgress(step === "quiz");
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`flight-applicant-progress-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "asd_applicant_progress", filter: `applicant_id=eq.${user.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["flight-applicant-progress", user.id] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
 
   const { data: modules } = useQuery({
     queryKey: ["flight-training-modules-all"],
