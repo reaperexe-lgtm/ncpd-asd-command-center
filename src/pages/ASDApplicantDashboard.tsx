@@ -193,14 +193,12 @@ const ASDApplicantDashboard = () => {
       const userIds = roles.map((r) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, phone_number")
+        .select("id, name, dienstnummer")
         .in("id", userIds);
-      return (profiles || [])
-        .filter((p) => p.phone_number)
-        .map((p) => ({
-          ...p,
-          role: roles.find((r) => r.user_id === p.id)?.role || "member",
-        }));
+      return (profiles || []).map((p) => ({
+        ...p,
+        role: roles.find((r) => r.user_id === p.id)?.role || "member",
+      }));
     },
   });
 
