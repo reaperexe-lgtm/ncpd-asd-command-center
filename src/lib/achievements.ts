@@ -104,98 +104,20 @@ const MISSION_PURSUIT_METRICS = new Set([
 ]);
 
 export async function awardAchievements(userId: string, userName: string, dienstnummer?: string | null) {
-  const [defsRes, ownedRes] = await Promise.all([
-    supabase.from("achievement_definitions").select("*").eq("is_active", true),
-    supabase.from("user_achievements").select("achievement_code").eq("user_id", userId),
-  ]);
-  const defs = defsRes.data || [];
-  const owned = new Set((ownedRes.data || []).map((a: any) => a.achievement_code));
-  const metrics = await computeMetrics(userId, userName, dienstnummer);
-
-  const toAward: { user_id: string; achievement_code: string; progress_value: number }[] = [];
-  for (const d of defs) {
-    if (owned.has(d.code)) continue;
-    const value = (metrics as any)[d.metric] || 0;
-    if (value >= d.threshold) {
-      toAward.push({ user_id: userId, achievement_code: d.code, progress_value: value });
-    }
+  // Awarding now happens server-side (RLS forbids self-insert on user_achievements).
+  // Edge function validates JWT, recomputes metrics from trusted DB queries,
+  // and writes via service role.
+  try {
+    const { data, error } = await supabase.functions.invoke("award-achievements", {
+      body: {},
+    });
+    if (error) throw error;
+    return {
+      newlyAwarded: (data as any)?.newlyAwarded ?? 0,
+      metrics: ((data as any)?.metrics ?? (await computeMetrics(userId, userName, dienstnummer))) as MetricSnapshot,
+    };
+  } catch (e) {
+    console.error("award-achievements invoke failed:", e);
+    return { newlyAwarded: 0, metrics: await computeMetrics(userId, userName, dienstnummer) };
   }
-
-  if (toAward.length) {
-    // Use upsert with ignoreDuplicates so concurrent calls don't both
-    // succeed in sending notifications. Only rows actually inserted are
-    // returned in `inserted` – duplicates are skipped silently.
-    const { data: inserted } = await supabase
-      .from("user_achievements")
-      .upsert(toAward, {
-        onConflict: "user_id,achievement_code",
-        ignoreDuplicates: true,
-      })
-      .select("achievement_code");
-
-    const insertedCodes = new Set((inserted || []).map((r: any) => r.achievement_code));
-    if (insertedCodes.size === 0) {
-      return { newlyAwarded: 0, metrics };
-    }
-    const actuallyAwarded = toAward.filter((a) => insertedCodes.has(a.achievement_code));
-
-    // Casino-Belohnung (nur für nicht-Einsatz/Verfolgungs-Achievements)
-    let totalCasinoReward = 0;
-    for (const award of actuallyAwarded) {
-      const def = defs.find((d: any) => d.code === award.achievement_code);
-      if (!def) continue;
-      if (MISSION_PURSUIT_METRICS.has(def.metric)) continue;
-      const tier = (def.tier || "").toLowerCase();
-      totalCasinoReward += TIER_REWARDS[tier] || 0;
-    }
-    if (totalCasinoReward > 0) {
-      const { data: balRow } = await supabase
-        .from("casino_balances")
-        .select("balance")
-        .eq("user_id", userId)
-        .maybeSingle();
-      const current = (balRow as any)?.balance ?? 0;
-      const newBal = current + totalCasinoReward;
-      if (balRow) {
-        await supabase.from("casino_balances").update({ balance: newBal }).eq("user_id", userId);
-      } else {
-        await supabase.from("casino_balances").insert({ user_id: userId, balance: newBal });
-      }
-    }
-
-    // Discord-Benachrichtigungen werden NUR für diese beiden wöchentlichen
-    // Achievements verschickt: 5 Einsätze/Woche ODER 10 Verfolgungen/Woche.
-    // Alle anderen Achievements werden weiterhin freigeschaltet und gespeichert,
-    // lösen aber keine Discord-Nachricht (weder DM noch Direction-Ping) aus.
-    const NOTIFY_CODES = new Set(["missions_week_5", "pursuits_week_10"]);
-
-    for (const award of actuallyAwarded) {
-      if (!NOTIFY_CODES.has(award.achievement_code)) continue;
-      const def = defs.find((d: any) => d.code === award.achievement_code);
-      if (!def) continue;
-      const tier = (def.tier || "").toLowerCase();
-      const casinoReward = MISSION_PURSUIT_METRICS.has(def.metric) ? 0 : (TIER_REWARDS[tier] || 0);
-      try {
-        await supabase.functions.invoke("discord-notify", {
-          body: {
-            type: "achievement_unlocked",
-            data: {
-              user_id: userId,
-              user_name: userName,
-              dienstnummer: dienstnummer ?? null,
-              achievement_code: def.code,
-              achievement_title: def.title,
-              achievement_description: def.description,
-              achievement_tier: def.tier,
-              casino_reward: casinoReward,
-            },
-          },
-        });
-      } catch (e) {
-        console.error("Failed to send achievement Discord notification:", e);
-      }
-    }
-    return { newlyAwarded: actuallyAwarded.length, metrics };
-  }
-  return { newlyAwarded: toAward.length, metrics };
 }
