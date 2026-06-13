@@ -979,54 +979,69 @@ export type Database = {
       profiles: {
         Row: {
           asd_join_date: string | null
-          birthday: string | null
           created_at: string
           dienstnummer: string | null
-          discord_id: string | null
           discord_notifications: Json
           has_sr_training: boolean
           id: string
           image_url: string | null
-          internal_dienstnummer: string | null
           is_approved: boolean
           is_blocked: boolean
           name: string
-          phone_number: string | null
           updated_at: string
         }
         Insert: {
           asd_join_date?: string | null
-          birthday?: string | null
           created_at?: string
           dienstnummer?: string | null
-          discord_id?: string | null
           discord_notifications?: Json
           has_sr_training?: boolean
           id: string
           image_url?: string | null
-          internal_dienstnummer?: string | null
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
-          phone_number?: string | null
           updated_at?: string
         }
         Update: {
           asd_join_date?: string | null
-          birthday?: string | null
           created_at?: string
           dienstnummer?: string | null
-          discord_id?: string | null
           discord_notifications?: Json
           has_sr_training?: boolean
           id?: string
           image_url?: string | null
-          internal_dienstnummer?: string | null
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles_private: {
+        Row: {
+          birthday: string | null
+          discord_id: string | null
+          internal_dienstnummer: string | null
+          phone_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birthday?: string | null
+          discord_id?: string | null
+          internal_dienstnummer?: string | null
           phone_number?: string | null
           updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birthday?: string | null
+          discord_id?: string | null
+          internal_dienstnummer?: string | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
