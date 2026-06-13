@@ -32,10 +32,15 @@ const MilestoneCelebrations = () => {
       try {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("name, birthday, asd_join_date")
+          .select("name, asd_join_date")
           .eq("id", user.id)
           .maybeSingle();
         if (!profile) return;
+        const { data: priv } = await supabase
+          .from("profiles_private")
+          .select("birthday")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
         const today = new Date();
         const todayMonth = today.getMonth();
@@ -48,7 +53,7 @@ const MilestoneCelebrations = () => {
           return d.getMonth() === todayMonth && d.getDate() === todayDay;
         };
 
-        const isBirthday = matchesAnnualDate((profile as any).birthday);
+        const isBirthday = matchesAnnualDate((priv as any)?.birthday);
         const joinDate = (profile as any).asd_join_date as string | null;
         const isAnniversaryDate = matchesAnnualDate(joinDate);
         const anniversaryYears = isAnniversaryDate && joinDate
