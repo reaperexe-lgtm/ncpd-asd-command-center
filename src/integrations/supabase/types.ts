@@ -985,6 +985,7 @@ export type Database = {
           has_sr_training: boolean
           id: string
           image_url: string | null
+          internal_dienstnummer: string | null
           is_approved: boolean
           is_blocked: boolean
           name: string
@@ -998,6 +999,7 @@ export type Database = {
           has_sr_training?: boolean
           id: string
           image_url?: string | null
+          internal_dienstnummer?: string | null
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
@@ -1011,6 +1013,7 @@ export type Database = {
           has_sr_training?: boolean
           id?: string
           image_url?: string | null
+          internal_dienstnummer?: string | null
           is_approved?: boolean
           is_blocked?: boolean
           name?: string
@@ -1022,7 +1025,6 @@ export type Database = {
         Row: {
           birthday: string | null
           discord_id: string | null
-          internal_dienstnummer: string | null
           phone_number: string | null
           updated_at: string
           user_id: string
@@ -1030,7 +1032,6 @@ export type Database = {
         Insert: {
           birthday?: string | null
           discord_id?: string | null
-          internal_dienstnummer?: string | null
           phone_number?: string | null
           updated_at?: string
           user_id: string
@@ -1038,7 +1039,6 @@ export type Database = {
         Update: {
           birthday?: string | null
           discord_id?: string | null
-          internal_dienstnummer?: string | null
           phone_number?: string | null
           updated_at?: string
           user_id?: string
