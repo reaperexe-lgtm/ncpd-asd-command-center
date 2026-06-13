@@ -173,8 +173,10 @@ const AdminPanel = () => {
     queryFn: async () => {
       const { data: profiles } = await supabase.from("profiles").select("*");
       const { data: roles } = await supabase.from("user_roles").select("*");
+      const { data: privs } = await supabase.from("profiles_private").select("user_id, discord_id");
       return (profiles || []).map((p) => ({
         ...p,
+        discord_id: privs?.find((pp: any) => pp.user_id === p.id)?.discord_id ?? null,
         role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
       }));
     },
@@ -464,7 +466,12 @@ const AdminPanel = () => {
 
   const discordMutation = useMutation({
     mutationFn: async ({ userId, discordId }: { userId: string; discordId: string }) => {
-      const { error } = await supabase.from("profiles").update({ discord_id: discordId.trim() || null } as any).eq("id", userId);
+      const { error } = await supabase
+        .from("profiles_private")
+        .upsert(
+          { user_id: userId, discord_id: discordId.trim() || null },
+          { onConflict: "user_id" },
+        );
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
