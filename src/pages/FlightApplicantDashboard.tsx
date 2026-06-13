@@ -124,14 +124,12 @@ const FlightApplicantDashboard = () => {
       const userIds = roles.map((r) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, phone_number")
+        .select("id, name, dienstnummer")
         .in("id", userIds);
-      return (profiles || [])
-        .filter((p) => p.phone_number)
-        .map((p) => ({
-          ...p,
-          role: roles.find((r) => r.user_id === p.id)?.role || "member",
-        }));
+      return (profiles || []).map((p) => ({
+        ...p,
+        role: roles.find((r) => r.user_id === p.id)?.role || "member",
+      }));
     },
   });
 
@@ -379,19 +377,9 @@ const FlightApplicantDashboard = () => {
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 font-mono"
-                      onClick={() => {
-                        navigator.clipboard.writeText(trainer.phone_number || "");
-                        toast.success("Nummer kopiert!");
-                      }}
-                    >
-                      <Phone className="w-3 h-3" />
-                      {trainer.phone_number}
-                      <Copy className="w-3 h-3 text-muted-foreground" />
-                    </Button>
+                    <span className="text-xs text-muted-foreground italic">
+                      Kontakt via Discord
+                    </span>
                   </div>
                 ))}
                 {(!trainerContacts || trainerContacts.length === 0) && (

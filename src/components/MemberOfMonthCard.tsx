@@ -55,8 +55,20 @@ const MemberOfMonthCard = () => {
   const { data: profiles } = useQuery({
     queryKey: ["profiles-milestones"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, name, image_url, birthday, asd_join_date, created_at").eq("is_approved", true);
-      return data || [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, image_url, asd_join_date, created_at")
+        .eq("is_approved", true);
+      // birthday is in profiles_private and only readable by owner+admin.
+      // RLS will silently return only allowed rows; merge them in.
+      const { data: privs } = await supabase
+        .from("profiles_private")
+        .select("user_id, birthday");
+      const bdayMap = new Map((privs || []).map((p: any) => [p.user_id, p.birthday]));
+      return (profiles || []).map((p: any) => ({
+        ...p,
+        birthday: bdayMap.get(p.id) ?? null,
+      }));
     },
   });
 

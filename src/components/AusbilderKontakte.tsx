@@ -45,11 +45,16 @@ const AusbilderKontakte = () => {
       const userIds = roles.map((r) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, dienstnummer, internal_dienstnummer, phone_number")
+        .select("id, name, dienstnummer, internal_dienstnummer")
         .in("id", userIds);
+      const { data: privs } = await supabase
+        .from("profiles_private")
+        .select("user_id, phone_number")
+        .in("user_id", userIds);
 
       return (profiles || []).map((p) => ({
         ...p,
+        phone_number: privs?.find((pp: any) => pp.user_id === p.id)?.phone_number ?? null,
         role: roles.find((r) => r.user_id === p.id)?.role || "member",
       }));
     },
@@ -58,9 +63,11 @@ const AusbilderKontakte = () => {
   const updatePhone = useMutation({
     mutationFn: async ({ userId, phone }: { userId: string; phone: string }) => {
       const { error } = await supabase
-        .from("profiles")
-        .update({ phone_number: phone || null })
-        .eq("id", userId);
+        .from("profiles_private")
+        .upsert(
+          { user_id: userId, phone_number: phone || null },
+          { onConflict: "user_id" },
+        );
       if (error) throw error;
     },
     onSuccess: () => {

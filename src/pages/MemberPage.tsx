@@ -44,11 +44,15 @@ const MemberPage = () => {
 
   const updateDatesMutation = useMutation({
     mutationFn: async ({ id, birthday, asd_join_date }: { id: string; birthday: string | null; asd_join_date: string | null }) => {
-      const { error } = await supabase
+      const { error: e1 } = await supabase
         .from("profiles")
-        .update({ birthday, asd_join_date })
+        .update({ asd_join_date })
         .eq("id", id);
-      if (error) throw error;
+      if (e1) throw e1;
+      const { error: e2 } = await supabase
+        .from("profiles_private")
+        .upsert({ user_id: id, birthday }, { onConflict: "user_id" });
+      if (e2) throw e2;
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
