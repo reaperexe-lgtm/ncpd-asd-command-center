@@ -35,17 +35,30 @@ const ProfilePage = () => {
       setDienstnummer(profile.dienstnummer || "");
       setImageUrl(profile.image_url || null);
     }
-    // Load discord_id from DB
     if (user) {
-      supabase.from("profiles").select("discord_id, discord_notifications, internal_dienstnummer, birthday, asd_join_date").eq("id", user.id).single().then(({ data }) => {
-        if (data?.discord_id) setDiscordId(data.discord_id);
-        if (data?.discord_notifications) {
-          setNotifications(data.discord_notifications as any);
-        }
-        setInternalDienstnummer((data as any)?.internal_dienstnummer ?? null);
-        if ((data as any)?.birthday) setBirthday((data as any).birthday);
-        if ((data as any)?.asd_join_date) setAsdJoinDate((data as any).asd_join_date);
-      });
+      // Public profile fields
+      supabase
+        .from("profiles")
+        .select("discord_notifications, internal_dienstnummer, asd_join_date")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if ((data as any)?.discord_notifications) {
+            setNotifications((data as any).discord_notifications as any);
+          }
+          setInternalDienstnummer((data as any)?.internal_dienstnummer ?? null);
+          if ((data as any)?.asd_join_date) setAsdJoinDate((data as any).asd_join_date);
+        });
+      // Private fields (own row only)
+      supabase
+        .from("profiles_private")
+        .select("discord_id, birthday")
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.discord_id) setDiscordId(data.discord_id);
+          if ((data as any)?.birthday) setBirthday((data as any).birthday);
+        });
       // Load discord server invite link
       supabase.from("permission_settings").select("role").eq("permission_key", "discord_invite_link").single().then(({ data }) => {
         if (data?.role) setDiscordServerLink(data.role);
@@ -85,12 +98,23 @@ const ProfilePage = () => {
         name: name.trim() || "Unbenannt",
         dienstnummer: dienstnummer.trim() || null,
         image_url: imageUrl,
-        discord_id: discordId.trim() || null,
         discord_notifications: notifications,
-        birthday: birthday || null,
         asd_join_date: asdJoinDate || null,
       } as any, { onConflict: "id" });
       if (error) throw error;
+
+      // Persist private fields
+      const { error: privErr } = await supabase
+        .from("profiles_private")
+        .upsert(
+          {
+            user_id: user.id,
+            discord_id: discordId.trim() || null,
+            birthday: birthday || null,
+          } as any,
+          { onConflict: "user_id" },
+        );
+      if (privErr) throw privErr;
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["members"] }),
