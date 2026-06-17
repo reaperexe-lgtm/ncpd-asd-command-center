@@ -76,7 +76,7 @@ const ProfilePage = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `profiles/${user.id}/${Date.now()}.${ext}`;
+      const path = `${user.id}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("avatars").upload(path, file);
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
