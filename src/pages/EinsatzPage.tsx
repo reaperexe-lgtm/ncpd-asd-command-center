@@ -47,9 +47,9 @@ const EinsatzPage = () => {
   const [leftGunner, setLeftGunner] = usePersistedState<string>("einsatz_leftGunner", "");
   const [rightGunner, setRightGunner] = usePersistedState<string>("einsatz_rightGunner", "");
   const [vehicles, setVehicles] = usePersistedState<VehicleForm[]>("einsatz_vehicles", []);
-  const [showVehicleForm, setShowVehicleForm] = useState(false);
-  const [currentVehicle, setCurrentVehicle] = useState<VehicleForm>({ ...emptyVehicle });
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showVehicleForm, setShowVehicleForm] = usePersistedState<boolean>("einsatz_showVehicleForm", false);
+  const [currentVehicle, setCurrentVehicle] = usePersistedState<VehicleForm>("einsatz_currentVehicle", { ...emptyVehicle });
+  const [editingIndex, setEditingIndex] = usePersistedState<number | null>("einsatz_editingIndex", null);
 
   const { data: gangs } = useQuery({
     queryKey: ["gangs"],
@@ -125,6 +125,7 @@ const EinsatzPage = () => {
       "einsatz_suspects","einsatz_hostages","einsatz_gangId","einsatz_gangInfo",
       "einsatz_protokollschreiber","einsatz_pilot","einsatz_coPilot",
       "einsatz_leftGunner","einsatz_rightGunner","einsatz_vehicles",
+      "einsatz_showVehicleForm","einsatz_currentVehicle","einsatz_editingIndex",
     ]);
   };
 
