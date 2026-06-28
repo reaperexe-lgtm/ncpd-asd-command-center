@@ -17,7 +17,7 @@ const VerfolgungPage = () => {
   const { user, isAdmin, role } = useAuth();
   const canDelete = isAdmin || role === "supervisor";
   const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = usePersistedState<boolean>("verfolgung_showForm", false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
