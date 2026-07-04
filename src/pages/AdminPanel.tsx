@@ -422,7 +422,7 @@ const AdminPanel = () => {
       return data;
     },
     onSuccess: (_, userId) => {
-      toast.success("Passwort wurde auf 'asd123' zurückgesetzt");
+      toast.success("Passwort wurde auf 'ASD123' zurückgesetzt");
       const targetName = users?.find((u) => u.id === userId)?.name || "Unbekannt";
       logActivity("Passwort zurückgesetzt", "admin", { target_user_id: userId, target_name: targetName });
     },
@@ -884,7 +884,7 @@ const AdminPanel = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Passwort zurücksetzen?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">asd123</code> zurückgesetzt.
+                                Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">ASD123</code> zurückgesetzt.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -1007,7 +1007,7 @@ const AdminPanel = () => {
                               {canResetPasswords && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" title="Passwort auf asd123 zurücksetzen">
+                                    <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" title="Passwort auf ASD123 zurücksetzen">
                                       <KeyRound className="w-3 h-3" />
                                     </Button>
                                   </AlertDialogTrigger>
@@ -1015,7 +1015,7 @@ const AdminPanel = () => {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Passwort zurücksetzen?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">asd123</code> zurückgesetzt.
+                                        Das Passwort von <strong>{u.name}</strong> wird auf <code className="px-1.5 py-0.5 bg-muted rounded">ASD123</code> zurückgesetzt.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>

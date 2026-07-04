@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const NEW_PASSWORD = "asd123";
+const NEW_PASSWORD = "ASD123";
 const ALLOWED_ROLES = ["admin", "director", "co_director"];
 
 serve(async (req) => {
