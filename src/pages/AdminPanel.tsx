@@ -417,7 +417,10 @@ const AdminPanel = () => {
       const { data, error } = await supabase.functions.invoke("reset-user-password", {
         body: { userId },
       });
-      if (error) throw error;
+      if (error) {
+        const detail = (data as any)?.error;
+        throw new Error(detail || error.message || "Reset fehlgeschlagen");
+      }
       if (data?.error) throw new Error(data.error);
       return data;
     },
