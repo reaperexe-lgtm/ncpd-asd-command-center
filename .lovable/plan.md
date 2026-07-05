@@ -1,61 +1,33 @@
-## Was wird gefixt (13 Findings)
+## Problem
+Klick auf "Passwort zurücksetzen" wirft `Edge Function returned a non-2xx status code`. In den Logs der Function `reset-user-password` gibt es **keine Einträge** – d.h. die Function wurde entweder nie erfolgreich deployed oder scheitert direkt beim Auth-Check und liefert 401/403, ohne dass wir eine Fehlerursache im Client sehen.
 
-### A. Datenbank-Migration (1 großer Migration-File)
+## Ursache (wahrscheinlich)
+Die Function nutzt aktuell:
 
-1. **theory_exam_results — anon abuse** (2 Findings)
-   - Drop policy `Anon can view own exam by id` (USING true)
-   - Replace `Anyone can submit exam` (WITH CHECK true) → INSERT nur für `authenticated` + `dienstnummer = profile.dienstnummer des auth.uid()`
+```ts
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+const { data: { user } } = await supabase.auth.getUser(token);
+```
 
-2. **user_achievements — Self-Award entfernen**
-   - Drop INSERT policy für User. Achievements werden ab sofort nur noch von Admin/Edge-Function vergeben (Service-Role).
-   - Bestehender Client-Award-Code wird auf Edge-Function `award-achievements` umgestellt (mit JWT-Validierung, Server-berechnete Metriken).
+Auf einem Service-Role-Client ist `getUser(token)` unzuverlässig – der neue Signing-Keys-Ansatz erwartet Token-Validierung via `getClaims(token)`. Wenn der Aufruf `user = null` zurückgibt, antwortet die Function mit **401 "Invalid token"** – exakt das Verhalten, das der Client als "non-2xx" sieht.
 
-3. **profiles — sensible Felder verbergen**
-   - Neue Tabelle `profiles_private` (user_id PK, phone_number, birthday, discord_id, internal_dienstnummer)
-   - Daten aus `profiles` migrieren, dann Spalten droppen
-   - RLS: nur Owner + Admin lesen, Owner + Admin schreiben
-   - **Sichtbare Konsequenz:** Ausbilder-Telefonnummern werden Bewerbern NICHT mehr angezeigt (Karte zeigt nur Name + Dienstnummer). Geburtstage in MemberOfMonth-Karte sind für Nicht-Admins verborgen.
+## Fix-Plan
 
-4. **can_manage_map — Berechtigung einschränken**
-   - Function ändert sich: nur `admin/director/co_director/supervisor/ausbilder/trial_ausbilder` (statt jeder approved User)
-   - **Sichtbare Konsequenz:** Member können Karten-Hintergründe/Settings/Areas/Drawings nicht mehr selbst erstellen — nur noch Ausbilder+
+1. **`supabase/functions/reset-user-password/index.ts` überarbeiten**
+   - Auth-Header prüfen (`Bearer …`) und mit `supabase.auth.getClaims(token)` validieren (empfohlener Pattern für Signing Keys).
+   - `userId = claims.sub` verwenden, Rolle über Service-Role-Client aus `user_roles` laden.
+   - Rollencheck bleibt: nur `admin`, `director`, `co_director` dürfen zurücksetzen.
+   - CORS-Header aus `npm:@supabase/supabase-js@2/cors` importieren (statt handgeschriebener Header).
+   - Aussagekräftige `console.error`-Logs bei jedem Fehlerpfad, damit wir es beim nächsten Fehler in den Function-Logs sehen.
+   - Input-Validierung: `{ userId: string(uuid) }` per Zod.
 
-5. **Storage: avatars upload tightening**
-   - Drop `Authenticated users can upload avatars`, replace mit Check `(storage.foldername(name))[1] = auth.uid()::text`
+2. **Client (`AdminPanel.tsx`) robuster machen**
+   - In `onError` zusätzlich zum `error.message` den evtl. mitgelieferten `context.responseText` / `data.error` mit ausgeben, damit man die tatsächliche Fehlermeldung im Toast sieht statt der generischen "non-2xx"-Meldung.
 
-6. **Storage: pursuit-photos duplicate**
-   - Drop `Authenticated can upload pursuit photos` (Duplikat ohne Approval-Check)
+3. **Redeploy erzwingen**
+   - Nach der Änderung wird die Function automatisch neu deployed. Danach mit `curl_edge_functions` einen Testaufruf machen und Logs prüfen.
 
-7. **Storage: public bucket listing** (3 Buckets)
-   - Drop broad `Anyone can view avatars/pursuit photos/assets` SELECT-Policies für `public` Role. Bucket bleibt public — direkte URL-Reads funktionieren weiter, nur Listing geht nicht mehr ohne Auth.
-
-8. **SECURITY DEFINER Functions Anon-Execute**
-   - REVOKE EXECUTE ... FROM anon, public auf allen `public.*` Definer-Funktionen, die kein Anon-Aufruf brauchen.
-   - Authenticated EXECUTE bleibt für `is_approved`, `has_role`, `is_admin`, `can_*` (von RLS-Policies benötigt).
-
-### B. Auth Konfiguration
-9. **Leaked password protection** via `configure_auth` aktivieren.
-
-### C. Code-Anpassungen
-
-- `src/lib/achievements.ts` → Awarding über `supabase.functions.invoke("award-achievements")` statt direkt insert
-- Neue Edge-Function `award-achievements` (validiert JWT, berechnet Metriken serverseitig, schreibt mit Service-Role)
-- `src/pages/ProfilePage.tsx` → liest sensitive Felder aus `profiles_private` (eigener Datensatz)
-- `src/pages/AdminPanel.tsx` → `discord_id` aus `profiles_private`
-- `src/components/AusbilderKontakte.tsx` + beide Applicant-Dashboards → Telefonnummer-Spalte entfernen
-- `src/components/MemberOfMonthCard.tsx` → Birthday-Anzeige nur für Admins (verbergen für andere)
-- `src/components/MilestoneCelebrations.tsx` → Birthday eigenes Profil via `profiles_private`
-- `src/pages/MemberPage.tsx` → Birthday-Edit/Anzeige nur für Admin
-- Karten-Verwaltungs-UI (`OrtskundePage`) prüft jetzt strengere Permission — Buttons für Member ausblenden
-
-### D. Nicht umsetzbar
-- **Realtime.messages Policies** — Schema `realtime` ist von Lovable Cloud aus nicht editierbar. Muss manuell im Backend gemacht werden, falls überhaupt nötig (kann auch über Channel-Naming + Server-Push umgangen werden). Wird als Hinweis im Memory dokumentiert.
-
-### Ablauf
-1. Migration ausführen (mit Datentransfer für profiles_private)
-2. configure_auth für HIBP
-3. Edge-Function `award-achievements` deployen
-4. Alle betroffenen Frontend-Dateien anpassen
-5. Security-Findings markieren
-
-Ist das so OK? Insbesondere die UX-Änderungen unter Punkt 3 (Telefonnummern weg, Geburtstage Admin-only) und Punkt 4 (Map-Verwaltung nur noch Ausbilder+) sind sichtbar.
+## Nicht geändert
+- Passwortwert bleibt `ASD123`.
+- Berechtigte Rollen bleiben `admin | director | co_director`.
+- UI-Flow (AlertDialog + Button) bleibt gleich.
