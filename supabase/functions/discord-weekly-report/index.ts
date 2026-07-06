@@ -35,12 +35,14 @@ async function getTopProtokollschreiber(supabaseAdmin: any, startDate: Date, now
   const userIds = Object.keys(counts);
   let profileMap: Record<string, { name: string; discord_id: string | null }> = {};
   if (userIds.length > 0) {
-    const { data: profiles } = await supabaseAdmin
-      .from("profiles")
-      .select("id, name, discord_id")
-      .in("id", userIds);
+    const [{ data: profiles }, { data: privateRows }] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, name").in("id", userIds),
+      supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", userIds),
+    ]);
+    const discordMap: Record<string, string | null> = {};
+    for (const r of privateRows || []) discordMap[(r as any).user_id] = (r as any).discord_id ?? null;
     for (const p of profiles || []) {
-      profileMap[p.id] = { name: p.name, discord_id: p.discord_id };
+      profileMap[p.id] = { name: p.name, discord_id: discordMap[p.id] ?? null };
     }
   }
 
