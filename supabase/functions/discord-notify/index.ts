@@ -175,11 +175,16 @@ Deno.serve(async (req) => {
 
       if (adminRoles && adminRoles.length > 0) {
         const adminIds = adminRoles.map((r: any) => r.user_id);
-        const { data: adminProfiles } = await supabaseAdmin
-          .from("profiles")
-          .select("discord_id, name")
-          .in("id", adminIds)
-          .not("discord_id", "is", null);
+        const [{ data: adminProfilesRaw }, { data: adminPrivate }] = await Promise.all([
+          supabaseAdmin.from("profiles").select("id, name").in("id", adminIds),
+          supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", adminIds).not("discord_id", "is", null),
+        ]);
+        const nameMap: Record<string, string> = {};
+        for (const p of adminProfilesRaw || []) nameMap[(p as any).id] = (p as any).name;
+        const adminProfiles = (adminPrivate || []).map((r: any) => ({
+          discord_id: r.discord_id,
+          name: nameMap[r.user_id] ?? "Admin",
+        }));
 
         const message = `📩 **Neue Reset-Anfrage**\n\n**Typ:** ${data.reset_type}\n**Grund:** ${data.reason}\n**Von:** ${data.requested_by_name}`;
 
@@ -455,9 +460,9 @@ Deno.serve(async (req) => {
       let dmStatus: any = { sent: false };
       try {
         const { data: profile } = await supabaseAdmin
-          .from("profiles")
+          .from("profiles_private")
           .select("discord_id")
-          .eq("id", data.user_id)
+          .eq("user_id", data.user_id)
           .maybeSingle();
 
         if (profile?.discord_id) {
@@ -490,11 +495,16 @@ Deno.serve(async (req) => {
 
         const directionIds = (directionRoles || []).map((r: any) => r.user_id);
         if (directionIds.length > 0) {
-          const { data: directionProfiles } = await supabaseAdmin
-            .from("profiles")
-            .select("discord_id, name")
-            .in("id", directionIds)
-            .not("discord_id", "is", null);
+          const [{ data: directionNames }, { data: directionPrivate }] = await Promise.all([
+            supabaseAdmin.from("profiles").select("id, name").in("id", directionIds),
+            supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", directionIds).not("discord_id", "is", null),
+          ]);
+          const dirNameMap: Record<string, string> = {};
+          for (const p of directionNames || []) dirNameMap[(p as any).id] = (p as any).name;
+          const directionProfiles = (directionPrivate || []).map((r: any) => ({
+            discord_id: r.discord_id,
+            name: dirNameMap[r.user_id] ?? "Direction",
+          }));
 
           const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
           const directionMessage = [
