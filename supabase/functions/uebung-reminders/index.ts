@@ -42,11 +42,11 @@ Deno.serve(async (req) => {
     let body: any = {};
     try { body = await req.json(); } catch { /* no body */ }
     if (body?.test_user_id) {
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("id, name, discord_id")
-        .eq("id", body.test_user_id)
-        .maybeSingle();
+      const [{ data: pp }, { data: pv }] = await Promise.all([
+        supabase.from("profiles").select("id, name").eq("id", body.test_user_id).maybeSingle(),
+        supabase.from("profiles_private").select("discord_id").eq("user_id", body.test_user_id).maybeSingle(),
+      ]);
+      const p = pp ? { ...pp, discord_id: pv?.discord_id ?? null } : null;
       if (!p?.discord_id) {
         return new Response(JSON.stringify({ success: false, error: "No discord_id for user", profile: p }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -116,14 +116,18 @@ Deno.serve(async (req) => {
         .in("role", ASD_ROLES);
       const asdUserIds = Array.from(new Set((roleRows || []).map((r: any) => r.user_id)));
 
-      const { data: members } = asdUserIds.length
-        ? await supabase
-            .from("profiles")
-            .select("id, name, discord_id")
-            .eq("is_approved", true)
-            .not("discord_id", "is", null)
-            .in("id", asdUserIds)
-        : { data: [] as any[] };
+      let members: { id: string; name: string; discord_id: string | null }[] = [];
+      if (asdUserIds.length) {
+        const [{ data: pRows }, { data: pvRows }] = await Promise.all([
+          supabase.from("profiles").select("id, name").eq("is_approved", true).in("id", asdUserIds),
+          supabase.from("profiles_private").select("user_id, discord_id").in("user_id", asdUserIds).not("discord_id", "is", null),
+        ]);
+        const dMap: Record<string, string> = {};
+        for (const r of pvRows || []) dMap[(r as any).user_id] = (r as any).discord_id;
+        members = (pRows || [])
+          .map((r: any) => ({ id: r.id, name: r.name, discord_id: dMap[r.id] ?? null }))
+          .filter((m) => m.discord_id);
+      }
 
       // Get members who already responded
       const { data: tns } = await supabase
