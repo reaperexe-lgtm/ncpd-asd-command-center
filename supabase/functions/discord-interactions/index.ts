@@ -337,11 +337,18 @@ Deno.serve(async (req) => {
           }), { headers: { "Content-Type": "application/json" } });
         }
 
-        const { data: profiles } = await supabaseAdmin
-          .from("profiles")
-          .select("id, name, dienstnummer")
+        const { data: linkRow } = await supabaseAdmin
+          .from("profiles_private")
+          .select("user_id")
           .eq("discord_id", discordUserId)
-          .limit(1);
+          .maybeSingle();
+        const { data: profiles } = linkRow?.user_id
+          ? await supabaseAdmin
+              .from("profiles")
+              .select("id, name, dienstnummer")
+              .eq("id", linkRow.user_id)
+              .limit(1)
+          : { data: [] as any[] };
 
         if (!profiles || profiles.length === 0) {
           return new Response(JSON.stringify({
