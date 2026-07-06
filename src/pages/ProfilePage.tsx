@@ -350,6 +350,64 @@ const ProfilePage = () => {
           Änderungen werden beim Speichern des Profils übernommen.
         </p>
       </div>
+
+      {/* Passwort ändern */}
+      <div className="bg-card border border-border rounded-lg p-5 space-y-5">
+        <div className="flex items-center gap-2">
+          <KeyRound className="w-5 h-5 text-primary" />
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Passwort ändern</h2>
+            <p className="text-[10px] text-muted-foreground">Wähle ein neues Passwort für deinen Account</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Neues Passwort</Label>
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type={showPw ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mindestens 6 Zeichen"
+              className="bg-background border-border pl-9 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Passwort bestätigen</Label>
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type={showPw2 ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Passwort wiederholen"
+              className="bg-background border-border pl-9 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw2((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPw2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        <Button onClick={handleChangePassword} disabled={changingPw} className="w-full gap-2">
+          <KeyRound className="w-4 h-4" />
+          {changingPw ? "Ändere..." : "Passwort ändern"}
+        </Button>
+      </div>
     </div>
   );
 };
