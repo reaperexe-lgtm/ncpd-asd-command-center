@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink, Cake, PartyPopper } from "lucide-react";
+import { User, Hash, Camera, Save, MessageCircle, Bell, ExternalLink, Cake, PartyPopper, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const ProfilePage = () => {
@@ -28,6 +28,34 @@ const ProfilePage = () => {
   const [discordServerDescription, setDiscordServerDescription] = useState("");
   const [birthday, setBirthday] = useState("");
   const [asdJoinDate, setAsdJoinDate] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error("Passwort muss mindestens 6 Zeichen lang sein");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwörter stimmen nicht überein");
+      return;
+    }
+    setChangingPw(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Passwort geändert!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setChangingPw(false);
+    }
+  };
 
   useEffect(() => {
     if (profile) {
