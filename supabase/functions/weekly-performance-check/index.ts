@@ -120,11 +120,11 @@ Deno.serve(async (req) => {
     }
 
     // Get user profile for messaging
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name, dienstnummer, discord_id")
-      .eq("id", user.id)
-      .maybeSingle();
+    const [{ data: profileBase }, { data: profilePriv }] = await Promise.all([
+      supabase.from("profiles").select("name, dienstnummer").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles_private").select("discord_id").eq("user_id", user.id).maybeSingle(),
+    ]);
+    const profile = profileBase ? { ...profileBase, discord_id: profilePriv?.discord_id ?? null } : null;
 
     const botToken = Deno.env.get("DISCORD_BOT_TOKEN");
     const DISCORD_API = "https://discord.com/api/v10";
@@ -187,11 +187,16 @@ Deno.serve(async (req) => {
         .in("role", ["director", "co_director"]);
       const ids = (directionRoles || []).map((r: any) => r.user_id);
       if (ids.length > 0) {
-        const { data: directionProfiles } = await supabase
-          .from("profiles")
-          .select("discord_id, name")
-          .in("id", ids)
-          .not("discord_id", "is", null);
+        const [{ data: dirNames }, { data: dirPriv }] = await Promise.all([
+          supabase.from("profiles").select("id, name").in("id", ids),
+          supabase.from("profiles_private").select("user_id, discord_id").in("user_id", ids).not("discord_id", "is", null),
+        ]);
+        const dNameMap: Record<string, string> = {};
+        for (const p of dirNames || []) dNameMap[(p as any).id] = (p as any).name;
+        const directionProfiles = (dirPriv || []).map((r: any) => ({
+          discord_id: r.discord_id,
+          name: dNameMap[r.user_id] ?? "Direction",
+        }));
         for (const p of directionProfiles || []) {
           try {
             await sendDM(p.discord_id!, directionMsg);
