@@ -116,6 +116,7 @@ const AdminPanel = () => {
   const [aufstellungAuto, setAufstellungAuto] = useState(true);
   const [savingAufstellung, setSavingAufstellung] = useState(false);
   const [sendingAufstellung, setSendingAufstellung] = useState(false);
+  const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
@@ -1807,6 +1808,42 @@ const AdminPanel = () => {
                   className="gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
+            {/* Discord Test-Nachricht */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Send className="w-4 h-4" /> Discord Test-Nachricht
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Sendet eine kurze Testnachricht in den Ankündigungs-Channel, um zu prüfen, ob der Bot korrekt posten kann.
+              </p>
+              <div className="flex justify-end pt-2 border-t border-border">
+                <Button
+                  onClick={async () => {
+                    setSendingDiscordTest(true);
+                    try {
+                      const triggeredBy =
+                        (user?.user_metadata as any)?.name || user?.email || "Admin";
+                      const { data, error } = await supabase.functions.invoke("discord-notify", {
+                        body: { type: "test_channel_message", data: { triggered_by: triggeredBy } },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      toast.success("Testnachricht gesendet");
+                      logActivity("Discord Testnachricht gesendet", "admin");
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Senden");
+                    } finally {
+                      setSendingDiscordTest(false);
+                    }
+                  }}
+                  disabled={sendingDiscordTest}
+                  className="gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Testnachricht senden
                 </Button>
               </div>
             </div>
