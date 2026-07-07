@@ -1,36 +1,21 @@
-## Problem
+## Test-Nachricht Button im Admin-Bereich
 
-Die `discord_id`-Spalte wurde aus der `profiles`-Tabelle in die neue Tabelle `profiles_private` verschoben. Alle Edge Functions lesen aber weiterhin aus `profiles` – dadurch:
+Neuer Button im Admin-Panel, der eine Testnachricht in den konfigurierten Discord Announcement-Channel schickt.
 
-- **Director-DMs (Achievements, Reset-Anfragen, Übungsteilnehmer, Weekly Performance)**: Query schlägt still fehl → keine Discord-Nachrichten mehr.
-- **Automatischer Wochenbericht**: Profile-Join liefert nichts → jeder Rang zeigt „Unbekannt", kein `<@discord_id>`-Ping der Top-Schreiber.
+### Änderungen
 
-## Fix
+**1. Edge Function `discord-notify` erweitern**
+- Neuen Action-Typ `test_channel_message` hinzufügen
+- Postet über den Discord Bot Token eine kurze Nachricht (`✅ Test-Nachricht aus dem ASD Dashboard – ausgelöst von <Name> um <Uhrzeit>`) in `DISCORD_ANNOUNCEMENTS_CHANNEL_ID`
+- Nur für Admin/Director/Co-Director erlaubt (Rollencheck via `has_role`)
 
-In allen betroffenen Edge Functions den `discord_id`-Lookup auf `profiles_private` umstellen und mit `profiles` (Name/Dienstnummer) per zweiter Query zusammenführen.
+**2. UI im Admin-Bereich**
+- Neuer Karten-Abschnitt „Discord Test" mit Button „Testnachricht senden"
+- Beim Klick: `supabase.functions.invoke('discord-notify', { body: { action: 'test_channel_message' } })`
+- Toast bei Erfolg/Fehler, Button während Ausführung disabled
 
-### Betroffene Dateien
+### Technische Details
 
-1. **`supabase/functions/discord-weekly-report/index.ts`**
-   - `profiles`-Select nur `id, name`; zusätzlicher Select aus `profiles_private` (`user_id, discord_id`) für dieselben IDs; Map zusammenführen.
-
-2. **`supabase/functions/discord-notify/index.ts`**
-   - `reset_request` (Zeile ~178): admin-`discord_id` aus `profiles_private` holen, Name aus `profiles`.
-   - `achievement_unlocked` User-DM (~457): `discord_id` des Users aus `profiles_private`.
-   - `achievement_unlocked` Direction-DMs (~493): Direction `discord_id` aus `profiles_private`, Namen aus `profiles`.
-
-3. **`supabase/functions/uebung-reminders/index.ts`**
-   - Test-DM (~47) und Reminder-Batch (~122): `discord_id` aus `profiles_private`, Namen aus `profiles` zusammenführen.
-
-4. **`supabase/functions/weekly-performance-check/index.ts`**
-   - User-Profil (~125): `name, dienstnummer` aus `profiles`, `discord_id` separat aus `profiles_private`.
-   - Direction-DMs (~192): analog wie oben.
-
-5. **`supabase/functions/discord-interactions/index.ts`** (Zeile 340)
-   - `/stats`-Slash-Command sucht Profil per `discord_id` in `profiles`. Umstellen: zuerst `profiles_private.user_id` per `discord_id` finden, dann `profiles` per `id` laden.
-
-### Keine sonstigen Änderungen
-
-- Kein Schema-Change, keine RLS-Änderung (Service Role liest `profiles_private` ohnehin).
-- Client-Code und UI bleiben unverändert.
-- Kein Verhalten der Nachrichteninhalte ändert sich – nur die Datenquelle für `discord_id`.
+- Datei: `supabase/functions/discord-notify/index.ts` – neuer Switch-Case
+- Datei: die bestehende Admin-Settings-Seite (wird bei Umsetzung lokalisiert, z.B. `src/pages/AdminPage.tsx` bzw. dort wo bereits Aufstellung-Settings liegen)
+- Kein DB-Schema-Change, keine neuen Secrets nötig (Bot Token + Channel ID bereits vorhanden)
