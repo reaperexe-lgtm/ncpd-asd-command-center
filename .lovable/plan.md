@@ -1,21 +1,15 @@
-## Test-Nachricht Button im Admin-Bereich
+## Fix: „Email not confirmed" bei neuen Bewerbern
 
-Neuer Button im Admin-Panel, der eine Testnachricht in den konfigurierten Discord Announcement-Channel schickt.
+### Ursache
+Der Login läuft über generierte Fake-Adressen (`pd-xxx@asd.local`). Aktuell ist in den Auth-Settings **Email-Confirmation aktiv**, sodass neu erstellte Bewerber-Accounts nicht einloggen können — es kommt keine Bestätigungsmail an (Domain existiert nicht). Bestehende (bereits bestätigte) User sind nicht betroffen, deshalb erst jetzt aufgefallen.
 
-### Änderungen
+### Fix
+`supabase--configure_auth` aufrufen mit `auto_confirm_email: true`. Damit werden neue Accounts automatisch bestätigt — passt zum Dienstnummer-Login (kein echter Mailversand nötig).
 
-**1. Edge Function `discord-notify` erweitern**
-- Neuen Action-Typ `test_channel_message` hinzufügen
-- Postet über den Discord Bot Token eine kurze Nachricht (`✅ Test-Nachricht aus dem ASD Dashboard – ausgelöst von <Name> um <Uhrzeit>`) in `DISCORD_ANNOUNCEMENTS_CHANNEL_ID`
-- Nur für Admin/Director/Co-Director erlaubt (Rollencheck via `has_role`)
+- `disable_signup: false`
+- `external_anonymous_users_enabled: false`
+- `auto_confirm_email: true`
+- `password_hibp_enabled: false` (wie zuvor deaktiviert)
 
-**2. UI im Admin-Bereich**
-- Neuer Karten-Abschnitt „Discord Test" mit Button „Testnachricht senden"
-- Beim Klick: `supabase.functions.invoke('discord-notify', { body: { action: 'test_channel_message' } })`
-- Toast bei Erfolg/Fehler, Button während Ausführung disabled
-
-### Technische Details
-
-- Datei: `supabase/functions/discord-notify/index.ts` – neuer Switch-Case
-- Datei: die bestehende Admin-Settings-Seite (wird bei Umsetzung lokalisiert, z.B. `src/pages/AdminPage.tsx` bzw. dort wo bereits Aufstellung-Settings liegen)
-- Kein DB-Schema-Change, keine neuen Secrets nötig (Bot Token + Channel ID bereits vorhanden)
+### Nachbehandlung
+Die 3 bestehenden Bewerber-Accounts, die noch als „unconfirmed" markiert sind, per Migration bestätigen (`UPDATE auth.users SET email_confirmed_at = now() WHERE email_confirmed_at IS NULL`) — nur für die betroffenen Bewerber-IDs, damit sie sich sofort einloggen können.
