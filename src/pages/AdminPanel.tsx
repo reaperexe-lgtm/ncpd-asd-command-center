@@ -116,6 +116,7 @@ const AdminPanel = () => {
   const [aufstellungAuto, setAufstellungAuto] = useState(true);
   const [savingAufstellung, setSavingAufstellung] = useState(false);
   const [sendingAufstellung, setSendingAufstellung] = useState(false);
+  const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
