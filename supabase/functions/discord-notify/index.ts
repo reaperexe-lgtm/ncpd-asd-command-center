@@ -167,6 +167,28 @@ Deno.serve(async (req) => {
     }
 
     if (type === "reset_request") {
+      // handled below
+    }
+
+    if (type === "test_channel_message") {
+      const channelId = sanitizeDiscordId(
+        Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
+        Deno.env.get("DISCORD_CHANNEL_ID")
+      );
+      if (!channelId) throw new Error("Kein Discord-Channel konfiguriert");
+      const triggeredBy: string = (data?.triggered_by as string) || "Admin";
+      const time = new Date().toLocaleString("de-DE", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
+      });
+      const content = `✅ **Bot-Test** — Testnachricht aus dem ASD Dashboard\nAusgelöst von **${triggeredBy}** um ${time} Uhr.`;
+      const msg = await sendChannelMessage(botToken, channelId, content);
+      return new Response(JSON.stringify({ success: true, message_id: msg.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (type === "reset_request_DUPLICATE_MARKER") {
       // Notify all admins with discord_id about new reset request via DM
       const { data: adminRoles } = await supabaseAdmin
         .from("user_roles")
