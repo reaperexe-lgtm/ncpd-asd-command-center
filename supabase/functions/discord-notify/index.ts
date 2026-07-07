@@ -166,10 +166,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (type === "reset_request") {
-      // handled below
-    }
-
     if (type === "test_channel_message") {
       const channelId = sanitizeDiscordId(
         Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID") ||
@@ -188,7 +184,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (type === "reset_request_DUPLICATE_MARKER") {
+    if (type === "reset_request") {
       // Notify all admins with discord_id about new reset request via DM
       const { data: adminRoles } = await supabaseAdmin
         .from("user_roles")
