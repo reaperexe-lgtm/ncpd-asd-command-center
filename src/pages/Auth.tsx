@@ -93,8 +93,8 @@ const Auth = () => {
             data: {
               name: fullName,
               dienstnummer: dn,
-              ...(isASDSignup ? { is_asd_applicant: true } : {}),
-              ...(isFlightSignup ? { is_flight_applicant: true } : {}),
+              // Alle Neuanmeldungen sind Bewerber. Flight explizit, sonst ASD.
+              ...(isFlightSignup ? { is_flight_applicant: true } : { is_asd_applicant: true }),
             },
             emailRedirectTo: window.location.origin,
           },
@@ -114,16 +114,10 @@ const Auth = () => {
           }
           throw error;
         }
-        toast.success(
-          isASDSignup || isFlightSignup
-            ? "Registrierung erfolgreich! Du kannst dich jetzt anmelden."
-            : "Registrierung erfolgreich! Bitte warte auf die Freischaltung."
-        );
-        if (isASDSignup || isFlightSignup) {
-          setIsASDSignup(false);
-          setIsFlightSignup(false);
-          setIsLogin(true);
-        }
+        toast.success("Registrierung erfolgreich! Du kannst dich jetzt anmelden.");
+        setIsASDSignup(false);
+        setIsFlightSignup(false);
+        setIsLogin(true);
       }
     } catch (error: any) {
       toast.error(error.message);
