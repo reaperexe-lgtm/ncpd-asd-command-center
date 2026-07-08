@@ -294,6 +294,11 @@ const MemberPage = () => {
                     {m.dienstnummer && (
                       <p className="text-[10px] text-muted-foreground font-mono mt-1">PD · {m.dienstnummer}</p>
                     )}
+                    {(m as any).is_admin && (
+                      <div className="mt-1 inline-flex items-center gap-1 bg-red-500/15 border border-red-500/40 rounded-md px-2 py-0.5">
+                        <span className="text-[9px] uppercase tracking-wider text-red-300 font-bold">Admin</span>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
