@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Lock, Shield, Check, X } from "lucide-react";
+import { Lock, Shield, Check, X, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] as const;
@@ -24,6 +24,53 @@ interface PermissionMatrixSectionProps {
 
 const PermissionMatrixSection = ({ approved, roleMutation }: PermissionMatrixSectionProps) => {
   const queryClient = useQueryClient();
+
+  // Alle Rollen pro User (für Zweitrollen-Anzeige)
+  const { data: allUserRoles } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const rolesByUser = (allUserRoles || []).reduce((acc, r: any) => {
+    (acc[r.user_id] ||= []).push(r.role);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  const addSecondaryRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: userId, role: role as any }, { onConflict: "user_id,role" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-user-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Zweitrolle hinzugefügt");
+    },
+    onError: (e: any) => toast.error(e.message || "Fehler"),
+  });
+
+  const removeRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-user-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Rolle entfernt");
+    },
+    onError: (e: any) => toast.error(e.message || "Fehler"),
+  });
 
   // Load saved permission overrides from DB
   const { data: savedPermissions } = useQuery({
@@ -164,6 +211,31 @@ const PermissionMatrixSection = ({ approved, roleMutation }: PermissionMatrixSec
                         <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}>
                           <SelectTrigger className="w-28 h-6 text-[10px] bg-background border-border ml-1"><SelectValue /></SelectTrigger>
                           <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                        </Select>
+                        {/* Zweitrollen-Chips */}
+                        {(rolesByUser[u.id] || []).filter(r => r !== u.role).map(r => (
+                          <span key={r} className="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5 text-[10px] text-primary">
+                            +{ROLE_LABELS[r] || r}
+                            <button
+                              onClick={() => removeRole.mutate({ userId: u.id, role: r })}
+                              className="hover:text-destructive"
+                              title="Zweitrolle entfernen"
+                              disabled={removeRole.isPending}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                        {/* + Zweitrolle hinzufügen */}
+                        <Select value="" onValueChange={(r) => addSecondaryRole.mutate({ userId: u.id, role: r })}>
+                          <SelectTrigger className="w-8 h-6 p-0 flex items-center justify-center bg-background border-border" title="Zweitrolle hinzufügen">
+                            <Plus className="w-3 h-3" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLES.filter(r => !(rolesByUser[u.id] || []).includes(r)).map((r) => (
+                              <SelectItem key={r} value={r}>+ {ROLE_LABELS[r]}</SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                     ))}

@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   role: AppRole | null;
+  roles: AppRole[];
   isApproved: boolean;
   isAdmin: boolean;
   loading: boolean;
@@ -16,15 +17,22 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  session: null, user: null, role: null, isApproved: false, isAdmin: false, loading: true, signOut: async () => {}, profile: null,
+  session: null, user: null, role: null, roles: [], isApproved: false, isAdmin: false, loading: true, signOut: async () => {}, profile: null,
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+const ROLE_RANK: Record<string, number> = {
+  admin: 0, team_red: 0, director: 1, co_director: 2, supervisor: 3,
+  ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7,
+  asd_applicant: 8, flight_applicant: 8, flight_license: 8,
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [isApproved, setIsApproved] = useState(false);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
       ]);
       if (profileRes.error) console.error("Profile fetch error:", profileRes.error);
       if (roleRes.error) console.error("Role fetch error:", roleRes.error);
@@ -41,8 +49,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfile({ name: profileRes.data.name, image_url: profileRes.data.image_url, dienstnummer: profileRes.data.dienstnummer });
         setIsApproved(profileRes.data.is_approved ?? false);
       }
-      if (roleRes.data) {
-        setRole(roleRes.data.role as AppRole);
+      if (roleRes.data && roleRes.data.length > 0) {
+        const all = roleRes.data.map((r: any) => r.role as AppRole);
+        const primary = [...all].sort((a, b) => (ROLE_RANK[a] ?? 99) - (ROLE_RANK[b] ?? 99))[0];
+        setRoles(all);
+        setRole(primary);
       }
     } catch (e) {
       console.error("fetchUserData failed:", e);
@@ -69,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 0);
       } else {
         setRole(null);
+        setRoles([]);
         setIsApproved(false);
         setProfile(null);
         setLoading(false);
@@ -98,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = role === "director" || role === "co_director" || role === "admin" || role === "supervisor" || role === "team_red";
 
   return (
-    <AuthContext.Provider value={{ session, user, role, isApproved, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => {}), profile }}>
+    <AuthContext.Provider value={{ session, user, role, roles, isApproved, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => {}), profile }}>
       {children}
     </AuthContext.Provider>
   );

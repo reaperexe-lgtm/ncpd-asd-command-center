@@ -68,11 +68,14 @@ const MemberPage = () => {
     queryFn: async () => {
       const { data: profiles } = await supabase.from("profiles").select("*").eq("is_approved", true);
       const { data: roles } = await supabase.from("user_roles").select("*");
-      return (profiles || []).map((p) => ({
-        ...p,
-        role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
-      })).filter((m) => !HIDDEN_ROLES.includes(m.role))
-        .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
+      return (profiles || []).map((p) => {
+        const userRoles = (roles || []).filter((r) => r.user_id === p.id).map((r: any) => r.role as string);
+        // Anzeigerolle = höchste nicht-versteckte Rolle (nach ROLE_ORDER-Priorität)
+        const displayRole = ROLE_ORDER.find((r) => userRoles.includes(r)) || null;
+        const hasAdmin = userRoles.some((r) => HIDDEN_ROLES.includes(r) && (r === "admin"));
+        return { ...p, role: displayRole, all_roles: userRoles, is_admin: hasAdmin };
+      }).filter((m) => m.role !== null)
+        .sort((a, b) => ROLE_ORDER.indexOf(a.role!) - ROLE_ORDER.indexOf(b.role!));
     },
   });
 
@@ -290,6 +293,11 @@ const MemberPage = () => {
                     )}
                     {m.dienstnummer && (
                       <p className="text-[10px] text-muted-foreground font-mono mt-1">PD · {m.dienstnummer}</p>
+                    )}
+                    {(m as any).is_admin && (
+                      <div className="mt-1 inline-flex items-center gap-1 bg-red-500/15 border border-red-500/40 rounded-md px-2 py-0.5">
+                        <span className="text-[9px] uppercase tracking-wider text-red-300 font-bold">Admin</span>
+                      </div>
                     )}
                   </button>
                 ))}

@@ -381,7 +381,18 @@ const AdminPanel = () => {
 
   const roleMutation = useMutation({
     mutationFn: async ({ userId, newRole, oldRole }: { userId: string; newRole: string; oldRole: string }) => {
-      const { error } = await supabase.from("user_roles").update({ role: newRole as any }).eq("user_id", userId);
+      // Nur die alte Rolle entfernen (nicht alle Rollen des Users) und neue upserten.
+      if (oldRole && oldRole !== newRole) {
+        const { error: delErr } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", oldRole as any);
+        if (delErr) throw delErr;
+      }
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: userId, role: newRole as any }, { onConflict: "user_id,role" });
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
