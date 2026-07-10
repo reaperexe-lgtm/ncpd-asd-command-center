@@ -4,54 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Tag } from "lucide-react";
 
-type ChangelogEntry = {
-  id: string;
-  version: string;
-  created_at: string;
-  title: string;
-  description?: string;
-  changes?: Array<string | { text: string; type?: string }>;
-};
-
-const DEFAULT_CHANGELOGS: ChangelogEntry[] = [
-  {
-    id: "welcome",
-    version: "1.2.0",
-    created_at: "2026-07-11T00:00:00.000Z",
-    title: "Schönere Startseite",
-    description: "Die Login-Seite wirkt jetzt klarer, ruhiger und einfacher im Einstieg.",
-    changes: [
-      "Kurzüberblick mit den wichtigsten Neuerungen",
-      "Saubere Darstellung für Desktop und Handy",
-      "Mehr Fokus auf den schnellen Einstieg in die App",
-    ],
-  },
-  {
-    id: "speed",
-    version: "1.1.9",
-    created_at: "2026-07-08T00:00:00.000Z",
-    title: "Schnellerer Einstieg",
-    description: "Wichtige Funktionen sind jetzt noch einfacher zu finden.",
-    changes: [
-      "Bessere Orientierung direkt nach dem Login",
-      "Kürzere Wege zu den wichtigsten Bereichen",
-      "Komfortableres Arbeiten im Alltag",
-    ],
-  },
-  {
-    id: "quality",
-    version: "1.1.8",
-    created_at: "2026-07-03T00:00:00.000Z",
-    title: "Feinere Details",
-    description: "Kleine Verbesserungen für ein angenehmeres Gefühl in der Nutzung.",
-    changes: [
-      "Optimierte Darstellung von Infos und Status",
-      "Mehr Konsistenz in Buttons und Karten",
-      "Weniger Ablenkung bei der Nutzung",
-    ],
-  },
-];
-
 const Changelog = () => {
   const queryClient = useQueryClient();
 
@@ -91,20 +43,15 @@ const Changelog = () => {
     );
   }
 
-  const visibleChangelogs = (changelogs && changelogs.length > 0 ? changelogs : DEFAULT_CHANGELOGS) as ChangelogEntry[];
-
   return (
     <div className="bg-card/60 border border-border rounded-xl p-5 backdrop-blur-sm">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-4">
         <Sparkles className="w-4 h-4 text-primary" />
         <h3 className="text-sm font-bold text-primary tracking-wide uppercase">Changelog</h3>
       </div>
-      <p className="text-xs text-muted-foreground mb-4">
-        Kurze Neuigkeiten und Verbesserungen für einen angenehmeren Start.
-      </p>
       <ScrollArea className="h-[280px] pr-3">
         <div className="space-y-4">
-          {visibleChangelogs.map((log) => (
+          {changelogs.map((log) => (
             <div key={log.id} className="border-l-2 border-primary/30 pl-3 space-y-1">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">

@@ -4,65 +4,55 @@
 
 @layer base {
   :root {
-    /* Dark mode palette with blue primary */
-    --background: 210 12% 6%;
-    --foreground: 210 10% 96%;
+    --background: 150 25% 6%;
+    --foreground: 80 30% 88%;
 
-    --card: 210 14% 8%;
-    --card-foreground: 210 10% 96%;
+    --card: 150 22% 9%;
+    --card-foreground: 80 30% 88%;
 
-    --popover: 210 14% 8%;
-    --popover-foreground: 210 10% 96%;
+    --popover: 150 22% 9%;
+    --popover-foreground: 80 30% 88%;
 
-    --primary: 215 90% 50%; /* bright blue accent */
+    --primary: 140 50% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 14% 8%;
-    --secondary-foreground: 210 10% 96%;
+    --secondary: 150 20% 14%;
+    --secondary-foreground: 80 30% 88%;
 
-    --muted: 210 12% 10%;
-    --muted-foreground: 210 8% 70%;
+    --muted: 150 18% 14%;
+    --muted-foreground: 80 15% 65%;
 
-    --accent: 200 80% 40%;
+    --accent: 90 40% 40%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 14% 12%;
-    --input: 210 14% 10%;
-    --ring: 215 90% 50%;
+    --border: 150 20% 18%;
+    --input: 150 20% 16%;
+    --ring: 140 50% 35%;
 
     --radius: 0.5rem;
 
-    /* Sidebar tweaks */
-    --sidebar-background: 210 12% 5%;
-    --sidebar-foreground: 210 10% 92%;
-    --sidebar-primary: 215 90% 50%;
+    --sidebar-background: 150 25% 7%;
+    --sidebar-foreground: 80 30% 85%;
+    --sidebar-primary: 140 50% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 14% 8%;
-    --sidebar-accent-foreground: 210 10% 96%;
-    --sidebar-border: 210 14% 12%;
-    --sidebar-ring: 215 90% 50%;
+    --sidebar-accent: 150 20% 13%;
+    --sidebar-accent-foreground: 80 30% 88%;
+    --sidebar-border: 150 20% 18%;
+    --sidebar-ring: 140 50% 35%;
   }
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Default card style to make layouts cleaner */
-  .card {
-    @apply bg-card/95 text-card-foreground rounded-lg shadow-sm border border-border p-5;
-  }
-
-  /* Slightly larger default radius for controls */
-  button, input, select, textarea {
-    border-radius: var(--radius);
+    @apply bg-background text-foreground;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
 }
 
