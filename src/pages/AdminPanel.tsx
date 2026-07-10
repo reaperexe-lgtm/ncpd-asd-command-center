@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
-import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
+import { deleteUserAccount } from "@/lib/supabaseFunctions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -356,13 +356,10 @@ const AdminPanel = () => {
         if (error) throw error;
       } else {
         // Reject = delete user completely so name/dienstnummer become available again
-        const headers = await getSupabaseFunctionAuthHeaders(supabase);
-        const { data, error } = await supabase.functions.invoke("delete-user", {
-          body: { userId },
-          headers,
-        });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+        const result = await deleteUserAccount(supabase as any, userId);
+        if (!result.success) {
+          throw new Error(result.message || "Löschen fehlgeschlagen");
+        }
       }
     },
     onSuccess: (_, vars) => {
@@ -444,13 +441,10 @@ const AdminPanel = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const headers = await getSupabaseFunctionAuthHeaders(supabase);
-      const { data, error } = await supabase.functions.invoke("delete-user", {
-        body: { userId },
-        headers,
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const result = await deleteUserAccount(supabase as any, userId);
+      if (!result.success) {
+        throw new Error(result.message || "Löschen fehlgeschlagen");
+      }
     },
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
