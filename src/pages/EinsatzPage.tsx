@@ -167,22 +167,6 @@ const EinsatzPage = () => {
         </div>
       </div>
 
-      {/* Protokollschreiber */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <Label className="text-primary font-semibold text-sm">Protokollschreiber</Label>
-        <Select value={protokollschreiber} onValueChange={setProtokollschreiber}>
-          <SelectTrigger className="mt-2 bg-background border-border">
-            <SelectValue placeholder="Bitte auswählen" />
-          </SelectTrigger>
-          <SelectContent>
-            {members?.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                {m.name} {(m as any).internal_dienstnummer ? `[${(m as any).internal_dienstnummer}]` : ""} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Raubinformationen */}
       <div className="bg-card border border-border rounded-lg p-5 space-y-5">
