@@ -36,17 +36,19 @@ const ROLE_HIERARCHY: Record<string, number> = {
  * Director/Co-Director dürfen nur Rollen unter dem eigenen Rang.
  * Co-Director darf seinen eigenen Rang nicht vergeben.
  */
-function getAssignableRoles(currentRole: string | null): readonly string[] {
+function getAssignableRoles(currentRole: string | null, isAdmin: boolean): readonly string[] {
+  if (isAdmin) return ROLES;
   if (!currentRole) return [];
-  if (currentRole === "admin" || currentRole === "team_red") return ROLES;
+  if (currentRole === "team_red") return ROLES;
   if (currentRole === "director") return ROLES.filter((r) => r !== "admin");
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
   return ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
 }
 
-function canEditUser(currentRole: string | null, targetRole: string): boolean {
+function canEditUser(currentRole: string | null, targetRole: string, isAdmin: boolean): boolean {
+  if (isAdmin) return true;
   if (!currentRole) return false;
-  if (currentRole === "admin" || currentRole === "team_red") return true;
+  if (currentRole === "team_red") return true;
   if (currentRole === "director") return targetRole !== "admin";
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
   const targetLevel = ROLE_HIERARCHY[targetRole] ?? 999;
@@ -99,7 +101,7 @@ const RESET_TYPE_LABELS: Record<string, string> = {
 
 const AdminPanel = () => {
   const { isAdmin, user, role: currentUserRole } = useAuth();
-  const assignableRoles = getAssignableRoles(currentUserRole);
+  const assignableRoles = getAssignableRoles(currentUserRole, isAdmin);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
   const [logFilter, setLogFilter] = useState("all");
@@ -827,7 +829,7 @@ const AdminPanel = () => {
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role)}>
+                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role, isAdmin)}>
                           <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                           <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                         </Select>
@@ -912,7 +914,7 @@ const AdminPanel = () => {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="flex flex-col gap-2">
-                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role)}>
+                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role, isAdmin)}>
                           <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                           <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                         </Select>
@@ -925,12 +927,12 @@ const AdminPanel = () => {
                           <span>Admin-Rechte</span>
                         </label>
                       </div>
-                      {canEditUser(currentUserRole, u.role) && (
+                      {canEditUser(currentUserRole, u.role, isAdmin) && (
                         <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
                           <Ban className="w-3 h-3" /> Sperren
                         </Button>
                       )}
-                      {canResetPasswords && canEditUser(currentUserRole, u.role) && (
+                      {canResetPasswords && canEditUser(currentUserRole, u.role, isAdmin) && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
@@ -1034,7 +1036,7 @@ const AdminPanel = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">
-                            <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role)}>
+                            <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role, isAdmin)}>
                               <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                               <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                             </Select>
@@ -1049,7 +1051,7 @@ const AdminPanel = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {canEditUser(currentUserRole, u.role) ? (
+                          {canEditUser(currentUserRole, u.role, isAdmin) ? (
                             <div className="flex items-center gap-1.5">
                               <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
                                 <Ban className="w-3 h-3" /> Sperren
@@ -1198,12 +1200,12 @@ const AdminPanel = () => {
                       <Select
                         defaultValue={u.role}
                         onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })}
-                        disabled={!canEditUser(currentUserRole, u.role)}
+                        disabled={!canEditUser(currentUserRole, u.role, isAdmin)}
                       >
                         <SelectTrigger className="w-44 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                         <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                       </Select>
-                      {canEditUser(currentUserRole, u.role) && (
+                      {canEditUser(currentUserRole, u.role, isAdmin) && (
                         <>
                           <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-8 text-xs">
                             <Ban className="w-3.5 h-3.5" /> Sperren
