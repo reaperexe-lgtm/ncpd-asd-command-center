@@ -54,7 +54,7 @@ interface ExamConfig {
 const EXAM_CONFIGS: Record<string, ExamConfig> = {
   ASD1: {
     type: "ASD1",
-    label: "Bewerbungsprüfung ASD 1",
+    label: "Vorabprüfung 1",
     locations: ASD1_LOCATIONS,
     maxScore: 35,
     passScore: 28,
@@ -63,7 +63,7 @@ const EXAM_CONFIGS: Record<string, ExamConfig> = {
   },
   ASD2: {
     type: "ASD2",
-    label: "Bewerbungsprüfung ASD 2",
+    label: "Vorabprüfung 2",
     locations: ASD2_LOCATIONS,
     maxScore: 38,
     passScore: 30,
@@ -371,47 +371,41 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
           </p>
           <div className={`grid gap-4 ${config.hasUturn ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
             <div className="space-y-2">
-              <Label className="text-xs">Himmelsrichtung (+1 bis +5)</Label>
+              <Label className="text-xs">Himmelsrichtung (max. 2)</Label>
               <Input
                 type="number"
                 min={0}
-                max={5}
+                max={2}
                 value={himmelsrichtungDeduction}
-                onChange={e => setHimmelsrichtungDeduction(Math.max(0, Math.min(5, parseInt(e.target.value) || 0)))}
+                onChange={e => setHimmelsrichtungDeduction(Math.max(0, Math.min(2, parseInt(e.target.value) || 0)))}
               />
               <p className="text-xs text-muted-foreground">Keine Himmelsrichtung angesagt</p>
             </div>
             {config.hasUturn && (
               <div className="space-y-2">
-                <Label className="text-xs">U-Turn Abzug (+1 je U-Turn)</Label>
+                <Label className="text-xs">U-Turn Abzug (max. 2)</Label>
                 <Input
                   type="number"
                   min={0}
-                  max={10}
+                  max={2}
                   value={uturnDeduction}
-                  onChange={e => setUturnDeduction(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setUturnDeduction(Math.max(0, Math.min(2, parseInt(e.target.value) || 0)))}
                 />
                 <p className="text-xs text-muted-foreground">Keine U-Turns angesagt</p>
               </div>
             )}
             <div className="space-y-2">
-              <Label className="text-xs">10-33 Abzug (+1 je 10-33)</Label>
+              <Label className="text-xs">10-33 Abzug (max. 2)</Label>
               <Input
                 type="number"
                 min={0}
-                max={config.max1033}
+                max={2}
                 value={ten33Deduction}
-                onChange={e => setTen33Deduction(Math.max(0, Math.min(config.max1033, parseInt(e.target.value) || 0)))}
+                onChange={e => setTen33Deduction(Math.max(0, Math.min(2, parseInt(e.target.value) || 0)))}
               />
               <p className="text-xs text-muted-foreground">Keine 10-33 angesagt (max. {config.max1033})</p>
             </div>
           </div>
-        </div>
-
-        {/* Notes */}
-        <div className="border border-border rounded-xl bg-card p-5 space-y-4">
-          <Label className="text-xs">Anmerkungen (optional)</Label>
-          <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notizen zur Prüfung..." rows={3} />
         </div>
 
         {/* Score Summary */}
@@ -565,13 +559,6 @@ const PracticalExam = ({ examType = "ASD1" }: PracticalExamProps) => {
             })}
           </div>
         </div>
-
-        {exam.notes && (
-          <div className="border border-border rounded-xl bg-card p-5">
-            <p className="text-xs text-muted-foreground mb-1">Anmerkungen</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{exam.notes}</p>
-          </div>
-        )}
 
         {/* Freigabe für Bewerber */}
         {canEdit && (

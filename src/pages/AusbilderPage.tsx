@@ -37,11 +37,11 @@ const AusbilderPage = () => {
           </TabsTrigger>
           <TabsTrigger value="asd1" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <FileCheck className="w-4 h-4" />
-            Praxis ASD 1
+            Vorabprüfung 1
           </TabsTrigger>
           <TabsTrigger value="asd2" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <FileCheck className="w-4 h-4" />
-            Praxis ASD 2
+            Vorabprüfung 2
           </TabsTrigger>
           <TabsTrigger value="ausbildungen" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs">
             <GraduationCap className="w-4 h-4" />
