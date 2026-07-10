@@ -118,7 +118,7 @@ const EinsatzPage = () => {
     setDesc(""); setLocation(""); setCustomLocation(""); setTatzeit("");
     setSuspects("1"); setHostages("0"); setGangId(""); setGangInfo("");
     setPilot(""); setCoPilot(""); setLeftGunner(""); setRightGunner("");
-    setVehicles([]); setShowVehicleForm(false); setProtokollschreiber("");
+    setVehicles([]); setShowVehicleForm(false);
     setCurrentVehicle({ ...emptyVehicle });
     clearPersistedKeys([
       "einsatz_desc","einsatz_location","einsatz_customLocation","einsatz_tatzeit",
