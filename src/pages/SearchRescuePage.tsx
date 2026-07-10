@@ -7,9 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { LifeBuoy, CheckCircle2, Clock, XCircle, ShieldCheck, Users, Building2, HeartPulse, GraduationCap, Play } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
-import SearchAndRescueContent from "@/components/SearchAndRescueContent";
-import SRTrainingCurriculum from "@/components/SRTrainingCurriculum";
-import SRTheoryExam from "@/components/SRTheoryExam";
 
 type Signup = {
   id: string;

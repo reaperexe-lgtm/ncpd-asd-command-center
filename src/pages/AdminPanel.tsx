@@ -916,7 +916,7 @@ const AdminPanel = () => {
                         onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
                       />
                       <LifeBuoy className="w-3.5 h-3.5 text-primary" />
-                      <span>Search & Rescue Ausbildung</span>
+                      <span>SR-Ausbildung</span>
                     </label>
                   </div>
                 ))}
@@ -1006,7 +1006,7 @@ const AdminPanel = () => {
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center justify-center" title="Search & Rescue Ausbildung">
+                          <div className="flex items-center justify-center" title="SR-Ausbildung">
                             <Checkbox
                               checked={!!(u as any).has_sr_training}
                               onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
