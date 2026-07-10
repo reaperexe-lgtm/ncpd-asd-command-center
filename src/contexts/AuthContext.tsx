@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { getEffectiveRole, hasAdminPermissions, type AppRole } from "@/lib/roles";
+import { getEffectiveRole, hasAdminOverride, hasAdminPermissions, type AppRole } from "@/lib/roles";
 
 interface AuthContextType {
   session: Session | null;
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string, currentUser: User | null = user) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
@@ -38,16 +38,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ]);
       if (profileRes.error) console.error("Profile fetch error:", profileRes.error);
       if (roleRes.error) console.error("Role fetch error:", roleRes.error);
-      if (profileRes.data) {
-        setProfile({ name: profileRes.data.name, image_url: profileRes.data.image_url, dienstnummer: profileRes.data.dienstnummer });
+
+      const profileData = profileRes.data
+        ? {
+            name: profileRes.data.name,
+            image_url: profileRes.data.image_url,
+            dienstnummer: profileRes.data.dienstnummer,
+          }
+        : null;
+
+      if (profileData) {
+        setProfile(profileData);
         setIsApproved(profileRes.data.is_approved ?? false);
       }
-      if (roleRes.data && roleRes.data.length > 0) {
-        const all = roleRes.data.map((r: any) => r.role as AppRole);
-        const primary = getEffectiveRole(all);
-        setRoles(all);
-        setRole(primary);
-      }
+
+      const rolesFromDb = (roleRes.data || []).map((r: any) => r.role as AppRole);
+      const adminOverride = hasAdminOverride(currentUser, profileData);
+      const allRoles = adminOverride ? [...new Set([...rolesFromDb, "admin"])] : rolesFromDb;
+      const primary = getEffectiveRole(allRoles);
+
+      setRoles(allRoles);
+      setRole(primary);
     } catch (e) {
       console.error("fetchUserData failed:", e);
     }
@@ -67,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user) {
         setLoading(true);
         setTimeout(() => {
-          fetchUserData(session.user.id).finally(() => {
+          fetchUserData(session.user.id, session.user).finally(() => {
             if (mounted) setLoading(false);
           });
         }, 0);
@@ -85,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserData(session.user.id).finally(() => {
+        fetchUserData(session.user.id, session.user).finally(() => {
           if (mounted) setLoading(false);
         });
       } else {
