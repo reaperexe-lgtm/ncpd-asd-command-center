@@ -41,7 +41,7 @@ const EinsatzPage = () => {
   const [hostages, setHostages] = usePersistedState<string>("einsatz_hostages", "0");
   const [gangId, setGangId] = usePersistedState<string>("einsatz_gangId", "");
   const [gangInfo, setGangInfo] = usePersistedState<string>("einsatz_gangInfo", "");
-  const [protokollschreiber, setProtokollschreiber] = usePersistedState<string>("einsatz_protokollschreiber", "");
+  
   const [pilot, setPilot] = usePersistedState<string>("einsatz_pilot", "");
   const [coPilot, setCoPilot] = usePersistedState<string>("einsatz_coPilot", "");
   const [leftGunner, setLeftGunner] = usePersistedState<string>("einsatz_leftGunner", "");
