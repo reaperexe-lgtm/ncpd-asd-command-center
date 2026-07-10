@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
 import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
+import { createEmptyVehicleForm, normalizeVehicleForm, type VehicleFormData } from "@/lib/vehicleForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, Trash2, Car, FileText, Users, Shield, Pencil } from "lucide-react";
 
@@ -18,17 +18,9 @@ const LOCATIONS = ["Staatsbank","Juwelier","Human Labs","Geiselnahme","10-12 Lad
 const VEHICLE_TYPES = ["Fahrzeug","Motorrad","Helikopter","Boot"];
 const VEHICLE_MODELS = ["Drafter","VSTR","Sultan Classic","Sultan Revolter","Schafter","Jugular","Chino Custom","Faction Custom","Benefactor","Schlagen","Schneider","BFB 100","Super Volito","Skyhawk","Null","Sonstiges"];
 
-interface VehicleForm {
-  vehicle_type: string; model: string; custom_model: string; license_plate: string;
-  owner_info: string; primary_color: string; secondary_color: string;
-  pearl_color: string; neon_color: string; xenon: boolean; xenon_color: string;
-}
+type VehicleForm = VehicleFormData;
 
-const emptyVehicle: VehicleForm = {
-  vehicle_type: "Fahrzeug", model: "Drafter", custom_model: "", license_plate: "",
-  owner_info: "", primary_color: "#000000", secondary_color: "#000000",
-  pearl_color: "#000000", neon_color: "#000000", xenon: false, xenon_color: "#ffffff",
-};
+const emptyVehicle: VehicleForm = createEmptyVehicleForm();
 
 const EinsatzPage = () => {
   const { user } = useAuth();
@@ -92,10 +84,7 @@ const EinsatzPage = () => {
             license_plate: v.license_plate,
             owner_info: v.owner_info,
             primary_color: v.primary_color,
-            secondary_color: v.secondary_color,
             pearl_color: v.pearl_color,
-            neon_color: v.neon_color,
-            xenon: v.xenon,
           }))
         );
         if (vError) throw vError;
@@ -141,16 +130,14 @@ const EinsatzPage = () => {
       setCurrentVehicle({
         ...emptyVehicle,
         primary_color: currentVehicle.primary_color,
-        secondary_color: currentVehicle.secondary_color,
         pearl_color: currentVehicle.pearl_color,
-        neon_color: currentVehicle.neon_color,
       });
     }
     setShowVehicleForm(false);
   };
 
   const startEditVehicle = (i: number) => {
-    setCurrentVehicle({ ...vehicles[i] });
+    setCurrentVehicle(normalizeVehicleForm(vehicles[i]));
     setEditingIndex(i);
     setShowVehicleForm(true);
   };
@@ -242,7 +229,7 @@ const EinsatzPage = () => {
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 <span className="w-4 h-4 rounded-full border border-border" style={{ background: v.primary_color }} />
-                <span className="w-4 h-4 rounded-full border border-border" style={{ background: v.secondary_color }} />
+                <span className="w-4 h-4 rounded-full border border-border" style={{ background: v.pearl_color }} />
               </div>
               <div>
                 <p className="text-sm font-medium text-primary">{v.vehicle_type} – {v.model === "Sonstiges" ? v.custom_model : v.model}</p>
@@ -266,7 +253,7 @@ const EinsatzPage = () => {
 
         {showVehicleForm && (
           <div className="space-y-4 border border-primary/20 rounded-lg p-4 bg-background">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Art</Label>
                 <Select value={currentVehicle.vehicle_type} onValueChange={(v) => setCurrentVehicle({ ...currentVehicle, vehicle_type: v })}>
@@ -285,54 +272,21 @@ const EinsatzPage = () => {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Kennzeichen</Label><Input className="mt-1 bg-card border-border" value={currentVehicle.license_plate} onChange={(e) => setCurrentVehicle({ ...currentVehicle, license_plate: e.target.value })} /></div>
-              <div><Label>Besitzer & Geb. Datum</Label><Input className="mt-1 bg-card border-border" placeholder="Name, TT.MM.JJJJ" value={currentVehicle.owner_info} onChange={(e) => setCurrentVehicle({ ...currentVehicle, owner_info: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs">Primär</Label>
+                <Label>Primärfarbe</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.primary_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, primary_color: e.target.value })} />
                   <span className="text-[10px] text-muted-foreground font-mono">{currentVehicle.primary_color}</span>
                 </div>
               </div>
               <div>
-                <Label className="text-xs">Sekundär</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.secondary_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, secondary_color: e.target.value })} />
-                  <span className="text-[10px] text-muted-foreground font-mono">{currentVehicle.secondary_color}</span>
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs">Pearl</Label>
+                <Label>Perlfarbe</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.pearl_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, pearl_color: e.target.value })} />
                   <span className="text-[10px] text-muted-foreground font-mono">{currentVehicle.pearl_color}</span>
                 </div>
               </div>
-              <div>
-                <Label className="text-xs">Neon</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.neon_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, neon_color: e.target.value })} />
-                  <span className="text-[10px] text-muted-foreground font-mono">{currentVehicle.neon_color}</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Checkbox checked={currentVehicle.xenon} onCheckedChange={(v) => setCurrentVehicle({ ...currentVehicle, xenon: !!v })} id="xenon" />
-                <Label htmlFor="xenon" className="text-sm cursor-pointer">Xenon-Scheinwerfer</Label>
-              </div>
-              {currentVehicle.xenon && (
-                <div>
-                  <Label className="text-xs">Xenon-Farbe</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.xenon_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, xenon_color: e.target.value })} />
-                    <span className="text-[10px] text-muted-foreground font-mono">{currentVehicle.xenon_color}</span>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <Button size="sm" onClick={addVehicle}>{editingIndex !== null ? "Änderungen übernehmen" : "Fahrzeug übernehmen"}</Button>

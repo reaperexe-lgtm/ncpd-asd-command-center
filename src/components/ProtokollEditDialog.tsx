@@ -7,36 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Car } from "lucide-react";
 import { logActivity } from "@/lib/activityLog";
+import { createEmptyVehicleForm, normalizeVehicleForm, type VehicleFormData } from "@/lib/vehicleForm";
 
 const LOCATIONS = ["Staatsbank","Juwelier","Human Labs","Geiselnahme","10-12 Laden","1000 Laden","Paleto Bank","Sandy Laden","Razzia","Panikbutton","Sonstiges"];
 const VEHICLE_TYPES = ["Fahrzeug","Motorrad","Helikopter","Boot"];
 const VEHICLE_MODELS = ["Drafter","VSTR","Sultan Classic","Sultan Revolter","Schafter","Jugular","Chino Custom","Faction Custom","Benefactor","Schlagen","Schneider","BFB 100","Super Volito","Skyhawk","Null","Sonstiges"];
 
-interface VehicleForm {
+interface VehicleForm extends VehicleFormData {
   id?: string;
-  vehicle_type: string;
-  model: string;
-  custom_model: string;
-  license_plate: string;
-  owner_info: string;
-  primary_color: string;
-  secondary_color: string;
-  pearl_color: string;
-  neon_color: string;
-  xenon: boolean;
   _isNew?: boolean;
   _deleted?: boolean;
 }
 
-const emptyVehicle: VehicleForm = {
-  vehicle_type: "Fahrzeug", model: "Drafter", custom_model: "", license_plate: "",
-  owner_info: "", primary_color: "#000000", secondary_color: "#000000",
-  pearl_color: "#000000", neon_color: "#000000", xenon: false,
-};
+const emptyVehicle: VehicleForm = createEmptyVehicleForm();
 
 function toLocalInput(value?: string | null) {
   if (!value) return "";
@@ -127,10 +113,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
             license_plate: v.license_plate || "",
             owner_info: v.owner_info || "",
             primary_color: v.primary_color || "#000000",
-            secondary_color: v.secondary_color || "#000000",
             pearl_color: v.pearl_color || "#000000",
-            neon_color: v.neon_color || "#000000",
-            xenon: !!v.xenon,
           };
         })
       );
@@ -212,10 +195,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
         license_plate: "Kennzeichen",
         owner_info: "Besitzer",
         primary_color: "Farbe Primär",
-        secondary_color: "Farbe Sekundär",
         pearl_color: "Pearl",
-        neon_color: "Neon",
-        xenon: "Xenon",
       };
       const originalVehicles = ((data.mission_vehicles || []) as any[]).reduce<Record<string, any>>((acc, v) => { acc[v.id] = v; return acc; }, {});
       for (const v of mVehicles) {
@@ -227,10 +207,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
           license_plate: v.license_plate || null,
           owner_info: v.owner_info || null,
           primary_color: v.primary_color,
-          secondary_color: v.secondary_color,
           pearl_color: v.pearl_color,
-          neon_color: v.neon_color,
-          xenon: v.xenon,
         };
         const labelOf = (mdl: string, plate?: string | null) => `${mdl}${plate ? ` (${plate})` : ""}`;
         if (v._deleted && v.id) {
@@ -489,32 +466,21 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs">Kennzeichen</Label>
-                      <Input className="mt-1 bg-background border-border h-9" value={v.license_plate} onChange={(e) => { const u = [...mVehicles]; u[i] = { ...v, license_plate: e.target.value }; setMVehicles(u); }} />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Besitzer & Geb.</Label>
-                      <Input className="mt-1 bg-background border-border h-9" value={v.owner_info} onChange={(e) => { const u = [...mVehicles]; u[i] = { ...v, owner_info: e.target.value }; setMVehicles(u); }} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {([
-                      ["primary_color", "Primär"],
-                      ["secondary_color", "Sekundär"],
-                      ["pearl_color", "Pearl"],
-                      ["neon_color", "Neon"],
-                    ] as const).map(([key, lbl]) => (
-                      <div key={key}>
-                        <Label className="text-[10px]">{lbl}</Label>
-                        <Input type="color" className="w-full h-9 p-1 mt-1 bg-background border-border cursor-pointer" value={(v as any)[key]} onChange={(e) => { const u = [...mVehicles]; u[i] = { ...v, [key]: e.target.value }; setMVehicles(u); }} />
+                      <Label className="text-xs">Primärfarbe</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input type="color" className="w-10 h-9 p-1 bg-background border-border cursor-pointer" value={v.primary_color} onChange={(e) => { const u = [...mVehicles]; u[i] = { ...v, primary_color: e.target.value }; setMVehicles(u); }} />
+                        <span className="text-[10px] text-muted-foreground font-mono">{v.primary_color}</span>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox checked={v.xenon} onCheckedChange={(val) => { const u = [...mVehicles]; u[i] = { ...v, xenon: !!val }; setMVehicles(u); }} id={`xenon-${i}`} />
-                    <Label htmlFor={`xenon-${i}`} className="text-xs cursor-pointer">Xenon</Label>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Perlfarbe</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input type="color" className="w-10 h-9 p-1 bg-background border-border cursor-pointer" value={v.pearl_color} onChange={(e) => { const u = [...mVehicles]; u[i] = { ...v, pearl_color: e.target.value }; setMVehicles(u); }} />
+                        <span className="text-[10px] text-muted-foreground font-mono">{v.pearl_color}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

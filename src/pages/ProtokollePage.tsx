@@ -417,10 +417,8 @@ const ProtokollePage = () => {
                                 {v.owner_info && <p className="text-xs text-muted-foreground font-medium">Besitzer: <span className="text-foreground/70">{v.owner_info}</span></p>}
                                 <div className="flex items-center gap-3 flex-wrap">
                                   {[
-                                    { label: "P", color: v.primary_color },
-                                    { label: "S", color: v.secondary_color },
+                                    { label: "Primär", color: v.primary_color },
                                     { label: "Pearl", color: v.pearl_color },
-                                    { label: "Neon", color: v.neon_color },
                                   ].map((c) =>
                                     c.color && c.color !== "#000000" ? (
                                       <div key={c.label} className="flex items-center gap-1.5">
@@ -428,9 +426,6 @@ const ProtokollePage = () => {
                                         <span className="text-[10px] text-muted-foreground font-bold uppercase">{c.label}</span>
                                       </div>
                                     ) : null
-                                  )}
-                                  {v.xenon && (
-                                    <span className="text-[10px] bg-gradient-to-r from-yellow-500/20 to-yellow-500/5 text-yellow-300 px-2.5 py-1 rounded-md font-black border border-yellow-500/25 tracking-wider">XENON</span>
                                   )}
                                 </div>
                               </div>
