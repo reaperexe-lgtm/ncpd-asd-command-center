@@ -24,13 +24,9 @@ const VerfolgungPage = lazy(() => import("./pages/VerfolgungPage"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AusbilderPage = lazy(() => import("./pages/AusbilderPage"));
-const AufstellungsprotokollPage = lazy(() => import("./pages/AufstellungsprotokollPage"));
-const UebungenPage = lazy(() => import("./pages/UebungenPage"));
 const ASDApplicantDashboard = lazy(() => import("./pages/ASDApplicantDashboard"));
 const FlightApplicantDashboard = lazy(() => import("./pages/FlightApplicantDashboard"));
-const LernenPage = lazy(() => import("./pages/LernenPage"));
 const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
-const SearchRescuePage = lazy(() => import("./pages/SearchRescuePage"));
 const OrtskundePage = lazy(() => import("./pages/OrtskundePage"));
 
 const queryClient = new QueryClient({
@@ -84,11 +80,7 @@ const ProtectedRoutes = () => {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/ausbilder" element={<AusbilderPage />} />
-        <Route path="/aufstellungsprotokoll" element={<AufstellungsprotokollPage />} />
-        <Route path="/uebungen" element={<UebungenPage />} />
-        <Route path="/lernen" element={<LernenPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
-        <Route path="/search-rescue" element={<SearchRescuePage />} />
         <Route path="/ortskunde" element={<OrtskundePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

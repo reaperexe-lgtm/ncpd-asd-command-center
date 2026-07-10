@@ -31,17 +31,12 @@ const navItems = [
   { to: "/fluglizenzen", label: "Fluglizenzen", emoji: "✈️" },
   { to: "/fluglizenz-member", label: "Lizenz-Inhaber", emoji: "🛩️" },
   { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
-  { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
-  { to: "/uebungen", label: "Übungen", emoji: "🎯" },
-  { to: "/lernen", label: "Lernen", emoji: "📚" },
   { to: "/achievements", label: "Achievements", emoji: "🏆" },
-  { to: "/search-rescue", label: "Search & Rescue", emoji: "🚁" },
-  { to: "/ortskunde", label: "Ortskunde", emoji: "🗺️" },
 ];
 
 const FLIGHT_LICENSE_VISIBLE = new Set([
   "/", "/gambling", "/verfolgung", "/einsatz", "/protokolle",
-  "/familien", "/statistik", "/member", "/fluglizenz-member", "/uebungen", "/lernen", "/achievements", "/ortskunde",
+  "/familien", "/statistik", "/member", "/fluglizenz-member", "/achievements",
 ]);
 
 export function AppSidebar() {

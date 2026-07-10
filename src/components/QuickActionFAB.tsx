@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, FileText, Car, X, ClipboardList, BookOpen } from "lucide-react";
+import { Plus, FileText, Car, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ActionItem {
@@ -15,7 +15,6 @@ interface ActionItem {
 const ACTIONS: ActionItem[] = [
   { icon: FileText, label: "Einsatz erfassen", path: "/einsatz", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40", hideOn: ["/einsatz"] },
   { icon: Car, label: "10-80 starten", path: "/verfolgung", color: "bg-orange-500/15 text-orange-300 border-orange-500/40", hideOn: ["/verfolgung"] },
-  { icon: ClipboardList, label: "Aufstellung", path: "/aufstellungsprotokoll", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/40", hideOn: ["/aufstellungsprotokoll"] },
   { icon: BookOpen, label: "Protokolle", path: "/protokolle", color: "bg-purple-500/15 text-purple-300 border-purple-500/40", hideOn: ["/protokolle"] },
 ];
 

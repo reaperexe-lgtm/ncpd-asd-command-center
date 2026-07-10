@@ -17,12 +17,7 @@ const DEFAULT_NAV = [
   { to: "/fluglizenzen", label: "Fluglizenzen", emoji: "✈️" },
   { to: "/fluglizenz-member", label: "Lizenz-Inhaber", emoji: "🛩️" },
   { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
-  { to: "/aufstellungsprotokoll", label: "Aufstellung", emoji: "📋" },
-  { to: "/uebungen", label: "Übungen", emoji: "🎯" },
-  { to: "/lernen", label: "Lernen", emoji: "📚" },
   { to: "/achievements", label: "Achievements", emoji: "🏆" },
-  { to: "/search-rescue", label: "Search & Rescue", emoji: "🚁" },
-  { to: "/ortskunde", label: "Ortskunde", emoji: "🗺️" },
 ];
 
 export default function NavOrderSection() {
