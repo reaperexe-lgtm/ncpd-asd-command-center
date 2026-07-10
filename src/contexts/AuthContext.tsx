@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { getEffectiveRole, hasAdminOverride, hasAdminPermissions, type AppRole } from "@/lib/roles";
-import { ensureAdminAccess } from "@/lib/ensureAdmin";
+import { getEffectiveRole, hasAdminPermissions, type AppRole } from "@/lib/roles";
 
 interface AuthContextType {
   session: Session | null;
@@ -31,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (userId: string, currentUser: User | null = user) => {
+  const fetchUserData = async (userId: string) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
@@ -53,9 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsApproved(profileRes.data.is_approved ?? false);
       }
 
-      const rolesFromDb = (roleRes.data || []).map((r: any) => r.role as AppRole);
-      const adminOverride = hasAdminOverride(currentUser, profileData);
-      const allRoles = adminOverride ? [...new Set([...rolesFromDb, "admin", "ausbilder"])] : rolesFromDb;
+      const allRoles = (roleRes.data || []).map((r: any) => r.role as AppRole);
       const primary = getEffectiveRole(allRoles);
 
       setRoles(allRoles);
@@ -68,15 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    const restoreAccess = async (currentSession: Session | null) => {
-      if (!currentSession?.user) return;
-      try {
-        await ensureAdminAccess(currentSession.user.id);
-        await fetchUserData(currentSession.user.id, currentSession.user);
-      } catch (error) {
-        console.error("restoreAccess failed:", error);
-      }
-    };
     // Safety: never stay in loading state for more than 5s
     const safetyTimer = setTimeout(() => {
       if (mounted) setLoading(false);
@@ -89,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user) {
         setLoading(true);
         setTimeout(() => {
-          void restoreAccess(session).finally(() => {
+          fetchUserData(session.user.id).finally(() => {
             if (mounted) setLoading(false);
           });
         }, 0);
@@ -107,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        void restoreAccess(session).finally(() => {
+        fetchUserData(session.user.id).finally(() => {
           if (mounted) setLoading(false);
         });
       } else {

@@ -13,7 +13,6 @@ export type AppRole =
   | "team_red";
 
 const ROLE_RANK: Record<string, number> = {
-  admin: 0,
   team_red: 0,
   director: 1,
   co_director: 2,
@@ -25,6 +24,7 @@ const ROLE_RANK: Record<string, number> = {
   asd_applicant: 8,
   flight_applicant: 8,
   flight_license: 8,
+  admin: 99,
 };
 
 const ADMIN_LIKE = new Set(["admin", "director", "co_director", "supervisor", "team_red"]);
@@ -38,21 +38,8 @@ export const getEffectiveRole = (roles: AppRole[]): AppRole | null => {
   if (ordered.includes("co_director")) return "co_director";
   if (ordered.includes("supervisor")) return "supervisor";
   if (ordered.includes("team_red")) return "team_red";
-  if (ordered.includes("admin")) return "admin";
 
   return ordered[0] || null;
 };
 
 export const hasAdminPermissions = (roles: AppRole[]): boolean => roles.some((role) => ADMIN_LIKE.has(role));
-
-export const hasAdminOverride = (user: { email?: string | null } | null, profile?: { name?: string | null; dienstnummer?: string | null } | null): boolean => {
-  const haystacks = [
-    user?.email,
-    profile?.name,
-    profile?.dienstnummer,
-    (user as { user_metadata?: { name?: string | null } } | null)?.user_metadata?.name,
-    (user as { user_metadata?: { dienstnummer?: string | null } } | null)?.user_metadata?.dienstnummer,
-  ].filter((value): value is string => Boolean(value));
-
-  return haystacks.some((value) => /asd-?007/i.test(value));
-};

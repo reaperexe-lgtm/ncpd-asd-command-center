@@ -18,7 +18,7 @@ const SlideshowImagesSection = lazy(() => import("@/components/SlideshowImagesSe
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getEffectiveRole, type AppRole } from "@/lib/roles";
 
-const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] as const;
+const BASE_ROLES = ["director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] as const;
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin", team_red: "Team Red", director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
   ausbilder: "Ausbilder", trial_ausbilder: "Trial-Ausbilder", member: "Member", trial_member: "Trial Member",
@@ -37,12 +37,12 @@ const ROLE_HIERARCHY: Record<string, number> = {
  * Co-Director darf seinen eigenen Rang nicht vergeben.
  */
 function getAssignableRoles(currentRole: string | null, isAdmin: boolean): readonly string[] {
-  if (isAdmin) return ROLES;
+  if (isAdmin) return BASE_ROLES;
   if (!currentRole) return [];
-  if (currentRole === "team_red") return ROLES;
-  if (currentRole === "director") return ROLES.filter((r) => r !== "admin");
+  if (currentRole === "team_red") return BASE_ROLES;
+  if (currentRole === "director") return BASE_ROLES;
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 999;
-  return ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
+  return BASE_ROLES.filter((r) => (ROLE_HIERARCHY[r] ?? 999) > myLevel);
 }
 
 function canEditUser(currentRole: string | null, targetRole: string, isAdmin: boolean): boolean {
@@ -389,6 +389,7 @@ const AdminPanel = () => {
 
   const roleMutation = useMutation({
     mutationFn: async ({ userId, newRole, oldRole, adminEnabled }: { userId: string; newRole: string; oldRole: string; adminEnabled?: boolean }) => {
+      const isSelf = user?.id === userId;
       const { data: existingRows, error: fetchErr } = await supabase
         .from("user_roles")
         .select("role")
@@ -396,6 +397,10 @@ const AdminPanel = () => {
       if (fetchErr) throw fetchErr;
 
       const existingRoles = (existingRows || []).map((row: any) => row.role as string);
+      const hasExistingAdmin = existingRoles.includes("admin");
+      if (adminEnabled === undefined) adminEnabled = hasExistingAdmin;
+      if (isSelf && isAdmin) adminEnabled = true;
+
       const nextRoles = new Set<string>();
 
       existingRoles.forEach((role) => {
@@ -836,6 +841,7 @@ const AdminPanel = () => {
                         <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                           <Checkbox
                             checked={!!(u as any).roles?.includes("admin")}
+                            disabled={!canEditUser(currentUserRole, u.role, isAdmin) || (user?.id === u.id && isAdmin)}
                             onCheckedChange={(v) => roleMutation.mutate({ userId: u.id, newRole: u.role, oldRole: u.role, adminEnabled: !!v })}
                           />
                           <Shield className="w-3.5 h-3.5 text-primary" />
@@ -921,6 +927,7 @@ const AdminPanel = () => {
                         <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                           <Checkbox
                             checked={!!(u as any).roles?.includes("admin")}
+                            disabled={!canEditUser(currentUserRole, u.role, isAdmin) || (user?.id === u.id && isAdmin)}
                             onCheckedChange={(v) => roleMutation.mutate({ userId: u.id, newRole: u.role, oldRole: u.role, adminEnabled: !!v })}
                           />
                           <Shield className="w-3.5 h-3.5 text-primary" />
@@ -1043,6 +1050,7 @@ const AdminPanel = () => {
                             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                               <Checkbox
                                 checked={!!(u as any).roles?.includes("admin")}
+                                disabled={!canEditUser(currentUserRole, u.role, isAdmin) || (user?.id === u.id && isAdmin)}
                                 onCheckedChange={(v) => roleMutation.mutate({ userId: u.id, newRole: u.role, oldRole: u.role, adminEnabled: !!v })}
                               />
                               <Shield className="w-3.5 h-3.5 text-primary" />
