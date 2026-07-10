@@ -80,7 +80,7 @@ const EinsatzPage = () => {
         left_gunner: leftGunner && leftGunner !== "none" ? leftGunner : null,
         right_gunner: rightGunner && rightGunner !== "none" ? rightGunner : null,
         created_by: user!.id,
-        protokollschreiber: protokollschreiber || user!.id,
+        protokollschreiber: user!.id,
       }).select().single();
       if (error) throw error;
 
