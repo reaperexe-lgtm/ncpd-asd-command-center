@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GraduationCap, ClipboardCheck, FileCheck, Users, BarChart3, Phone, Plane } from "lucide-react";
@@ -13,7 +13,27 @@ import AusbilderKontakte from "@/components/AusbilderKontakte";
 const AusbilderPage = () => {
   const { role } = useAuth();
   const [activeTab, setActiveTab] = useState("pruefungen");
+  const [cleanupCountdown, setCleanupCountdown] = useState("--:--:--");
   const canAccess = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
+
+  useEffect(() => {
+    const targetTime = Date.now() + 60 * 60 * 1000;
+    const tick = () => {
+      const remaining = targetTime - Date.now();
+      if (remaining <= 0) {
+        setCleanupCountdown("läuft gerade");
+        return;
+      }
+      const hours = Math.floor(remaining / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      setCleanupCountdown(`${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`);
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   if (!canAccess) {
     return <div className="text-center py-12 text-muted-foreground">Keine Berechtigung.</div>;
@@ -21,9 +41,15 @@ const AusbilderPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Ausbilder</h1>
-        <p className="text-sm text-muted-foreground mt-1">Prüfungen & Ausbildungen verwalten</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Ausbilder</h1>
+          <p className="text-sm text-muted-foreground mt-1">Prüfungen & Ausbildungen verwalten</p>
+        </div>
+        <div className="rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm text-foreground">
+          <div className="font-medium text-xs uppercase tracking-[0.2em] text-muted-foreground">Automatische Bereinigung</div>
+          <div className="mt-1 text-lg font-semibold">in {cleanupCountdown}</div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
