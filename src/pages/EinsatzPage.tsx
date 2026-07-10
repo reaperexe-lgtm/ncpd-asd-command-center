@@ -41,7 +41,7 @@ const EinsatzPage = () => {
   const [hostages, setHostages] = usePersistedState<string>("einsatz_hostages", "0");
   const [gangId, setGangId] = usePersistedState<string>("einsatz_gangId", "");
   const [gangInfo, setGangInfo] = usePersistedState<string>("einsatz_gangInfo", "");
-  const [protokollschreiber, setProtokollschreiber] = usePersistedState<string>("einsatz_protokollschreiber", "");
+  
   const [pilot, setPilot] = usePersistedState<string>("einsatz_pilot", "");
   const [coPilot, setCoPilot] = usePersistedState<string>("einsatz_coPilot", "");
   const [leftGunner, setLeftGunner] = usePersistedState<string>("einsatz_leftGunner", "");
@@ -80,7 +80,7 @@ const EinsatzPage = () => {
         left_gunner: leftGunner && leftGunner !== "none" ? leftGunner : null,
         right_gunner: rightGunner && rightGunner !== "none" ? rightGunner : null,
         created_by: user!.id,
-        protokollschreiber: protokollschreiber || user!.id,
+        protokollschreiber: user!.id,
       }).select().single();
       if (error) throw error;
 
@@ -118,7 +118,7 @@ const EinsatzPage = () => {
     setDesc(""); setLocation(""); setCustomLocation(""); setTatzeit("");
     setSuspects("1"); setHostages("0"); setGangId(""); setGangInfo("");
     setPilot(""); setCoPilot(""); setLeftGunner(""); setRightGunner("");
-    setVehicles([]); setShowVehicleForm(false); setProtokollschreiber("");
+    setVehicles([]); setShowVehicleForm(false);
     setCurrentVehicle({ ...emptyVehicle });
     clearPersistedKeys([
       "einsatz_desc","einsatz_location","einsatz_customLocation","einsatz_tatzeit",
@@ -167,22 +167,6 @@ const EinsatzPage = () => {
         </div>
       </div>
 
-      {/* Protokollschreiber */}
-      <div className="bg-card border border-border rounded-lg p-5">
-        <Label className="text-primary font-semibold text-sm">Protokollschreiber</Label>
-        <Select value={protokollschreiber} onValueChange={setProtokollschreiber}>
-          <SelectTrigger className="mt-2 bg-background border-border">
-            <SelectValue placeholder="Bitte auswählen" />
-          </SelectTrigger>
-          <SelectContent>
-            {members?.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                {m.name} {(m as any).internal_dienstnummer ? `[${(m as any).internal_dienstnummer}]` : ""} {m.dienstnummer ? `(${m.dienstnummer})` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Raubinformationen */}
       <div className="bg-card border border-border rounded-lg p-5 space-y-5">
