@@ -355,8 +355,10 @@ const AdminPanel = () => {
         if (error) throw error;
       } else {
         // Reject = delete user completely so name/dienstnummer become available again
+        const headers = await getSupabaseFunctionAuthHeaders(supabase);
         const { data, error } = await supabase.functions.invoke("delete-user", {
           body: { userId },
+          headers,
         });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
@@ -441,8 +443,10 @@ const AdminPanel = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
+      const headers = await getSupabaseFunctionAuthHeaders(supabase);
       const { data, error } = await supabase.functions.invoke("delete-user", {
         body: { userId },
+        headers,
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
