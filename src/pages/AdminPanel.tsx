@@ -124,8 +124,30 @@ const AdminPanel = () => {
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
   const [applicantFilter, setApplicantFilter] = useState<"all" | "asd_applicant" | "flight_applicant">("all");
+  const [cleanupCountdown, setCleanupCountdown] = useState<string>("--:--:--");
 
   // Load discord invite link
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const targetTime = Date.now() + 60 * 60 * 1000;
+    const tick = () => {
+      const remaining = targetTime - Date.now();
+      if (remaining <= 0) {
+        setCleanupCountdown("läuft gerade");
+        return;
+      }
+      const hours = Math.floor(remaining / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      setCleanupCountdown(`${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`);
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, [isAdmin]);
+
   useEffect(() => {
     if (!isAdmin) return;
     if (activeTab !== "settings") return;
@@ -752,6 +774,9 @@ const AdminPanel = () => {
         <div>
           <h1 className="text-2xl font-bold text-primary">Admin-Bereich</h1>
           <p className="text-xs text-muted-foreground">{users?.length || 0} Benutzer · {pending.length} ausstehend</p>
+          <p className="text-xs text-primary mt-1">
+            Automatische Bereinigung: in {cleanupCountdown}
+          </p>
         </div>
       </div>
 
