@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getEffectiveRole, hasAdminPermissions, type AppRole } from "@/lib/roles";
+import { cleanupOldTrialMemberExamResults } from "@/lib/supabaseFunctions";
 
 interface AuthContextType {
   session: Session | null;
@@ -88,6 +89,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfile(null);
         setLoading(false);
       }
+    });
+
+    void cleanupOldTrialMemberExamResults(supabase as any).catch((error) => {
+      console.warn("cleanupOldTrialMemberExamResults failed:", error);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

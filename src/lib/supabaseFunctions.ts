@@ -21,6 +21,61 @@ export async function getSupabaseFunctionAuthHeaders(
   };
 }
 
+export async function cleanupOldTrialMemberExamResults(
+  supabase: Pick<SupabaseClient, "from">,
+) {
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: trialMemberRows, error: trialMemberError } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "trial_member")
+    .lt("created_at", cutoff);
+
+  if (trialMemberError) {
+    throw trialMemberError;
+  }
+
+  const userIds = Array.from(
+    new Set(
+      (trialMemberRows ?? [])
+        .map((row: any) => row.user_id)
+        .filter((value: string | null | undefined): value is string => Boolean(value)),
+    ),
+  );
+
+  if (!userIds.length) {
+    return { deletedTheory: 0, deletedPractical: 0 };
+  }
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("dienstnummer")
+    .in("id", userIds);
+
+  if (profilesError) {
+    throw profilesError;
+  }
+
+  const dienstnummerValues = (profiles ?? [])
+    .map((profile: any) => profile.dienstnummer)
+    .filter((value: string | null | undefined): value is string => Boolean(value));
+
+  if (!dienstnummerValues.length) {
+    return { deletedTheory: 0, deletedPractical: 0 };
+  }
+
+  const [theoryResult, practicalResult] = await Promise.all([
+    supabase.from("theory_exam_results").delete().in("dienstnummer", dienstnummerValues),
+    supabase.from("practical_exam_results").delete().in("candidate_dienstnummer", dienstnummerValues),
+  ]);
+
+  return {
+    deletedTheory: theoryResult.error ? 0 : 1,
+    deletedPractical: practicalResult.error ? 0 : 1,
+  };
+}
+
 export async function deleteUserAccount(
   supabase: Pick<SupabaseClient, "auth" | "functions" | "from">,
   userId: string,
