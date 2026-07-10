@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { hasAdminPermissions } from "@/lib/roles";
 
 /**
  * Zentraler Permission-Hook.
@@ -48,7 +49,7 @@ const PROTECTED_ROLES = ["admin", "director"];
 const LICENSE_HOLDER_PERMISSIONS: PermissionKey[] = ["create_missions", "create_pursuits"];
 
 export function usePermissions() {
-  const { user, role, profile } = useAuth();
+  const { user, role, roles, profile } = useAuth();
 
   const { data: overrides } = useQuery({
     queryKey: ["permission-settings"],
@@ -80,7 +81,7 @@ export function usePermissions() {
     if (!role) return false;
 
     // Director & Admin: immer voll
-    if (PROTECTED_ROLES.includes(role)) return true;
+    if (PROTECTED_ROLES.includes(role || "") || hasAdminPermissions(roles)) return true;
 
     const def = DEFAULT_PERMISSIONS.find((p) => p.key === permKey);
     if (!def) return false;

@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-
-type AppRole = "admin" | "director" | "co_director" | "supervisor" | "ausbilder" | "trial_ausbilder" | "member" | "trial_member" | "asd_applicant" | "flight_applicant" | "flight_license" | "team_red";
+import { getEffectiveRole, hasAdminPermissions, type AppRole } from "@/lib/roles";
 
 interface AuthContextType {
   session: Session | null;
@@ -21,12 +20,6 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const useAuth = () => useContext(AuthContext);
-
-const ROLE_RANK: Record<string, number> = {
-  admin: 0, team_red: 0, director: 1, co_director: 2, supervisor: 3,
-  ausbilder: 4, trial_ausbilder: 5, member: 6, trial_member: 7,
-  asd_applicant: 8, flight_applicant: 8, flight_license: 8,
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -51,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       if (roleRes.data && roleRes.data.length > 0) {
         const all = roleRes.data.map((r: any) => r.role as AppRole);
-        const primary = [...all].sort((a, b) => (ROLE_RANK[a] ?? 99) - (ROLE_RANK[b] ?? 99))[0];
+        const primary = getEffectiveRole(all);
         setRoles(all);
         setRole(primary);
       }
@@ -107,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const isAdmin = role === "director" || role === "co_director" || role === "admin" || role === "supervisor" || role === "team_red";
+  const isAdmin = hasAdminPermissions(roles);
 
   return (
     <AuthContext.Provider value={{ session, user, role, roles, isApproved, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => {}), profile }}>

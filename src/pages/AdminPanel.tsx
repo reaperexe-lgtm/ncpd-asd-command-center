@@ -14,9 +14,9 @@ import { useState, useEffect, lazy, Suspense } from "react";
 const PermissionMatrixSection = lazy(() => import("@/components/PermissionMatrixSection"));
 const AchievementsManager = lazy(() => import("@/components/AchievementsManager"));
 const NavOrderSection = lazy(() => import("@/components/NavOrderSection"));
-const HiddenMapPasswordSection = lazy(() => import("@/components/HiddenMapPasswordSection"));
 const SlideshowImagesSection = lazy(() => import("@/components/SlideshowImagesSection"));
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { getEffectiveRole, type AppRole } from "@/lib/roles";
 
 const ROLES = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "member", "trial_member", "flight_license", "team_red"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -120,8 +120,6 @@ const AdminPanel = () => {
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
-  const [srMaxAttempts, setSrMaxAttempts] = useState("3");
-  const [savingSrAttempts, setSavingSrAttempts] = useState(false);
   const [applicantFilter, setApplicantFilter] = useState<"all" | "asd_applicant" | "flight_applicant">("all");
 
   // Load discord invite link
@@ -136,7 +134,6 @@ const AdminPanel = () => {
       "aufstellung_auto_enabled",
       "stats_ping_director_id",
       "stats_ping_codirector_id",
-      "sr_max_attempts",
     ];
     supabase
       .from("permission_settings")
@@ -163,7 +160,6 @@ const AdminPanel = () => {
             case "aufstellung_auto_enabled": setAufstellungAuto(v === "true"); break;
             case "stats_ping_director_id": setStatsPingDirector(v); break;
             case "stats_ping_codirector_id": setStatsPingCoDirector(v); break;
-            case "sr_max_attempts": setSrMaxAttempts(v); break;
           }
         }
       });
@@ -175,11 +171,21 @@ const AdminPanel = () => {
       const { data: profiles } = await supabase.from("profiles").select("*");
       const { data: roles } = await supabase.from("user_roles").select("*");
       const { data: privs } = await supabase.from("profiles_private").select("user_id, discord_id");
-      return (profiles || []).map((p) => ({
-        ...p,
-        discord_id: privs?.find((pp: any) => pp.user_id === p.id)?.discord_id ?? null,
-        role: roles?.find((r) => r.user_id === p.id)?.role || "trial_member",
-      }));
+      const rolesByUser = new Map<string, AppRole[]>();
+      (roles || []).forEach((r: any) => {
+        const existing = rolesByUser.get(r.user_id) || [];
+        existing.push(r.role as AppRole);
+        rolesByUser.set(r.user_id, existing);
+      });
+      return (profiles || []).map((p) => {
+        const userRoles = rolesByUser.get(p.id) || [];
+        return {
+          ...p,
+          discord_id: privs?.find((pp: any) => pp.user_id === p.id)?.discord_id ?? null,
+          roles: userRoles,
+          role: getEffectiveRole(userRoles) || "trial_member",
+        };
+      });
     },
     enabled: isAdmin,
   });
@@ -380,30 +386,41 @@ const AdminPanel = () => {
   });
 
   const roleMutation = useMutation({
-    mutationFn: async ({ userId, newRole, oldRole }: { userId: string; newRole: string; oldRole: string }) => {
-      // Nur die alte Rolle entfernen (nicht alle Rollen des Users) und neue upserten.
-      if (oldRole && oldRole !== newRole) {
-        const { error: delErr } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", userId)
-          .eq("role", oldRole as any);
-        if (delErr) throw delErr;
-      }
-      const { error } = await supabase
+    mutationFn: async ({ userId, newRole, oldRole, adminEnabled }: { userId: string; newRole: string; oldRole: string; adminEnabled?: boolean }) => {
+      const { data: existingRows, error: fetchErr } = await supabase
         .from("user_roles")
-        .upsert({ user_id: userId, role: newRole as any }, { onConflict: "user_id,role" });
-      if (error) throw error;
+        .select("role")
+        .eq("user_id", userId);
+      if (fetchErr) throw fetchErr;
+
+      const existingRoles = (existingRows || []).map((row: any) => row.role as string);
+      const nextRoles = existingRoles.filter((role) => {
+        if (role === "admin") return !!adminEnabled;
+        if (role === oldRole) return false;
+        return true;
+      });
+
+      if (newRole) nextRoles.push(newRole);
+      if (adminEnabled && !nextRoles.includes("admin")) nextRoles.push("admin");
+
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (delErr) throw delErr;
+
+      if (nextRoles.length) {
+        const { error } = await supabase.from("user_roles").insert(nextRoles.map((role) => ({ user_id: userId, role })));
+        if (error) throw error;
+      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("Rolle aktualisiert");
+      toast.success(vars.adminEnabled ? "Admin-Rechte aktualisiert" : "Rolle aktualisiert");
       const targetName = users?.find(u => u.id === vars.userId)?.name || "Unbekannt";
-      logActivity(`Rolle geändert: ${ROLE_LABELS[vars.oldRole] || vars.oldRole} → ${ROLE_LABELS[vars.newRole] || vars.newRole}`, "admin", { 
+      logActivity(`Rolle geändert: ${ROLE_LABELS[vars.oldRole] || vars.oldRole} → ${ROLE_LABELS[vars.newRole] || vars.newRole}${vars.adminEnabled ? " + Admin" : ""}`, "admin", {
         target_user_id: vars.userId,
         target_name: targetName,
         old_role: vars.oldRole,
-        new_role: vars.newRole 
+        new_role: vars.newRole,
+        admin_enabled: vars.adminEnabled ?? false,
       });
     },
   });
@@ -803,10 +820,18 @@ const AdminPanel = () => {
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
+                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role)}>
                           <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
                           <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                         </Select>
+                        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                          <Checkbox
+                            checked={!!(u as any).roles?.includes("admin")}
+                            onCheckedChange={(v) => roleMutation.mutate({ userId: u.id, newRole: u.role, oldRole: u.role, adminEnabled: !!v })}
+                          />
+                          <Shield className="w-3.5 h-3.5 text-primary" />
+                          <span>Admin-Rechte</span>
+                        </label>
                         <Button size="sm" onClick={() => approveMutation.mutate({ userId: u.id, approve: true })} className="gap-1.5 h-8 text-xs">
                           <UserCheck className="w-3.5 h-3.5" /> Freischalten
                         </Button>
@@ -879,10 +904,20 @@ const AdminPanel = () => {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
-                        <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <div className="flex flex-col gap-2">
+                        <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role)}>
+                          <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                          <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                          <Checkbox
+                            checked={!!(u as any).roles?.includes("admin")}
+                            onCheckedChange={(v) => roleMutation.mutate({ userId: u.id, newRole: u.role, oldRole: u.role, adminEnabled: !!v })}
+                          />
+                          <Shield className="w-3.5 h-3.5 text-primary" />
+                          <span>Admin-Rechte</span>
+                        </label>
+                      </div>
                       {canEditUser(currentUserRole, u.role) && (
                         <Button size="sm" variant="destructive" onClick={() => blockMutation.mutate({ userId: u.id, block: true })} className="gap-1.5 h-7 text-xs">
                           <Ban className="w-3 h-3" /> Sperren
@@ -910,14 +945,6 @@ const AdminPanel = () => {
                         </AlertDialog>
                       )}
                     </div>
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                      <Checkbox
-                        checked={!!(u as any).has_sr_training}
-                        onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
-                      />
-                      <LifeBuoy className="w-3.5 h-3.5 text-primary" />
-                      <span>SR-Ausbildung</span>
-                    </label>
                   </div>
                 ))}
               </div>
@@ -933,7 +960,6 @@ const AdminPanel = () => {
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Discord ID</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Rolle</th>
-                      <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">SR</th>
                       <th className="px-4 py-3 text-left text-primary font-semibold text-xs uppercase tracking-wider">Aktionen</th>
                     </tr>
                   </thead>
@@ -1000,17 +1026,19 @@ const AdminPanel = () => {
                           {renderActivityBadge(u, true)}
                         </td>
                         <td className="px-4 py-3">
-                          <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role })} disabled={!canEditUser(currentUserRole, u.role)}>
-                            <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
-                            <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center" title="SR-Ausbildung">
-                            <Checkbox
-                              checked={!!(u as any).has_sr_training}
-                              onCheckedChange={(v) => srTrainingMutation.mutate({ userId: u.id, value: !!v })}
-                            />
+                          <div className="flex flex-col gap-2">
+                            <Select defaultValue={u.role} onValueChange={(r) => roleMutation.mutate({ userId: u.id, newRole: r, oldRole: u.role, adminEnabled: !!(u as any).roles?.includes("admin") })} disabled={!canEditUser(currentUserRole, u.role)}>
+                              <SelectTrigger className="w-36 h-8 text-xs bg-background border-border"><SelectValue /></SelectTrigger>
+                              <SelectContent>{assignableRoles.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                              <Checkbox
+                                checked={!!(u as any).roles?.includes("admin")}
+                                onCheckedChange={(v) => roleMutation.mutate({ userId: u.id, newRole: u.role, oldRole: u.role, adminEnabled: !!v })}
+                              />
+                              <Shield className="w-3.5 h-3.5 text-primary" />
+                              <span>Admin-Rechte</span>
+                            </label>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -1571,8 +1599,7 @@ const AdminPanel = () => {
           <div className="space-y-6">
             <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade Einstellungen...</div>}>
               <NavOrderSection />
-              <HiddenMapPasswordSection currentRole={currentUserRole} />
-              <SlideshowImagesSection />
+                <SlideshowImagesSection />
             </Suspense>
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
@@ -1658,63 +1685,6 @@ const AdminPanel = () => {
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
-              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                <LifeBuoy className="w-4 h-4" /> SR-Theorieprüfung – Versuchslimit
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Anzahl Versuche, die ein Member für die SR-Theorieprüfung hat. Nach Erreichen des Limits ist die Prüfung gesperrt, bis ein Ausbilder den SR-Verlauf zurücksetzt.
-              </p>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={srMaxAttempts}
-                  onChange={(e) => setSrMaxAttempts(e.target.value)}
-                  className="bg-background border-border w-32"
-                />
-                <Button
-                  onClick={async () => {
-                    const n = parseInt(srMaxAttempts, 10);
-                    if (Number.isNaN(n) || n < 1) {
-                      toast.error("Bitte eine Zahl ≥ 1 eingeben");
-                      return;
-                    }
-                    setSavingSrAttempts(true);
-                    try {
-                      const { data: existing } = await supabase
-                        .from("permission_settings")
-                        .select("id")
-                        .eq("permission_key", "sr_max_attempts")
-                        .maybeSingle();
-                      if (existing) {
-                        const { error } = await supabase
-                          .from("permission_settings")
-                          .update({ role: String(n) } as any)
-                          .eq("permission_key", "sr_max_attempts");
-                        if (error) throw error;
-                      } else {
-                        const { error } = await supabase
-                          .from("permission_settings")
-                          .insert({ permission_key: "sr_max_attempts", role: String(n), allowed: true } as any);
-                        if (error) throw error;
-                      }
-                      toast.success("Versuchslimit gespeichert");
-                      logActivity("SR-Versuchslimit aktualisiert", "admin", { value: n });
-                    } catch (e: any) {
-                      toast.error("Fehler: " + (e?.message ?? "Speichern fehlgeschlagen"));
-                    } finally {
-                      setSavingSrAttempts(false);
-                    }
-                  }}
-                  disabled={savingSrAttempts}
-                  className="gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5" /> Speichern
-                </Button>
-              </div>
-            </div>
 
             {/* Wöchentliche Aufstellung — Discord Ankündigung */}
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
