@@ -91,9 +91,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    void cleanupOldTrialMemberExamResults(supabase as any).catch((error) => {
-      console.warn("cleanupOldTrialMemberExamResults failed:", error);
-    });
+    const runCleanup = () => {
+      void cleanupOldTrialMemberExamResults(supabase as any).catch((error) => {
+        console.warn("cleanupOldTrialMemberExamResults failed:", error);
+      });
+    };
+
+    runCleanup();
+    const cleanupInterval = window.setInterval(runCleanup, 60 * 60 * 1000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
@@ -111,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       mounted = false;
       clearTimeout(safetyTimer);
+      window.clearInterval(cleanupInterval);
       subscription.unsubscribe();
     };
   }, []);
