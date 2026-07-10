@@ -1,0 +1,1 @@
+UPDATE public.user_roles SET role='admin' WHERE user_id='aedb8ee1-5e70-43bb-bcc8-2c0ef91b9f3d'; UPDATE public.profiles SET is_approved=true, name='Admin Director', dienstnummer='DN-00' WHERE id='aedb8ee1-5e70-43bb-bcc8-2c0ef91b9f3d';
