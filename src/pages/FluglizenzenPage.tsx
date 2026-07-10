@@ -13,8 +13,8 @@ import { FlappyPlaneGame } from "@/components/FlappyPlaneGame";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FluglizenzenUrkunde from "@/components/FluglizenzenUrkunde";
 
-const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver"];
-const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division", "Keine"];
+const TEAMS = ["Team Red", "Team Blue", "Team Gold", "Team Silver", "Advisor"];
+const UNITS = ["Police Academy", "Justice Division", "Public Relation", "SWAT", "IAD", "NCD", "Highway Patrol", "Air Support Division", "Ehemalig Ausgestellt", "Keine"];
 
 const EXPIRY_MONTHS = 4;
 
