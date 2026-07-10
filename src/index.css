@@ -4,46 +4,46 @@
 
 @layer base {
   :root {
-    /* Light, modern neutral palette */
-    --background: 210 18% 97%;
-    --foreground: 220 8% 12%;
+    /* Dark mode palette with blue primary */
+    --background: 210 12% 6%;
+    --foreground: 210 10% 96%;
 
-    --card: 210 16% 100%;
-    --card-foreground: 220 8% 12%;
+    --card: 210 14% 8%;
+    --card-foreground: 210 10% 96%;
 
-    --popover: 210 16% 100%;
-    --popover-foreground: 220 8% 12%;
+    --popover: 210 14% 8%;
+    --popover-foreground: 210 10% 96%;
 
-    --primary: 213 95% 40%; /* calm blue */
+    --primary: 215 90% 50%; /* bright blue accent */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 16% 96%;
-    --secondary-foreground: 220 8% 12%;
+    --secondary: 210 14% 8%;
+    --secondary-foreground: 210 10% 96%;
 
-    --muted: 215 12% 91%;
-    --muted-foreground: 220 8% 45%;
+    --muted: 210 12% 10%;
+    --muted-foreground: 210 8% 70%;
 
-    --accent: 160 60% 45%;
+    --accent: 200 80% 40%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 12% 88%;
-    --input: 220 12% 94%;
-    --ring: 213 95% 40%;
+    --border: 210 14% 12%;
+    --input: 210 14% 10%;
+    --ring: 215 90% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Sidebar tweaks */
-    --sidebar-background: 220 13% 98%;
-    --sidebar-foreground: 220 10% 18%;
-    --sidebar-primary: 213 95% 40%;
+    --sidebar-background: 210 12% 5%;
+    --sidebar-foreground: 210 10% 92%;
+    --sidebar-primary: 215 90% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 16% 96%;
-    --sidebar-accent-foreground: 220 8% 12%;
-    --sidebar-border: 220 12% 88%;
-    --sidebar-ring: 213 95% 40%;
+    --sidebar-accent: 210 14% 8%;
+    --sidebar-accent-foreground: 210 10% 96%;
+    --sidebar-border: 210 14% 12%;
+    --sidebar-ring: 215 90% 50%;
   }
 }
 

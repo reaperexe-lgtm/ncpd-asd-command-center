@@ -20,18 +20,18 @@ import {
 import { useEffect, useState } from "react";
 
 const navItems = [
-  { to: "/", label: "Home", emoji: "🏠" },
-  { to: "/gambling", label: "Gambling", emoji: "🎰" },
-  { to: "/verfolgung", label: "10-80", emoji: "🚔" },
-  { to: "/einsatz", label: "Einsatz", emoji: "🚨" },
-  { to: "/protokolle", label: "Protokolle", emoji: "📄" },
-  { to: "/familien", label: "Familien", emoji: "👥" },
-  { to: "/statistik", label: "Statistik", emoji: "📊" },
-  { to: "/member", label: "Member", emoji: "👤" },
-  { to: "/fluglizenzen", label: "Fluglizenzen", emoji: "✈️" },
-  { to: "/fluglizenz-member", label: "Lizenz-Inhaber", emoji: "🛩️" },
-  { to: "/bewerbungssperre", label: "Sperre", emoji: "🚫" },
-  { to: "/achievements", label: "Achievements", emoji: "🏆" },
+  { to: "/", label: "Home", emoji: "•" },
+  { to: "/gambling", label: "Gambling", emoji: "•" },
+  { to: "/verfolgung", label: "10-80", emoji: "•" },
+  { to: "/einsatz", label: "Einsatz", emoji: "•" },
+  { to: "/protokolle", label: "Protokolle", emoji: "•" },
+  { to: "/familien", label: "Familien", emoji: "•" },
+  { to: "/statistik", label: "Statistik", emoji: "•" },
+  { to: "/member", label: "Member", emoji: "•" },
+  { to: "/fluglizenzen", label: "Fluglizenzen", emoji: "•" },
+  { to: "/fluglizenz-member", label: "Lizenz-Inhaber", emoji: "•" },
+  { to: "/bewerbungssperre", label: "Sperre", emoji: "•" },
+  { to: "/achievements", label: "Achievements", emoji: "•" },
 ];
 
 const FLIGHT_LICENSE_VISIBLE = new Set([
