@@ -394,20 +394,27 @@ const AdminPanel = () => {
       if (fetchErr) throw fetchErr;
 
       const existingRoles = (existingRows || []).map((row: any) => row.role as string);
-      const nextRoles = existingRoles.filter((role) => {
-        if (role === "admin") return !!adminEnabled;
-        if (role === oldRole) return false;
-        return true;
+      const nextRoles = new Set<string>();
+
+      existingRoles.forEach((role) => {
+        if (role === "admin") {
+          if (adminEnabled) nextRoles.add("admin");
+          return;
+        }
+        if (role === oldRole) return;
+        nextRoles.add(role);
       });
 
-      if (newRole) nextRoles.push(newRole);
-      if (adminEnabled && !nextRoles.includes("admin")) nextRoles.push("admin");
+      if (newRole) nextRoles.add(newRole);
+      if (adminEnabled) nextRoles.add("admin");
 
       const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
       if (delErr) throw delErr;
 
-      if (nextRoles.length) {
-        const { error } = await supabase.from("user_roles").insert(nextRoles.map((role) => ({ user_id: userId, role })));
+      if (nextRoles.size) {
+        const { error } = await supabase
+          .from("user_roles")
+          .upsert(Array.from(nextRoles).map((role) => ({ user_id: userId, role })), { onConflict: "user_id,role" });
         if (error) throw error;
       }
     },

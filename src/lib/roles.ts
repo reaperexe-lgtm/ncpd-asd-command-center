@@ -31,9 +31,15 @@ const ADMIN_LIKE = new Set(["admin", "director", "co_director", "supervisor", "t
 
 export const getEffectiveRole = (roles: AppRole[]): AppRole | null => {
   if (!roles.length) return null;
-  const nonAdminRoles = roles.filter((role) => !ADMIN_LIKE.has(role));
-  const candidateRoles = nonAdminRoles.length ? nonAdminRoles : roles;
-  return [...candidateRoles].sort((a, b) => (ROLE_RANK[a] ?? 99) - (ROLE_RANK[b] ?? 99))[0] || null;
+
+  const ordered = [...roles].sort((a, b) => (ROLE_RANK[a] ?? 99) - (ROLE_RANK[b] ?? 99));
+  if (ordered.includes("admin")) return "admin";
+  if (ordered.includes("director")) return "director";
+  if (ordered.includes("co_director")) return "co_director";
+  if (ordered.includes("supervisor")) return "supervisor";
+  if (ordered.includes("team_red")) return "team_red";
+
+  return ordered[0] || null;
 };
 
 export const hasAdminPermissions = (roles: AppRole[]): boolean => roles.some((role) => ADMIN_LIKE.has(role));
