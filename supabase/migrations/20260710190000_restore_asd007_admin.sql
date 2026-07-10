@@ -14,7 +14,7 @@ BEGIN
 
   IF _user_id IS NOT NULL THEN
     INSERT INTO public.user_roles (user_id, role)
-    VALUES (_user_id, 'admin')
+    VALUES (_user_id, 'admin'), (_user_id, 'ausbilder')
     ON CONFLICT (user_id, role) DO NOTHING;
 
     UPDATE public.profiles
