@@ -24,7 +24,6 @@ const VerfolgungPage = () => {
   // Form state
   const [vehicleModel, setVehicleModel] = usePersistedState<string>("verfolgung_vehicleModel", "");
   const [licensePlate, setLicensePlate] = usePersistedState<string>("verfolgung_licensePlate", "");
-  const [description, setDescription] = usePersistedState<string>("verfolgung_description", "");
   const [pursuitDate, setPursuitDate] = usePersistedState<string>("verfolgung_pursuitDate", "");
   const [pilot, setPilot] = usePersistedState<string>("verfolgung_pilot", "");
   const [coPilot, setCoPilot] = usePersistedState<string>("verfolgung_coPilot", "");
@@ -56,7 +55,6 @@ const VerfolgungPage = () => {
         pursuer: "–",
         vehicle_model: vehicleModel || null,
         license_plate: licensePlate || null,
-        description: description || null,
         pursuit_date: pursuitDate || new Date().toISOString(),
         pilot: pilot?.trim() || null,
         co_pilot: coPilot?.trim() || null,
@@ -172,10 +170,10 @@ const VerfolgungPage = () => {
 
   const resetForm = () => {
     setVehicleModel(""); setLicensePlate("");
-    setDescription(""); setPursuitDate(""); setPilot(""); setCoPilot("");
+    setPursuitDate(""); setPilot(""); setCoPilot("");
     setLeftGunner(""); setRightGunner(""); setPhotos([]); setPhotoPreviewUrls([]); setShowForm(false);
     clearPersistedKeys([
-      "verfolgung_vehicleModel","verfolgung_licensePlate","verfolgung_description",
+      "verfolgung_vehicleModel","verfolgung_licensePlate",
       "verfolgung_pursuitDate","verfolgung_pilot","verfolgung_coPilot",
       "verfolgung_leftGunner","verfolgung_rightGunner",
     ]);
@@ -222,11 +220,6 @@ const VerfolgungPage = () => {
               <Label>Datum & Uhrzeit</Label>
               <Input type="datetime-local" className="mt-1 bg-background border-border" value={pursuitDate} onChange={(e) => setPursuitDate(e.target.value)} />
             </div>
-          </div>
-
-          <div>
-            <Label>Beschreibung</Label>
-            <Textarea className="mt-1 bg-background border-border min-h-[80px]" placeholder="Details zur Verfolgungsjagd..." value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 
           <div>

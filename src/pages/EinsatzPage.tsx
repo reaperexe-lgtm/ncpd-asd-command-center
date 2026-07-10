@@ -33,7 +33,6 @@ const emptyVehicle: VehicleForm = {
 const EinsatzPage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [desc, setDesc] = usePersistedState<string>("einsatz_desc", "");
   const [location, setLocation] = usePersistedState<string>("einsatz_location", "");
   const [customLocation, setCustomLocation] = usePersistedState<string>("einsatz_customLocation", "");
   const [tatzeit, setTatzeit] = usePersistedState<string>("einsatz_tatzeit", "");
@@ -67,7 +66,6 @@ const EinsatzPage = () => {
   const saveMission = useMutation({
     mutationFn: async () => {
       const { data: mission, error } = await supabase.from("missions").insert({
-        description: desc,
         location_type: location === "Sonstiges" ? customLocation : location,
         custom_location: location === "Sonstiges" ? customLocation : null,
         tatzeit: tatzeit || new Date().toISOString(),
@@ -115,13 +113,13 @@ const EinsatzPage = () => {
   });
 
   const resetForm = () => {
-    setDesc(""); setLocation(""); setCustomLocation(""); setTatzeit("");
+    setLocation(""); setCustomLocation(""); setTatzeit("");
     setSuspects("1"); setHostages("0"); setGangId(""); setGangInfo("");
     setPilot(""); setCoPilot(""); setLeftGunner(""); setRightGunner("");
     setVehicles([]); setShowVehicleForm(false);
     setCurrentVehicle({ ...emptyVehicle });
     clearPersistedKeys([
-      "einsatz_desc","einsatz_location","einsatz_customLocation","einsatz_tatzeit",
+      "einsatz_location","einsatz_customLocation","einsatz_tatzeit",
       "einsatz_suspects","einsatz_hostages","einsatz_gangId","einsatz_gangInfo",
       "einsatz_protokollschreiber","einsatz_pilot","einsatz_coPilot",
       "einsatz_leftGunner","einsatz_rightGunner","einsatz_vehicles",
@@ -173,11 +171,6 @@ const EinsatzPage = () => {
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-bold text-primary">Raubinformationen / Geiselnahme</h2>
-        </div>
-
-        <div>
-          <Label>Beschreibung</Label>
-          <Textarea placeholder="Kurze Beschreibung des Einsatzes..." value={desc} onChange={(e) => setDesc(e.target.value)} className="mt-1 bg-background border-border min-h-[80px]" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
