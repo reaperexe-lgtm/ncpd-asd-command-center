@@ -32,12 +32,13 @@ const ADMIN_LIKE = new Set(["admin", "director", "co_director", "supervisor", "t
 export const getEffectiveRole = (roles: AppRole[]): AppRole | null => {
   if (!roles.length) return null;
 
-  const ordered = [...roles].sort((a, b) => (ROLE_RANK[a] ?? 99) - (ROLE_RANK[b] ?? 99));
-  if (ordered.includes("admin")) return "admin";
+  const nonAdminRoles = roles.filter((role) => role !== "admin");
+  const ordered = [...(nonAdminRoles.length ? nonAdminRoles : roles)].sort((a, b) => (ROLE_RANK[a] ?? 99) - (ROLE_RANK[b] ?? 99));
   if (ordered.includes("director")) return "director";
   if (ordered.includes("co_director")) return "co_director";
   if (ordered.includes("supervisor")) return "supervisor";
   if (ordered.includes("team_red")) return "team_red";
+  if (ordered.includes("admin")) return "admin";
 
   return ordered[0] || null;
 };

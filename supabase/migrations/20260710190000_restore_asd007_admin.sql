@@ -8,7 +8,7 @@ BEGIN
   FROM auth.users u
   LEFT JOIN public.profiles p ON p.id = u.id
   WHERE
-    (p.name ILIKE '%asd-007%' OR p.name ILIKE 'asd-007' OR p.name ILIKE 'asd007' OR p.dienstnummer ILIKE '%007%' OR u.email ILIKE '%asd-007%' OR u.email ILIKE '%asd007%' OR COALESCE(u.raw_user_meta_data->>'name', '') ILIKE '%asd-007%' OR COALESCE(u.raw_user_meta_data->>'name', '') ILIKE 'asd007')
+    (p.name ILIKE '%asd-007%' OR p.name ILIKE 'asd-007' OR p.name ILIKE 'asd007' OR p.name ILIKE '%dn-00%' OR p.dienstnummer ILIKE '%007%' OR p.dienstnummer ILIKE '%dn-00%' OR u.email ILIKE '%asd-007%' OR u.email ILIKE '%asd007%' OR u.email ILIKE '%dn-00%' OR COALESCE(u.raw_user_meta_data->>'name', '') ILIKE '%asd-007%' OR COALESCE(u.raw_user_meta_data->>'name', '') ILIKE 'asd007' OR COALESCE(u.raw_user_meta_data->>'name', '') ILIKE '%dn-00%')
   ORDER BY u.created_at
   LIMIT 1;
 
