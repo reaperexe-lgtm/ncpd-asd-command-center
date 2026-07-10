@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
