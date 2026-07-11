@@ -77,23 +77,27 @@ export function AppSidebar() {
 
   const navClass = (active: boolean) =>
     active
-      ? "bg-secondary border border-primary/40 text-primary"
+      ? "bg-secondary text-primary"
       : "text-muted-foreground hover:text-primary hover:bg-secondary/50";
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="hud-sidebar">
       <SidebarHeader className="px-2 py-3">
         <div className="flex items-center justify-between gap-2">
           <SidebarTrigger className="shrink-0" />
           {!collapsed && (
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-primary font-bold text-sm truncate">ASD</span>
-              <span className="text-primary font-mono text-xs tabular-nums">
+              <div className="w-4 h-4 shrink-0">
+                <div className="hud-radar" />
+              </div>
+              <span className="text-primary font-bold text-sm truncate tracking-wide">ASD</span>
+              <span className="hud-time text-primary text-xs tabular-nums">
                 {time.toLocaleTimeString("de-DE")}
               </span>
             </div>
           )}
         </div>
+        {!collapsed && <div className="hud-tick mt-3" />}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -103,7 +107,12 @@ export function AppSidebar() {
               {visibleNavItems.map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
-                    <NavLink to={item.to} end={item.to === "/"} className={navClass(isActive(item.to))}>
+                    <NavLink
+                      to={item.to}
+                      end={item.to === "/"}
+                      data-active={isActive(item.to)}
+                      className={`hud-nav-item ${navClass(isActive(item.to))}`}
+                    >
                       <span className="text-base shrink-0">{item.emoji}</span>
                       <span>{item.label}</span>
                     </NavLink>
@@ -116,13 +125,18 @@ export function AppSidebar() {
 
         {(canReviewExams || isAdmin) && (
           <SidebarGroup>
+            {!collapsed && <div className="hud-tick mb-2" />}
             <SidebarGroupLabel>Verwaltung</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {canReviewExams && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive("/ausbilder")} tooltip="Ausbilder">
-                      <NavLink to="/ausbilder" className={navClass(isActive("/ausbilder"))}>
+                      <NavLink
+                        to="/ausbilder"
+                        data-active={isActive("/ausbilder")}
+                        className={`hud-nav-item ${navClass(isActive("/ausbilder"))}`}
+                      >
                         <span className="text-base shrink-0">🎓</span>
                         <span>Ausbilder</span>
                       </NavLink>
@@ -132,7 +146,11 @@ export function AppSidebar() {
                 {isAdmin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive("/admin")} tooltip="Admin">
-                      <NavLink to="/admin" className={navClass(isActive("/admin"))}>
+                      <NavLink
+                        to="/admin"
+                        data-active={isActive("/admin")}
+                        className={`hud-nav-item ${navClass(isActive("/admin"))}`}
+                      >
                         <Shield className="w-4 h-4 shrink-0" />
                         <span>Admin</span>
                       </NavLink>
@@ -146,10 +164,15 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-2">
+        {!collapsed && <div className="hud-tick mb-2" />}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={isActive("/profil")} tooltip="Profil">
-              <NavLink to="/profil" className={navClass(isActive("/profil"))}>
+              <NavLink
+                to="/profil"
+                data-active={isActive("/profil")}
+                className={`hud-nav-item ${navClass(isActive("/profil"))}`}
+              >
                 <UserIcon className="w-4 h-4 shrink-0" />
                 <span>Profil</span>
               </NavLink>
