@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
+import image50 from "@/assets/slideshow/image-50-1.png";
 
-// Automatically picks up every image dropped into src/assets/slideshow —
-// no manual list maintenance needed. Sorted alphabetically by filename.
-const modules = import.meta.glob("/src/assets/slideshow/*.{png,jpg,jpeg,webp,gif}", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-
-const LOCAL_IMAGES = Object.keys(modules)
-  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-  .map((key) => modules[key]);
+// To add more images: import them the same way above and add them to this array.
+// Example:
+//   import myPic from "@/assets/slideshow/mein-bild.png";
+//   const LOCAL_IMAGES = [image50, myPic];
+const LOCAL_IMAGES: string[] = [image50];
 
 const SlideshowBackground = () => {
   const [current, setCurrent] = useState(0);
