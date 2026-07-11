@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteUserAccount } from "@/lib/supabaseFunctions";
@@ -102,6 +103,7 @@ const RESET_TYPE_LABELS: Record<string, string> = {
 
 const AdminPanel = () => {
   const { isAdmin, user, role: currentUserRole } = useAuth();
+  const { theme, setTheme } = useTheme();
   const assignableRoles = getAssignableRoles(currentUserRole, isAdmin);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
@@ -1642,6 +1644,38 @@ const AdminPanel = () => {
               <NavOrderSection />
                 <SlideshowImagesSection />
             </Suspense>
+
+            {/* Theme Selection */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Settings className="w-4 h-4" /> Theme / Farbschema
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Wähle zwischen Grün und Blau als Hauptfarbschema für alle Nutzer der App.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant={theme === "green" ? "default" : "outline"}
+                  onClick={() => setTheme("green")}
+                  className="gap-2"
+                >
+                  <div className="w-4 h-4 rounded bg-emerald-500" />
+                  Grün
+                </Button>
+                <Button
+                  variant={theme === "blue" ? "default" : "outline"}
+                  onClick={() => setTheme("blue")}
+                  className="gap-2"
+                >
+                  <div className="w-4 h-4 rounded bg-blue-500" />
+                  Blau
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Aktuell gewähltes Theme: <strong>{theme === "green" ? "Grün 🟢" : "Blau 🔵"}</strong>
+              </p>
+            </div>
+
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
               <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Discord-Server Einladungslink
