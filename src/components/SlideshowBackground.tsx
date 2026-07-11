@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 
-const LOCAL_IMAGES = [
-  "/images/auth-bg.png",
-  "/images/bg-1.png",
-  "/images/bg-2.png",
-  "/images/bg-3.png",
-  "/images/bg-4.png",
-  "/images/bg-5.png",
-  "/images/bg-6.png",
-  "/images/bg-7.png",
-  "/images/bg-8.png",
-];
+const LOCAL_IMAGES = ["/images/auth-bg.png"];
 
 const SlideshowBackground = () => {
   const [current, setCurrent] = useState(0);
