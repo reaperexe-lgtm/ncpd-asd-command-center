@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowRight, CheckCircle, XCircle, Plane, Hash, User, Send, Clock, Loader2 } from "lucide-react";
-import SlideshowBackground from "@/components/SlideshowBackground";
 import asdLogo from "@/assets/asd-logo.png";
 
 interface ExamQuestion {
@@ -169,7 +168,6 @@ const TheoryExam = ({ onBack, embedded, prefillName, prefillDienstnummer, onExam
 
   return (
     <div className={embedded ? "w-full space-y-6" : "min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden"}>
-      {!embedded && <SlideshowBackground />}
       <div className={embedded ? "w-full space-y-6" : "w-full max-w-2xl space-y-6 relative"}>
         {/* Header */}
         <div className="flex flex-col items-center gap-4">
