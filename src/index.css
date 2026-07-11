@@ -256,27 +256,12 @@
 
 /* ---------- Aviation HUD — app-wide ---------- */
 
-@keyframes hud-page-scan-move {
-  0% { top: -5%; }
-  100% { top: 105%; }
-}
-
 .hud-page-scan {
   position: fixed;
   inset: 0;
   z-index: 45;
   pointer-events: none;
   overflow: hidden;
-}
-.hud-page-scan::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: hsl(var(--primary) / 0.5);
-  box-shadow: 0 0 16px 3px hsl(var(--primary) / 0.55);
-  animation: hud-page-scan-move 7s linear infinite;
 }
 .hud-page-scan::after {
   content: "";
@@ -313,5 +298,40 @@
   box-shadow: 0 0 18px -4px hsl(var(--primary) / 0.4);
 }
 .hud-card:hover::before {
+  opacity: 1;
+}
+
+/* Catch raw bg-card + border panels across pages (Einsatz, 10-80, Gambling, etc.)
+   that don't use the <Card> component directly, so they get the same HUD frame. */
+.bg-card.border,
+.bg-card.border-2 {
+  position: relative;
+}
+.bg-card.border::before,
+.bg-card.border-2::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.6;
+  transition: opacity 0.25s ease;
+  background:
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 2px 14px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 2px 14px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 2px 14px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 2px 14px no-repeat;
+}
+.bg-card.border:hover,
+.bg-card.border-2:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 18px -4px hsl(var(--primary) / 0.4);
+}
+.bg-card.border:hover::before,
+.bg-card.border-2:hover::before {
   opacity: 1;
 }
