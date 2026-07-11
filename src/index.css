@@ -278,20 +278,22 @@
 .hud-card::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 7px;
+  left: 7px;
+  right: 7px;
+  bottom: 7px;
   pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.6;
+  opacity: 0.55;
   transition: opacity 0.25s ease;
   background:
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 2px 14px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 2px 14px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 2px 14px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 2px 14px no-repeat;
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 2px 12px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 2px 12px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 2px 12px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 2px 12px no-repeat;
 }
 .hud-card:hover {
   border-color: hsl(var(--primary) / 0.5);
@@ -311,20 +313,22 @@
 .bg-card.border-2::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 7px;
+  left: 7px;
+  right: 7px;
+  bottom: 7px;
   pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.6;
+  opacity: 0.55;
   transition: opacity 0.25s ease;
   background:
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 2px 14px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 2px 14px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 2px 14px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 14px 2px no-repeat,
-    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 2px 14px no-repeat;
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 2px 12px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 2px 12px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 2px 12px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 12px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 2px 12px no-repeat;
 }
 .bg-card.border:hover,
 .bg-card.border-2:hover {
