@@ -46,6 +46,10 @@
 }
 
 @layer base {
+  html {
+    background-color: hsl(215 35% 8%);
+  }
+
   * {
     @apply border-border;
   }
