@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Changelog from "@/components/Changelog";
+import SlideshowBackground from "@/components/SlideshowBackground";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -127,6 +128,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden normal-cursor">
+      <SlideshowBackground />
       <div className="w-full max-w-5xl flex flex-col lg:flex-row items-start justify-center gap-8 relative">
       {/* Changelog - left side on desktop */}
       <div className="hidden lg:block w-80 flex-shrink-0 sticky top-8">

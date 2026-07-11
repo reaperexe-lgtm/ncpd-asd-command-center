@@ -4,11 +4,13 @@ import { AppSidebar } from "./AppSidebar";
 import QuickActionFAB from "./QuickActionFAB";
 import MiniGamesEasterEgg from "./MiniGamesEasterEgg";
 import MilestoneCelebrations from "./MilestoneCelebrations";
+import SlideshowBackground from "./SlideshowBackground";
 
 const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen relative flex w-full">
+        <SlideshowBackground />
         <div className="relative z-10 flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
