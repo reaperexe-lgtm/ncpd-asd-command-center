@@ -8,14 +8,14 @@ const SlideshowImagesSection = () => {
       </CardHeader>
       <CardContent className="space-y-4 text-sm text-muted-foreground">
         <p>
-          Die Hintergrundbilder werden jetzt lokal aus dem Ordner <strong>public/images</strong> geladen.
+          Die Hintergrundbilder werden jetzt lokal aus dem Ordner <strong>src/assets/slideshow</strong> geladen.
         </p>
         <p>
-          Lege neue Bilder dort ab, und sie erscheinen automatisch in der Slideshow. Für die Reihenfolge reicht die Dateibenennung,
-          da die Dateien alphabetisch sortiert werden.
+          Lege neue Bilder dort ab, und sie erscheinen nach einem Neu-Build/Neustart automatisch in der Slideshow. Für die
+          Reihenfolge reicht die Dateibenennung, da die Dateien alphabetisch sortiert werden.
         </p>
         <div className="rounded-lg border border-dashed border-border p-3 bg-muted/30">
-          Beispiel: <span className="font-medium text-foreground">public/images/mein-bild.png</span>
+          Beispiel: <span className="font-medium text-foreground">src/assets/slideshow/mein-bild.png</span>
         </div>
       </CardContent>
     </Card>
