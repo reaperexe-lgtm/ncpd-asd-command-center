@@ -114,7 +114,8 @@ export function AppSidebar() {
                       className={`hud-nav-item ${navClass(isActive(item.to))}`}
                     >
                       <span className="text-base shrink-0">{item.emoji}</span>
-                      <span>{item.label}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {isActive(item.to) && <span className="hud-dot shrink-0" />}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

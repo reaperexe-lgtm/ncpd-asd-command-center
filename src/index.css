@@ -174,11 +174,11 @@
 }
 
 .hud-sidebar {
-  position: relative;
   background-image:
-    linear-gradient(hsl(var(--primary) / 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--primary) / 0.05) 1px, transparent 1px);
+    linear-gradient(hsl(var(--primary) / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.09) 1px, transparent 1px);
   background-size: 22px 22px;
+  box-shadow: inset -1px 0 0 hsl(var(--primary) / 0.15), 4px 0 24px -8px hsl(var(--primary) / 0.25);
 }
 
 .hud-radar {
@@ -208,8 +208,8 @@
   height: 1px;
   background: repeating-linear-gradient(
     90deg,
-    hsl(var(--border)) 0px,
-    hsl(var(--border)) 4px,
+    hsl(var(--primary) / 0.35) 0px,
+    hsl(var(--primary) / 0.35) 4px,
     transparent 4px,
     transparent 8px
   );
@@ -234,6 +234,7 @@
 }
 .hud-nav-item[data-active="true"] {
   border-left-color: hsl(var(--primary));
+  background-image: linear-gradient(90deg, hsl(var(--primary) / 0.12), transparent 60%);
   animation: hud-pulse 2.4s ease-in-out infinite;
 }
 
@@ -244,6 +245,73 @@
 }
 
 .hud-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
   box-shadow: 0 0 6px 1px hsl(var(--primary) / 0.8);
   animation: hud-blink 2s ease-in-out infinite;
+}
+
+/* ---------- Aviation HUD — app-wide ---------- */
+
+@keyframes hud-page-scan-move {
+  0% { top: -5%; }
+  100% { top: 105%; }
+}
+
+.hud-page-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hud-page-scan::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 16px 3px hsl(var(--primary) / 0.55);
+  animation: hud-page-scan-move 7s linear infinite;
+}
+.hud-page-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 120px hsl(var(--background) / 0.85);
+}
+
+/* HUD corner brackets on cards, app-wide */
+.hud-card {
+  position: relative;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.hud-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.6;
+  transition: opacity 0.25s ease;
+  background:
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top left / 2px 14px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) top right / 2px 14px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom left / 2px 14px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 14px 2px no-repeat,
+    linear-gradient(hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.9)) bottom right / 2px 14px no-repeat;
+}
+.hud-card:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 18px -4px hsl(var(--primary) / 0.4);
+}
+.hud-card:hover::before {
+  opacity: 1;
 }

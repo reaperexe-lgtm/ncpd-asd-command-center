@@ -11,10 +11,11 @@ const Layout = ({ children }: { children: ReactNode }) => {
     <SidebarProvider>
       <div className="min-h-screen relative flex w-full">
         <SlideshowBackground />
+        <div className="hud-page-scan" />
         <div className="relative z-10 flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
-            <header className="md:hidden sticky top-0 z-40 flex items-center gap-2 h-12 px-3 border-b border-border bg-background/80 backdrop-blur">
+            <header className="md:hidden sticky top-0 z-40 flex items-center gap-2 h-12 px-3 border-b border-primary/30 bg-background/80 backdrop-blur shadow-[0_2px_12px_-4px_hsl(var(--primary)/0.35)]">
               <SidebarTrigger className="h-9 w-9" />
               <span className="text-primary font-bold text-sm">ASD</span>
             </header>
