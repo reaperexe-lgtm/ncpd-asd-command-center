@@ -60,11 +60,11 @@ const WeeklyChallengesCard = () => {
     enabled: !!user,
   });
 
-  // Idempotent seeding: legt fehlende Default-Challenges an und korrigiert
-  // veraltete Beträge/Texte bei bestehenden Zeilen. Nutzt UPSERT auf
-  // (week_start, title), damit bei gleichzeitigen Aufrufen (z.B. mehrere
-  // offene Tabs) KEINE Duplikate mehr entstehen. Legacy "Aktiver Pilot"
-  // Einträge werden gezielt entfernt statt alles zu löschen und neu anzulegen.
+  // Idempotent seeding über eine Edge Function mit Service-Role: läuft für JEDEN
+  // angemeldeten Nutzer, nicht nur für Admins (RLS auf weekly_challenges erlaubt
+  // Schreibzugriff nur Admins — vorher blieb die Karte leer, wenn kein Admin die
+  // Seite als Erster in der Woche geladen hatte). Die Function selbst nutzt UPSERT
+  // auf (week_start, title), also auch bei Mehrfachaufrufen keine Duplikate.
   useEffect(() => {
     if (!challenges) return;
 
@@ -83,23 +83,11 @@ const WeeklyChallengesCard = () => {
     if (!hasLegacy && !needsUpdate) return;
 
     const seed = async () => {
-      if (hasLegacy) {
-        await supabase.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", "Aktiver Pilot");
+      try {
+        await supabase.functions.invoke("ensure-weekly-challenges");
+      } catch (e) {
+        // still fine to fail silently here; card just stays empty this render
       }
-
-      const rows = DEFAULT_WEEKLY_CHALLENGES.map((c) => ({
-        week_start: weekStartIso,
-        title: c.title,
-        description: c.description,
-        metric: c.metric,
-        target: c.target,
-        reward_amount: c.reward_amount,
-        is_active: true,
-      }));
-
-      // onConflict auf den UNIQUE(week_start, title) Constraint: bestehende
-      // Zeilen werden aktualisiert statt dupliziert, fehlende werden angelegt.
-      await supabase.from("weekly_challenges").upsert(rows, { onConflict: "week_start,title" });
       refetch();
     };
     seed();
