@@ -25,3 +25,33 @@ export function countCrewParticipationsForUser(
     return crew.some((value) => value.trim().toLowerCase() === normalized);
   }).length;
 }
+
+// Für das "Heli-Teilnehmer"-Achievement: zählt NUR Unterstützungscrew (Co-Pilot, Left-
+// und Right-Gunner) — der Pilot bekommt sein Achievement/seine Metrik separat. Außerdem
+// zählt ein Eintrag nicht, wenn dieselbe Person für diese Mission/Verfolgung auch der
+// Protokollschreiber ist (sonst würde man für die eigene Meldung zusätzlich als
+// "Teilnehmer" gutgeschrieben werden).
+export function countHeliTeilnehmerForUser(
+  entries: Array<{
+    co_pilot?: string | null;
+    left_gunner?: string | null;
+    right_gunner?: string | null;
+    protokollschreiber?: string | null;
+    created_by?: string | null;
+  }>,
+  userName: string,
+  userId?: string | null,
+) {
+  if (!userName?.trim()) return 0;
+  const normalized = userName.trim().toLowerCase();
+  return entries.filter((entry) => {
+    const crew = [entry.co_pilot, entry.left_gunner, entry.right_gunner]
+      .filter((value): value is string => Boolean(value));
+    const isCrew = crew.some((value) => value.trim().toLowerCase() === normalized);
+    if (!isCrew) return false;
+    if (!userId) return true;
+    const writer = entry.protokollschreiber?.trim();
+    const isWriter = writer ? writer === userId : entry.created_by === userId;
+    return !isWriter;
+  }).length;
+}

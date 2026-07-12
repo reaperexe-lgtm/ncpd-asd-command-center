@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getChallengeWeekStart } from "@/lib/weekBoundary";
-import { countCrewParticipationsForUser, countMissionsForUser } from "@/lib/missionStats";
+import { countHeliTeilnehmerForUser, countMissionsForUser } from "@/lib/missionStats";
 
 /**
  * Berechnet alle Achievement-Metriken für einen User und schaltet
@@ -52,11 +52,11 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
       return { count: countMissionsForUser(rows as any[], userId) } as any;
     }),
     Promise.all([
-      supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner"),
-      supabase.from("pursuits").select("pilot, co_pilot, left_gunner, right_gunner"),
+      supabase.from("missions").select("co_pilot, left_gunner, right_gunner, protokollschreiber, created_by"),
+      supabase.from("pursuits").select("co_pilot, left_gunner, right_gunner, protokollschreiber, created_by"),
     ]).then(([missionsCrew, pursuitsCrew]) => {
       const rows = [...(missionsCrew.data || []), ...(pursuitsCrew.data || [])];
-      return { count: countCrewParticipationsForUser(rows as any[], userName) } as any;
+      return { count: countHeliTeilnehmerForUser(rows as any[], userName, userId) } as any;
     }),
     supabase.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),

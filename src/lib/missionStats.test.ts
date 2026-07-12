@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countCrewParticipationsForUser, countMissionsForUser } from "./missionStats";
+import { countCrewParticipationsForUser, countHeliTeilnehmerForUser, countMissionsForUser } from "./missionStats";
 
 describe("countMissionsForUser", () => {
   it("counts missions by protocol writer when present and falls back to creator for legacy rows", () => {
@@ -25,5 +25,39 @@ describe("countMissionsForUser", () => {
 
     expect(countCrewParticipationsForUser(missions, "Alice")).toBe(3);
     expect(countCrewParticipationsForUser(missions, "Bob")).toBe(1);
+  });
+});
+
+describe("countHeliTeilnehmerForUser", () => {
+  it("counts co-pilot/gunner roles but not pilot", () => {
+    const entries = [
+      { pilot: "Alice", co_pilot: null, left_gunner: null, right_gunner: null },
+      { pilot: null, co_pilot: "Alice", left_gunner: null, right_gunner: null },
+      { pilot: null, co_pilot: null, left_gunner: "Alice", right_gunner: null },
+      { pilot: null, co_pilot: null, left_gunner: null, right_gunner: "Alice" },
+    ] as any[];
+
+    // Pilot-Eintrag (Zeile 1) zählt nicht, die drei Crew-Einträge schon.
+    expect(countHeliTeilnehmerForUser(entries, "Alice")).toBe(3);
+  });
+
+  it("does not count an entry where the user is also the protocol writer", () => {
+    const entries = [
+      { co_pilot: "Alice", left_gunner: null, right_gunner: null, protokollschreiber: "user-a", created_by: "user-x" },
+      { co_pilot: "Alice", left_gunner: null, right_gunner: null, protokollschreiber: null, created_by: "user-a" },
+      { co_pilot: "Alice", left_gunner: null, right_gunner: null, protokollschreiber: "user-b", created_by: "user-b" },
+    ] as any[];
+
+    // Erste zwei Zeilen: Alice (user-a) ist selbst Schreiber -> zählt nicht.
+    // Dritte Zeile: jemand anders (user-b) ist Schreiber -> zählt.
+    expect(countHeliTeilnehmerForUser(entries, "Alice", "user-a")).toBe(1);
+  });
+
+  it("falls back to counting everything if no userId is given", () => {
+    const entries = [
+      { co_pilot: "Alice", left_gunner: null, right_gunner: null, protokollschreiber: "user-a", created_by: "user-a" },
+    ] as any[];
+
+    expect(countHeliTeilnehmerForUser(entries, "Alice")).toBe(1);
   });
 });
