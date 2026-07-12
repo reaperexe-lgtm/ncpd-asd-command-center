@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Plane } from "lucide-react";
+import { Plane } from "lucide-react";
 import asdLogo from "@/assets/asd-logo.png";
 import MemberOfMonthCard from "@/components/MemberOfMonthCard";
 import OnlineUsersCard from "@/components/OnlineUsersCard";
@@ -22,7 +22,6 @@ const LOCATION_TYPE_LABELS: Record<string, string> = {
 };
 
 const Index = () => {
-  const [easterEgg, setEasterEgg] = useState(false);
   const [missionDialog, setMissionDialog] = useState<"all" | "today" | null>(null);
 
   const { data: members } = useQuery({
@@ -124,7 +123,7 @@ const Index = () => {
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-8 relative">
       <div className="relative z-10 flex flex-col items-center gap-4 sm:gap-8 w-full pb-4 sm:pb-8">
-      <div className="mt-2 sm:mt-4 w-28 h-28 sm:w-48 sm:h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)] cursor-pointer" onClick={() => setEasterEgg(true)}>
+      <div className="mt-2 sm:mt-4 w-28 h-28 sm:w-48 sm:h-48 rounded-full border-2 border-border overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
         <img src={asdLogo} alt="ASD Logo" className="w-full h-full object-cover rounded-full scale-125" />
       </div>
 
@@ -176,19 +175,6 @@ const Index = () => {
           Aus der Luft. Für den Boden. (Späzi für die A.S.D!)
         </p>
       </div>
-
-      <Dialog open={easterEgg} onOpenChange={setEasterEgg}>
-        <DialogContent className="max-w-[70vw] sm:max-w-sm p-1 bg-black border-border [&>button]:text-white [&>button]:bg-black/60 [&>button]:rounded-full [&>button]:z-10">
-          <video
-            src="https://qfstjmzklpnftoablrss.supabase.co/storage/v1/object/public/assets/easteregg.mp4"
-            autoPlay
-            controls
-            playsInline
-            className="w-full rounded"
-            ref={(el) => { if (el) el.volume = 0.1; }}
-          />
-        </DialogContent>
-      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-4xl">
         <div className="bg-card border border-border rounded-lg p-3 sm:p-5">
