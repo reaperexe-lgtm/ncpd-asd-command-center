@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Car, FileText, Users, Shield, Pencil } from "lucide-react";
 import { GANG_CATEGORIES } from "@/lib/gangCategories";
@@ -149,6 +149,9 @@ const EinsatzPage = () => {
     }
     const gang = gangs?.find((g) => g.id === id);
     setGangInfo((gang as any)?.erkennungsmerkmale || "");
+    if ((gang as any)?.primary_color) {
+      setCurrentVehicle({ ...currentVehicle, primary_color: (gang as any).primary_color });
+    }
   };
 
   const gangsByCategory = GANG_CATEGORIES.map((cat) => ({
@@ -215,12 +218,18 @@ const EinsatzPage = () => {
               <SelectTrigger className="mt-1 bg-background border-border"><SelectValue placeholder="Familie wählen..." /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Keine / Unbekannt</SelectItem>
-                {gangsByCategory.map((cat) => (
-                  <SelectGroup key={cat.value}>
-                    <SelectLabel>{cat.label}</SelectLabel>
-                    {cat.items.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-                  </SelectGroup>
-                ))}
+                {gangsByCategory.map((cat, idx) => {
+                  const Icon = cat.icon;
+                  return (
+                    <SelectGroup key={cat.value}>
+                      {idx > 0 && <SelectSeparator />}
+                      <SelectLabel className="flex items-center gap-1.5 py-2 pl-2 text-[11px] font-black uppercase tracking-wider text-primary bg-primary/10 rounded-sm mx-1">
+                        <Icon className="w-3.5 h-3.5" /> {cat.label}
+                      </SelectLabel>
+                      {cat.items.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                    </SelectGroup>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

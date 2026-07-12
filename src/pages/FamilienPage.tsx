@@ -24,6 +24,7 @@ type Gang = {
   category: string;
   hood: string | null;
   erkennungsmerkmale: string | null;
+  primary_color: string | null;
   created_at: string;
 };
 
@@ -37,6 +38,7 @@ const FamilienPage = () => {
   const [category, setCategory] = useState("Familie");
   const [hood, setHood] = useState("");
   const [erkennungsmerkmale, setErkennungsmerkmale] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#000000");
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("all");
@@ -72,6 +74,7 @@ const FamilienPage = () => {
         category,
         hood: hood || null,
         erkennungsmerkmale: erkennungsmerkmale || null,
+        primary_color: primaryColor || "#000000",
       } as any);
       if (error) throw error;
     },
@@ -79,7 +82,7 @@ const FamilienPage = () => {
       queryClient.invalidateQueries({ queryKey: ["gangs"] });
       toast.success("Familie hinzugefügt");
       logActivity("Familie/Gang erstellt", "familie", { name, category });
-      setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setHood(""); setErkennungsmerkmale(""); setShowForm(false);
+      setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setHood(""); setErkennungsmerkmale(""); setPrimaryColor("#000000"); setShowForm(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -147,6 +150,7 @@ const FamilienPage = () => {
       location: g.location || "",
       description: g.description || "",
       image_url: g.image_url || null,
+      primary_color: g.primary_color || "#000000",
     });
   };
 
@@ -162,6 +166,7 @@ const FamilienPage = () => {
         location: editData.location || null,
         description: editData.description || null,
         image_url: editData.image_url || null,
+        primary_color: editData.primary_color || "#000000",
       },
     });
   };
@@ -363,6 +368,13 @@ const FamilienPage = () => {
             <div><Label>Erkennungsmerkmale</Label><Input className="mt-1 bg-background border-border" placeholder="Farben, Kleidung, Tattoos..." value={erkennungsmerkmale} onChange={(e) => setErkennungsmerkmale(e.target.value)} /></div>
             <div><Label>Standort (alt.)</Label><Input className="mt-1 bg-background border-border" placeholder="Allgemeiner Standort" value={location} onChange={(e) => setLocation(e.target.value)} /></div>
           </div>
+          <div>
+            <Label>Fahrzeug-Farbe (für Einsatz-Autofill)</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input type="color" className="w-10 h-10 p-1 rounded bg-background border-border cursor-pointer" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
+              <span className="text-[10px] text-muted-foreground font-mono">{primaryColor}</span>
+            </div>
+          </div>
           <div><Label>Beschreibung</Label><Textarea className="mt-1 bg-background border-border min-h-[80px]" placeholder="Weitere Infos..." value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
           <div>
             <Label>Bild (optional)</Label>
@@ -438,6 +450,10 @@ const FamilienPage = () => {
                             <Input value={editData.hood || ""} onChange={(e) => setEditData({ ...editData, hood: e.target.value })} placeholder="Hood / Chapter" className="h-7 text-xs bg-background border-border" />
                             <Input value={editData.erkennungsmerkmale || ""} onChange={(e) => setEditData({ ...editData, erkennungsmerkmale: e.target.value })} placeholder="Erkennungsmerkmale" className="h-7 text-xs bg-background border-border" />
                             <Input value={editData.location || ""} onChange={(e) => setEditData({ ...editData, location: e.target.value })} placeholder="Standort" className="h-7 text-xs bg-background border-border" />
+                            <div className="flex items-center gap-2">
+                              <Label className="text-[10px] shrink-0">Fahrzeug-Farbe</Label>
+                              <Input type="color" className="w-8 h-7 p-0.5 rounded bg-background border-border cursor-pointer" value={editData.primary_color || "#000000"} onChange={(e) => setEditData({ ...editData, primary_color: e.target.value })} />
+                            </div>
                             <Textarea value={editData.description || ""} onChange={(e) => setEditData({ ...editData, description: e.target.value })} placeholder="Beschreibung" className="text-xs bg-background border-border min-h-[50px]" />
                             <div className="flex gap-2 justify-end pt-1">
                               <button onClick={() => { setEditingId(null); setEditData({}); }} className="p-2.5 rounded-md bg-destructive/10 text-muted-foreground hover:text-destructive hover:bg-destructive/20 transition-colors"><X className="w-5 h-5" /></button>
@@ -448,7 +464,10 @@ const FamilienPage = () => {
                           /* View mode */
                           <>
                             <div className="flex justify-between items-start">
-                              <h3 className="font-bold text-primary text-sm">{g.name}</h3>
+                              <h3 className="font-bold text-primary text-sm flex items-center gap-1.5">
+                                {g.primary_color && <span className="w-2.5 h-2.5 rounded-full border border-border shrink-0" style={{ background: g.primary_color }} title="Fahrzeug-Farbe" />}
+                                {g.name}
+                              </h3>
                               {isAdmin && (
                                 <div className="flex gap-2 opacity-0 group-hover/card:opacity-100 transition-opacity">
                                   <button onClick={() => startEdit(g)} className="p-2 rounded-md bg-primary/10 text-muted-foreground hover:text-primary hover:bg-primary/20 transition-colors">
