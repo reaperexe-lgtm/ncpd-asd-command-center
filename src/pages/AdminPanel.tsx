@@ -2035,7 +2035,25 @@ const AdminPanel = () => {
                       if (data?.error) throw new Error(data.error);
                       toast.success(`Vorschau: ${data?.inactive ?? 0} von ${data?.checked ?? 0} Mitgliedern ohne Aktivität`);
                     } catch (e: any) {
-                      toast.error(e.message ?? "Fehler bei der Vorschau");
+                      // Detailed diagnostic: try direct fetch to Functions endpoint to reveal CORS/404/500
+                      try {
+                        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+                        const url = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/weekly-inactivity-check`;
+                        const headers = {} as Record<string,string>;
+                        try {
+                          const authHeaders = await getSupabaseFunctionAuthHeaders(supabase as any);
+                          Object.assign(headers, authHeaders);
+                        } catch {}
+                        headers['Content-Type'] = 'application/json';
+                        const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ dry_run: true, force: true }) });
+                        const text = await resp.text();
+                        const message = `Invoke failed: ${e?.message || String(e)} — Diagnostic fetch ${resp.status} ${resp.statusText}: ${text}`;
+                        console.error(message, e);
+                        toast.error(message);
+                      } catch (diagErr: any) {
+                        console.error('Diagnostic fetch failed', diagErr, e);
+                        toast.error(e?.message ?? 'Fehler bei der Vorschau (kein weiterer Diagnostic-Info)');
+                      }
                     } finally {
                       setTestingInactivity(false);
                     }
