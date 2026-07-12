@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { useAuth } from "@/contexts/AuthContext";
 import { logActivity } from "@/lib/activityLog";
 import { BarChart3, TrendingUp, Calendar, Trophy, FileText, RotateCw, Car, ChevronRight, Clock, CalendarDays, CalendarRange } from "lucide-react";
@@ -217,9 +218,15 @@ const StatistikPage = () => {
       logActivity(`Reset-Anfrage gestellt: ${RESET_TYPE_LABELS[resetType] || resetType}`, "admin", { reset_type: resetType, reason });
       // Notify admins via Discord DM
       const userName = profiles?.find((p) => p.id === user?.id)?.name || "Unbekannt";
-      supabase.functions.invoke("discord-notify", {
-        body: { type: "reset_request", data: { reset_type: RESET_TYPE_LABELS[resetType] || resetType, reason, requested_by_name: userName } },
-      }).catch(() => {});
+      try {
+        const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+        supabase.functions.invoke("discord-notify", {
+          body: { type: "reset_request", data: { reset_type: RESET_TYPE_LABELS[resetType] || resetType, reason, requested_by_name: userName } },
+          headers,
+        }).catch(() => {});
+      } catch {
+        // no session – ignore notify
+      }
     },
     onSuccess: () => {
       toast.success("Reset-Anfrage wurde an den Admin gesendet");

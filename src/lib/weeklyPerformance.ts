@@ -5,6 +5,7 @@
 // wurden entfernt. Datei bewusst nicht gelöscht, falls sie referenziert wird —
 // bitte NICHT wieder verdrahten, ohne vorher mit WeeklyChallengesCard abzugleichen.
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { toast } from "sonner";
 
 let inFlight: Promise<void> | null = null;
@@ -21,7 +22,13 @@ export async function checkWeeklyPerformance() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session) return;
-      const { data, error } = await supabase.functions.invoke("weekly-performance-check");
+      let headers = undefined;
+      try {
+        headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+      } catch {
+        // ignore
+      }
+      const { data, error } = await supabase.functions.invoke("weekly-performance-check", headers ? { headers } : undefined);
       if (error) return;
       if (data?.qualified) {
         toast.success(

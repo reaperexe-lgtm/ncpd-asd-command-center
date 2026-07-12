@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -85,7 +86,13 @@ const WeeklyChallengesCard = () => {
     const seed = async () => {
       let edgeFnOk = false;
       try {
-        const { error } = await supabase.functions.invoke("ensure-weekly-challenges");
+        let headers = undefined;
+        try {
+          headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+        } catch {
+          // ignore: not authenticated
+        }
+        const { error } = await supabase.functions.invoke("ensure-weekly-challenges", headers ? { headers } : undefined);
         if (error) throw error;
         edgeFnOk = true;
       } catch (e) {
@@ -157,19 +164,26 @@ const WeeklyChallengesCard = () => {
           } else {
             // Ingame-Geld: keine automatische Gutschrift, stattdessen Discord-Benachrichtigung an die Direction
             try {
-              await supabase.functions.invoke("discord-notify", {
-                body: {
-                  type: "challenge_completed",
-                  data: {
-                    user_id: user.id,
-                    user_name: profile.name || "",
-                    dienstnummer: profile.dienstnummer ?? null,
-                    challenge_title: c.title,
-                    challenge_description: c.description,
-                    reward_amount: c.reward_amount,
+              try {
+                const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+                await supabase.functions.invoke("discord-notify", {
+                  body: {
+                    type: "challenge_completed",
+                    data: {
+                      user_id: user.id,
+                      user_name: profile.name || "",
+                      dienstnummer: profile.dienstnummer ?? null,
+                      challenge_title: c.title,
+                      challenge_description: c.description,
+                      reward_amount: c.reward_amount,
+                    },
                   },
-                },
-              });
+                  headers,
+                });
+              } catch (e) {
+                // If auth not available or function call fails, fall back to notifying user manually
+                throw e;
+              }
               toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
             } catch (e) {
               toast.success(`🏆 Challenge "${c.title}" geschafft! Bitte melde dich bei der Direction für deine $${c.reward_amount.toLocaleString()}.`);

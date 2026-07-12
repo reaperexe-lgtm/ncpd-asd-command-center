@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteUserAccount } from "@/lib/supabaseFunctions";
+import { deleteUserAccount, getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -488,8 +488,10 @@ const AdminPanel = () => {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (userId: string) => {
+      const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
       const { data, error } = await supabase.functions.invoke("reset-user-password", {
         body: { userId },
+        headers,
       });
       if (error) {
         const detail = (data as any)?.error;
@@ -1822,12 +1824,20 @@ const AdminPanel = () => {
                     }
                     setSendingAufstellung(true);
                     try {
-                      const { data, error } = await supabase.functions.invoke("discord-notify", {
-                        body: {
-                          type: "aufstellung_announcement",
-                          data: { start_at: new Date(aufstellungAt).toISOString(), ort: aufstellungOrt },
-                        },
-                      });
+                      try {
+                        const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+                        const { data, error } = await supabase.functions.invoke("discord-notify", {
+                          body: {
+                            type: "aufstellung_announcement",
+                            data: { start_at: new Date(aufstellungAt).toISOString(), ort: aufstellungOrt },
+                          },
+                          headers,
+                        });
+                        if (error) throw error;
+                        if (data?.error) throw new Error(data.error);
+                      } catch (e) {
+                        throw e;
+                      }
                       if (error) throw error;
                       if (data?.error) throw new Error(data.error);
                       toast.success("Ankündigung gepostet");
@@ -1891,8 +1901,10 @@ const AdminPanel = () => {
                     try {
                       const triggeredBy =
                         (user?.user_metadata as any)?.name || user?.email || "Admin";
+                      const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
                       const { data, error } = await supabase.functions.invoke("discord-notify", {
                         body: { type: "test_channel_message", data: { triggered_by: triggeredBy } },
+                        headers,
                       });
                       if (error) throw error;
                       if (data?.error) throw new Error(data.error);
@@ -2014,8 +2026,10 @@ const AdminPanel = () => {
                   onClick={async () => {
                     setTestingInactivity(true);
                     try {
+                      const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
                       const { data, error } = await supabase.functions.invoke("weekly-inactivity-check", {
                         body: { dry_run: true, force: true },
+                        headers,
                       });
                       if (error) throw error;
                       if (data?.error) throw new Error(data.error);

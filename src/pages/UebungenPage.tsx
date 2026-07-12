@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,11 +141,13 @@ export default function UebungenPage() {
 
     if (notifyDiscord) {
       try {
+        const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
         const { data: notifyResult, error: notifyError } = await supabase.functions.invoke("discord-notify", {
           body: {
             type: "uebung_announcement",
             data: { ...payload, id: data?.id, created_by_name: profile?.name },
           },
+          headers,
         });
 
         if (notifyError || notifyResult?.success === false) {

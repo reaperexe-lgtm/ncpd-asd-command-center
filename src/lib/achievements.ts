@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { getChallengeWeekStart } from "@/lib/weekBoundary";
 
 /**
@@ -102,9 +103,13 @@ export async function awardAchievements(userId: string, userName: string, dienst
   // Edge function validates JWT, recomputes metrics from trusted DB queries,
   // and writes via service role.
   try {
-    const { data, error } = await supabase.functions.invoke("award-achievements", {
-      body: {},
-    });
+    let headers = undefined;
+    try {
+      headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+    } catch {
+      // ignore
+    }
+    const { data, error } = await supabase.functions.invoke("award-achievements", headers ? { body: {}, headers } : { body: {} });
     if (error) throw error;
     return {
       newlyAwarded: (data as any)?.newlyAwarded ?? 0,
