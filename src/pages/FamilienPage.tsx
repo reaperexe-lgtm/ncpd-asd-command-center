@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check, BarChart3, TrendingUp, TrendingDown, Minus, Sparkles } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { GANG_CATEGORIES } from "@/lib/gangCategories";
 import { detectPrimaryAndPearl } from "@/lib/colorParser";
@@ -102,6 +102,29 @@ const FamilienPage = () => {
       toast.success("Gespeichert");
       setEditingId(null);
       setEditData({});
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const rescanColors = useMutation({
+    mutationFn: async () => {
+      const targets = (gangs || []).filter((g) => g.erkennungsmerkmale);
+      let updated = 0;
+      for (const g of targets) {
+        const { primary, pearl } = detectPrimaryAndPearl(g.erkennungsmerkmale || "");
+        if (!primary && !pearl) continue;
+        const updates: Record<string, string> = {};
+        if (primary) updates.primary_color = primary;
+        if (pearl) updates.pearl_color = pearl;
+        const { error } = await supabase.from("gangs").update(updates).eq("id", g.id);
+        if (!error) updated++;
+      }
+      return updated;
+    },
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ["gangs"] });
+      toast.success(`Farberkennung abgeschlossen: ${updated} Familie(n) aktualisiert`);
+      logActivity("Familien-Farben neu erkannt", "familie", { updated });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -212,6 +235,11 @@ const FamilienPage = () => {
           <Button variant="outline" size="sm" onClick={() => setShowStats(!showStats)} className="gap-1.5">
             <BarChart3 className="w-3.5 h-3.5" /> {showStats ? "Statistik ausblenden" : "Statistik"}
           </Button>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => rescanColors.mutate()} disabled={rescanColors.isPending} className="gap-1.5" title="Erkennt Primär- und Perlfarbe neu aus den Erkennungsmerkmalen aller Familien">
+              <Sparkles className="w-3.5 h-3.5" /> {rescanColors.isPending ? "Erkenne Farben..." : "Farben KI-Update"}
+            </Button>
+          )}
           {isAdmin && (
             <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
               <Plus className="w-3.5 h-3.5" /> {showForm ? "Abbrechen" : "Hinzufügen"}
