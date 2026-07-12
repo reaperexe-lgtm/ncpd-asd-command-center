@@ -25,6 +25,7 @@ export type Database = {
           id: string
           is_active: boolean
           metric: string
+          reward_amount: number | null
           sort_order: number
           threshold: number
           tier: string
@@ -41,6 +42,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           metric: string
+          reward_amount?: number | null
           sort_order?: number
           threshold?: number
           tier?: string
@@ -57,6 +59,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           metric?: string
+          reward_amount?: number | null
           sort_order?: number
           threshold?: number
           tier?: string

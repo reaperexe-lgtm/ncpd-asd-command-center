@@ -127,13 +127,9 @@ Deno.serve(async (req) => {
     const MISSION_PURSUIT_METRICS = new Set([
       "missions_total", "pursuits_total", "pursuits_week", "protocols_total",
     ]);
-    // Special-case: diese Achievements zahlen 1.000.000 statt der normalen Tier-Belohnung
-    // (waren teils früher Wochen-Challenges mit fixer 1-Mio-Belohnung).
-    const MILLION_REWARD_CODES = new Set([
-      "crew_participations_200",
-      "pursuits_total_100_sammler",
-      "missions_total_100_master",
-    ]);
+    // Achievements mit eigener, fest hinterlegter Stufen-Belohnung (Spalte
+    // reward_amount) statt der normalen Tier-Belohnung — z.B. die "10-80-Sammler"
+    // und "Missionen-Master" Stufenfamilien (aufsteigend, Ø 1.000.000 $/Stufe).
 
     const toAward: { user_id: string; achievement_code: string; progress_value: number }[] = [];
     for (const d of (defs || []) as any[]) {
@@ -159,11 +155,11 @@ Deno.serve(async (req) => {
         if (!insertedCodes.has(a.achievement_code)) continue;
         const def = (defs || []).find((d: any) => d.code === a.achievement_code);
         if (!def) continue;
-        if (!MILLION_REWARD_CODES.has(def.code) && MISSION_PURSUIT_METRICS.has(def.metric)) continue;
-        // Special-case: diese Codes zahlen die volle 1-Mio-Belohnung statt der
-        // normalen Tier-Belohnung (bzw. statt gar keiner, falls Mission/Pursuit-Metrik).
-        if (MILLION_REWARD_CODES.has(def.code)) {
-          casinoReward += 1_000_000;
+        if (def.reward_amount == null && MISSION_PURSUIT_METRICS.has(def.metric)) continue;
+        // reward_amount (falls gesetzt) überschreibt die normale Tier-Belohnung —
+        // genutzt für individuell abgestufte Belohnungen (z.B. Stufenfamilien).
+        if (def.reward_amount != null) {
+          casinoReward += def.reward_amount;
         } else {
           casinoReward += TIER_REWARDS[(def.tier || "").toLowerCase()] || 0;
         }

@@ -4,47 +4,28 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 // Achievements, die per SQL-Migration angelegt werden sollten, aber falls diese
 // Migration auf der laufenden DB (noch) nicht ausgeführt wurde, hier per
 // Service-Role idempotent nachgezogen werden (ON CONFLICT (code) DO NOTHING).
-// Muss inhaltlich zu den Migrationen
-//   20260712120000_add_heli_participation_achievement.sql
-//   20260712130000_move_challenges_to_achievements.sql
-// passen.
+// Muss inhaltlich zur Migration
+//   20260712140000_revert_heli_teilnahme_and_tier_sammler_master.sql
+// passen. Heli-Teilnehmer (crew_participations_200) wurde entfernt; 10-80-Sammler
+// und Missionen-Master sind jetzt 8-stufige Familien mit eigener reward_amount.
 const REQUIRED_ACHIEVEMENT_DEFS = [
-  {
-    code: "crew_participations_200",
-    title: "Heli-Teilnehmer",
-    description: "200 Heli-Beteiligungen erreicht",
-    icon: "Plane",
-    tier: "diamond",
-    category: "missions",
-    threshold: 200,
-    metric: "crew_participations_total",
-    sort_order: 260,
-    is_active: true,
-  },
-  {
-    code: "pursuits_total_100_sammler",
-    title: "10-80-Sammler",
-    description: "100 Verfolgungen insgesamt erreicht",
-    icon: "Car",
-    tier: "diamond",
-    category: "pursuits",
-    threshold: 100,
-    metric: "pursuits_total",
-    sort_order: 270,
-    is_active: true,
-  },
-  {
-    code: "missions_total_100_master",
-    title: "Missionen-Master",
-    description: "100 Einsätze insgesamt erreicht",
-    icon: "Target",
-    tier: "diamond",
-    category: "missions",
-    threshold: 100,
-    metric: "missions_total",
-    sort_order: 280,
-    is_active: true,
-  },
+  { code: "pursuits_sammler_10", title: "10-80-Lehrling", description: "10 Verfolgungen insgesamt erreicht", icon: "Car", tier: "bronze", category: "pursuits", threshold: 10, metric: "pursuits_total", sort_order: 271, is_active: true, base_code: "pursuits_sammler", tier_level: 1, reward_amount: 100000 },
+  { code: "pursuits_sammler_50", title: "10-80-Geselle", description: "50 Verfolgungen insgesamt erreicht", icon: "Car", tier: "silver", category: "pursuits", threshold: 50, metric: "pursuits_total", sort_order: 272, is_active: true, base_code: "pursuits_sammler", tier_level: 2, reward_amount: 250000 },
+  { code: "pursuits_sammler_150", title: "10-80-Experte", description: "150 Verfolgungen insgesamt erreicht", icon: "Car", tier: "gold", category: "pursuits", threshold: 150, metric: "pursuits_total", sort_order: 273, is_active: true, base_code: "pursuits_sammler", tier_level: 3, reward_amount: 500000 },
+  { code: "pursuits_sammler_200", title: "10-80-Spezialist", description: "200 Verfolgungen insgesamt erreicht", icon: "Car", tier: "platinum", category: "pursuits", threshold: 200, metric: "pursuits_total", sort_order: 274, is_active: true, base_code: "pursuits_sammler", tier_level: 4, reward_amount: 750000 },
+  { code: "pursuits_sammler_300", title: "10-80-Champion", description: "300 Verfolgungen insgesamt erreicht", icon: "Car", tier: "diamond", category: "pursuits", threshold: 300, metric: "pursuits_total", sort_order: 275, is_active: true, base_code: "pursuits_sammler", tier_level: 5, reward_amount: 1000000 },
+  { code: "pursuits_sammler_400", title: "10-80-Elite", description: "400 Verfolgungen insgesamt erreicht", icon: "Car", tier: "emerald", category: "pursuits", threshold: 400, metric: "pursuits_total", sort_order: 276, is_active: true, base_code: "pursuits_sammler", tier_level: 6, reward_amount: 1250000 },
+  { code: "pursuits_sammler_500", title: "10-80-Meister", description: "500 Verfolgungen insgesamt erreicht", icon: "Car", tier: "ruby", category: "pursuits", threshold: 500, metric: "pursuits_total", sort_order: 277, is_active: true, base_code: "pursuits_sammler", tier_level: 7, reward_amount: 1500000 },
+  { code: "pursuits_sammler_1000", title: "10-80-Sammler", description: "1000 Verfolgungen insgesamt erreicht", icon: "Car", tier: "obsidian", category: "pursuits", threshold: 1000, metric: "pursuits_total", sort_order: 278, is_active: true, base_code: "pursuits_sammler", tier_level: 8, reward_amount: 2650000 },
+
+  { code: "missions_master_10", title: "Missionen-Lehrling", description: "10 Einsätze insgesamt erreicht", icon: "Target", tier: "bronze", category: "missions", threshold: 10, metric: "missions_total", sort_order: 281, is_active: true, base_code: "missions_master", tier_level: 1, reward_amount: 100000 },
+  { code: "missions_master_50", title: "Missionen-Geselle", description: "50 Einsätze insgesamt erreicht", icon: "Target", tier: "silver", category: "missions", threshold: 50, metric: "missions_total", sort_order: 282, is_active: true, base_code: "missions_master", tier_level: 2, reward_amount: 250000 },
+  { code: "missions_master_150", title: "Missionen-Experte", description: "150 Einsätze insgesamt erreicht", icon: "Target", tier: "gold", category: "missions", threshold: 150, metric: "missions_total", sort_order: 283, is_active: true, base_code: "missions_master", tier_level: 3, reward_amount: 500000 },
+  { code: "missions_master_200", title: "Missionen-Spezialist", description: "200 Einsätze insgesamt erreicht", icon: "Target", tier: "platinum", category: "missions", threshold: 200, metric: "missions_total", sort_order: 284, is_active: true, base_code: "missions_master", tier_level: 4, reward_amount: 750000 },
+  { code: "missions_master_300", title: "Missionen-Champion", description: "300 Einsätze insgesamt erreicht", icon: "Target", tier: "diamond", category: "missions", threshold: 300, metric: "missions_total", sort_order: 285, is_active: true, base_code: "missions_master", tier_level: 5, reward_amount: 1000000 },
+  { code: "missions_master_400", title: "Missionen-Elite", description: "400 Einsätze insgesamt erreicht", icon: "Target", tier: "emerald", category: "missions", threshold: 400, metric: "missions_total", sort_order: 286, is_active: true, base_code: "missions_master", tier_level: 6, reward_amount: 1250000 },
+  { code: "missions_master_500", title: "Missionen-Meister", description: "500 Einsätze insgesamt erreicht", icon: "Target", tier: "ruby", category: "missions", threshold: 500, metric: "missions_total", sort_order: 287, is_active: true, base_code: "missions_master", tier_level: 7, reward_amount: 1500000 },
+  { code: "missions_master_1000", title: "Missionen-Master", description: "1000 Einsätze insgesamt erreicht", icon: "Target", tier: "obsidian", category: "missions", threshold: 1000, metric: "missions_total", sort_order: 288, is_active: true, base_code: "missions_master", tier_level: 8, reward_amount: 2650000 },
 ];
 
 Deno.serve(async (req) => {
