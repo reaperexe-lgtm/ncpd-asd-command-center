@@ -140,10 +140,10 @@ const FamilienPage = () => {
 
   const uploadImage = async (file: File | Blob): Promise<string | null> => {
     if (!user) { toast.error("Nicht angemeldet"); return null; }
-    const ext = file instanceof File ? file.name.split(".").pop() : "webp";
+    const ext = file instanceof File ? file.name.split(".").pop() : (file.type === "image/jpeg" ? "jpg" : "webp");
     const path = `${user.id}/gangs-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file);
-    if (error) { toast.error(`Upload fehlgeschlagen: ${error.message}`); return null; }
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { contentType: file.type || undefined });
+    if (error) { toast.error(`Upload fehlgeschlagen: ${error.message}`); console.error("Gang image upload error:", error); return null; }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     return urlData.publicUrl;
   };

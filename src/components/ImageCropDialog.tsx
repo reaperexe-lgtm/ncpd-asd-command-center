@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ZoomIn, Move } from "lucide-react";
+import { toast } from "sonner";
 
 interface ImageCropDialogProps {
   file: File | null;
@@ -117,7 +118,19 @@ export function ImageCropDialog({ file, open, onOpenChange, onConfirm, aspect = 
     ctx.scale(effScale, effScale);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
-    out.toBlob((blob) => { if (blob) onConfirm(blob); }, "image/webp", 0.85);
+
+    // Manche (v.a. ältere/eingebettete) Browser unterstützen kein WebP-Encoding via canvas.
+    // In dem Fall liefert toBlob() null zurück – dann auf JPEG zurückfallen.
+    out.toBlob((blob) => {
+      if (blob) { onConfirm(blob); return; }
+      out.toBlob((jpegBlob) => {
+        if (jpegBlob) onConfirm(jpegBlob);
+        else {
+          console.error("ImageCropDialog: canvas.toBlob() lieferte weder WebP noch JPEG");
+          toast.error("Bild konnte nicht verarbeitet werden. Bitte anderes Bild/Browser versuchen.");
+        }
+      }, "image/jpeg", 0.85);
+    }, "image/webp", 0.85);
   };
 
   return (
