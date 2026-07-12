@@ -114,4 +114,5 @@ export async function awardAchievements(userId: string, userName: string, dienst
     console.error("award-achievements invoke failed:", e);
     return { newlyAwarded: 0, metrics: await computeMetrics(userId, userName, dienstnummer) };
   }
-}
+}```
+
