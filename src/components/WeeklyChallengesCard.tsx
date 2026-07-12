@@ -83,11 +83,51 @@ const WeeklyChallengesCard = () => {
     if (!hasLegacy && !needsUpdate) return;
 
     const seed = async () => {
+      let edgeFnOk = false;
       try {
-        await supabase.functions.invoke("ensure-weekly-challenges");
+        const { error } = await supabase.functions.invoke("ensure-weekly-challenges");
+        if (error) throw error;
+        edgeFnOk = true;
       } catch (e) {
-        // still fine to fail silently here; card just stays empty this render
+        console.error(
+          "[WeeklyChallenges] ensure-weekly-challenges Edge Function fehlgeschlagen " +
+          "(evtl. noch nicht deployed?). Fallback auf Direct-Write (nur für Admins).",
+          e,
+        );
       }
+
+      if (!edgeFnOk) {
+        // Fallback: funktioniert nur, wenn der aktuelle Nutzer Admin ist (RLS).
+        // Verhindert, dass die Karte komplett leer bleibt, falls die Edge Function
+        // (noch) nicht deployed ist.
+        try {
+          if (hasLegacy) {
+            await supabase.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", "Aktiver Pilot");
+          }
+          const rows = DEFAULT_WEEKLY_CHALLENGES.map((c) => ({
+            week_start: weekStartIso,
+            title: c.title,
+            description: c.description,
+            metric: c.metric,
+            target: c.target,
+            reward_amount: c.reward_amount,
+            is_active: true,
+          }));
+          const { error: fallbackError } = await supabase
+            .from("weekly_challenges")
+            .upsert(rows, { onConflict: "week_start,title" });
+          if (fallbackError) {
+            console.error(
+              "[WeeklyChallenges] Fallback-Write ebenfalls fehlgeschlagen (kein Admin? RLS?). " +
+              "Wochen-Challenges bleiben leer, bis ensure-weekly-challenges deployed ist.",
+              fallbackError,
+            );
+          }
+        } catch (e) {
+          console.error("[WeeklyChallenges] Fallback-Write Exception:", e);
+        }
+      }
+
       refetch();
     };
     seed();
