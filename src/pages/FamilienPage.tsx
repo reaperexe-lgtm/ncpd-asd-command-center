@@ -12,6 +12,7 @@ import { useState } from "react";
 import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { GANG_CATEGORIES } from "@/lib/gangCategories";
+import { detectPrimaryAndPearl } from "@/lib/colorParser";
 
 const CATEGORIES = GANG_CATEGORIES;
 
@@ -25,6 +26,7 @@ type Gang = {
   hood: string | null;
   erkennungsmerkmale: string | null;
   primary_color: string | null;
+  pearl_color: string | null;
   created_at: string;
 };
 
@@ -39,6 +41,8 @@ const FamilienPage = () => {
   const [hood, setHood] = useState("");
   const [erkennungsmerkmale, setErkennungsmerkmale] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#000000");
+  const [pearlColor, setPearlColor] = useState("#000000");
+  const [colorManuallySet, setColorManuallySet] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("all");
@@ -75,6 +79,7 @@ const FamilienPage = () => {
         hood: hood || null,
         erkennungsmerkmale: erkennungsmerkmale || null,
         primary_color: primaryColor || "#000000",
+        pearl_color: pearlColor || "#000000",
       } as any);
       if (error) throw error;
     },
@@ -82,7 +87,7 @@ const FamilienPage = () => {
       queryClient.invalidateQueries({ queryKey: ["gangs"] });
       toast.success("Familie hinzugefügt");
       logActivity("Familie/Gang erstellt", "familie", { name, category });
-      setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setHood(""); setErkennungsmerkmale(""); setPrimaryColor("#000000"); setShowForm(false);
+      setName(""); setLocation(""); setDesc(""); setImageUrl(""); setCategory("Familie"); setHood(""); setErkennungsmerkmale(""); setPrimaryColor("#000000"); setPearlColor("#000000"); setColorManuallySet(false); setShowForm(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -118,6 +123,14 @@ const FamilienPage = () => {
     return urlData.publicUrl;
   };
 
+  const handleErkennungsmerkmaleChange = (value: string) => {
+    setErkennungsmerkmale(value);
+    if (colorManuallySet) return;
+    const { primary, pearl } = detectPrimaryAndPearl(value);
+    if (primary) setPrimaryColor(primary);
+    if (pearl) setPearlColor(pearl);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -151,6 +164,7 @@ const FamilienPage = () => {
       description: g.description || "",
       image_url: g.image_url || null,
       primary_color: g.primary_color || "#000000",
+      pearl_color: g.pearl_color || "#000000",
     });
   };
 
@@ -167,6 +181,7 @@ const FamilienPage = () => {
         description: editData.description || null,
         image_url: editData.image_url || null,
         primary_color: editData.primary_color || "#000000",
+        pearl_color: editData.pearl_color || "#000000",
       },
     });
   };
@@ -365,14 +380,26 @@ const FamilienPage = () => {
             <div><Label>Hood / Chapter</Label><Input className="mt-1 bg-background border-border" placeholder="z.B. South LS, Paleto Bay..." value={hood} onChange={(e) => setHood(e.target.value)} /></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label>Erkennungsmerkmale</Label><Input className="mt-1 bg-background border-border" placeholder="Farben, Kleidung, Tattoos..." value={erkennungsmerkmale} onChange={(e) => setErkennungsmerkmale(e.target.value)} /></div>
+            <div><Label>Erkennungsmerkmale</Label><Input className="mt-1 bg-background border-border" placeholder="Farben, Kleidung, Tattoos..." value={erkennungsmerkmale} onChange={(e) => handleErkennungsmerkmaleChange(e.target.value)} /></div>
             <div><Label>Standort (alt.)</Label><Input className="mt-1 bg-background border-border" placeholder="Allgemeiner Standort" value={location} onChange={(e) => setLocation(e.target.value)} /></div>
           </div>
           <div>
-            <Label>Fahrzeug-Farbe (für Einsatz-Autofill)</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <Input type="color" className="w-10 h-10 p-1 rounded bg-background border-border cursor-pointer" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
-              <span className="text-[10px] text-muted-foreground font-mono">{primaryColor}</span>
+            <Label>Fahrzeug-Farben (für Einsatz-Autofill)</Label>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Wird automatisch aus den Erkennungsmerkmalen erkannt (1. Farbe = Primär, 2. Farbe = Perl) – manuell überschreibbar.</p>
+            <div className="flex items-center gap-4 mt-1.5">
+              <div className="flex items-center gap-2">
+                <Input type="color" className="w-10 h-10 p-1 rounded bg-background border-border cursor-pointer" value={primaryColor} onChange={(e) => { setPrimaryColor(e.target.value); setColorManuallySet(true); }} />
+                <span className="text-[10px] text-muted-foreground font-mono">Primär {primaryColor}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input type="color" className="w-10 h-10 p-1 rounded bg-background border-border cursor-pointer" value={pearlColor} onChange={(e) => { setPearlColor(e.target.value); setColorManuallySet(true); }} />
+                <span className="text-[10px] text-muted-foreground font-mono">Perl {pearlColor}</span>
+              </div>
+              {colorManuallySet && (
+                <button type="button" onClick={() => { setColorManuallySet(false); const { primary, pearl } = detectPrimaryAndPearl(erkennungsmerkmale); if (primary) setPrimaryColor(primary); if (pearl) setPearlColor(pearl); }} className="text-[10px] text-primary hover:underline">
+                  Wieder automatisch erkennen
+                </button>
+              )}
             </div>
           </div>
           <div><Label>Beschreibung</Label><Textarea className="mt-1 bg-background border-border min-h-[80px]" placeholder="Weitere Infos..." value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
@@ -448,11 +475,23 @@ const FamilienPage = () => {
                               <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                             </Select>
                             <Input value={editData.hood || ""} onChange={(e) => setEditData({ ...editData, hood: e.target.value })} placeholder="Hood / Chapter" className="h-7 text-xs bg-background border-border" />
-                            <Input value={editData.erkennungsmerkmale || ""} onChange={(e) => setEditData({ ...editData, erkennungsmerkmale: e.target.value })} placeholder="Erkennungsmerkmale" className="h-7 text-xs bg-background border-border" />
+                            <Input value={editData.erkennungsmerkmale || ""} onChange={(e) => {
+                              const val = e.target.value;
+                              setEditData((prev) => {
+                                const { primary, pearl } = detectPrimaryAndPearl(val);
+                                return {
+                                  ...prev,
+                                  erkennungsmerkmale: val,
+                                  primary_color: primary || prev.primary_color,
+                                  pearl_color: pearl || prev.pearl_color,
+                                };
+                              });
+                            }} placeholder="Erkennungsmerkmale" className="h-7 text-xs bg-background border-border" />
                             <Input value={editData.location || ""} onChange={(e) => setEditData({ ...editData, location: e.target.value })} placeholder="Standort" className="h-7 text-xs bg-background border-border" />
-                            <div className="flex items-center gap-2">
-                              <Label className="text-[10px] shrink-0">Fahrzeug-Farbe</Label>
-                              <Input type="color" className="w-8 h-7 p-0.5 rounded bg-background border-border cursor-pointer" value={editData.primary_color || "#000000"} onChange={(e) => setEditData({ ...editData, primary_color: e.target.value })} />
+                            <div className="flex items-center gap-3">
+                              <Label className="text-[10px] shrink-0">Farben</Label>
+                              <Input type="color" title="Primärfarbe" className="w-8 h-7 p-0.5 rounded bg-background border-border cursor-pointer" value={editData.primary_color || "#000000"} onChange={(e) => setEditData({ ...editData, primary_color: e.target.value })} />
+                              <Input type="color" title="Perlfarbe" className="w-8 h-7 p-0.5 rounded bg-background border-border cursor-pointer" value={editData.pearl_color || "#000000"} onChange={(e) => setEditData({ ...editData, pearl_color: e.target.value })} />
                             </div>
                             <Textarea value={editData.description || ""} onChange={(e) => setEditData({ ...editData, description: e.target.value })} placeholder="Beschreibung" className="text-xs bg-background border-border min-h-[50px]" />
                             <div className="flex gap-2 justify-end pt-1">
@@ -465,7 +504,8 @@ const FamilienPage = () => {
                           <>
                             <div className="flex justify-between items-start">
                               <h3 className="font-bold text-primary text-sm flex items-center gap-1.5">
-                                {g.primary_color && <span className="w-2.5 h-2.5 rounded-full border border-border shrink-0" style={{ background: g.primary_color }} title="Fahrzeug-Farbe" />}
+                                {g.primary_color && <span className="w-2.5 h-2.5 rounded-full border border-border shrink-0" style={{ background: g.primary_color }} title="Primärfarbe" />}
+                                {g.pearl_color && <span className="w-2.5 h-2.5 rounded-full border border-border shrink-0 -ml-1" style={{ background: g.pearl_color }} title="Perlfarbe" />}
                                 {g.name}
                               </h3>
                               {isAdmin && (

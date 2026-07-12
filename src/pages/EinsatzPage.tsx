@@ -149,8 +149,13 @@ const EinsatzPage = () => {
     }
     const gang = gangs?.find((g) => g.id === id);
     setGangInfo((gang as any)?.erkennungsmerkmale || "");
-    if ((gang as any)?.primary_color) {
-      setCurrentVehicle({ ...currentVehicle, primary_color: (gang as any).primary_color });
+    const g = gang as any;
+    if (g?.primary_color || g?.pearl_color) {
+      setCurrentVehicle({
+        ...currentVehicle,
+        primary_color: g?.primary_color || currentVehicle.primary_color,
+        pearl_color: g?.pearl_color || currentVehicle.pearl_color,
+      });
     }
   };
 
