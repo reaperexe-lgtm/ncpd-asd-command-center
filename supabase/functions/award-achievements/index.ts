@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     const [
       missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes,
-      protocolsRes, crewRes, formationsRes, uebungenRes,
+      protocolsRes, crewMissionsRes, crewPursuitsRes, formationsRes, uebungenRes,
       theoryRes, practicalRes, balanceRes, challengesRes, jackpotRes,
     ] = await Promise.all([
       admin.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId),
@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
       admin.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
       admin.from("missions").select("id", { count: "exact", head: true }).eq("protokollschreiber", userId),
       admin.from("missions").select("pilot, co_pilot, left_gunner, right_gunner"),
+      admin.from("pursuits").select("pilot, co_pilot, left_gunner, right_gunner"),
       admin.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
       admin.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),
       dienstnummer
@@ -100,7 +101,10 @@ Deno.serve(async (req) => {
       pursuits_total: pursuitsRes.count || 0,
       pursuits_week: pursuitsWeekRes.count || 0,
       protocols_total: protocolsRes.count || 0,
-      crew_participations_total: countCrewParticipationsForUser((crewRes.data || []) as any[], userName),
+      crew_participations_total: countCrewParticipationsForUser(
+        [...(crewMissionsRes.data || []), ...(crewPursuitsRes.data || [])] as any[],
+        userName,
+      ),
       formations_total: formationsRes.count || 0,
       uebungen_attended: uebungenRes.count || 0,
       theory_passed: (theoryRes as any).count || 0,
@@ -121,6 +125,13 @@ Deno.serve(async (req) => {
     };
     const MISSION_PURSUIT_METRICS = new Set([
       "missions_total", "pursuits_total", "pursuits_week", "protocols_total",
+    ]);
+    // Special-case: diese Achievements zahlen 1.000.000 statt der normalen Tier-Belohnung
+    // (waren teils früher Wochen-Challenges mit fixer 1-Mio-Belohnung).
+    const MILLION_REWARD_CODES = new Set([
+      "crew_participations_200",
+      "pursuits_total_100_sammler",
+      "missions_total_100_master",
     ]);
 
     const toAward: { user_id: string; achievement_code: string; progress_value: number }[] = [];
@@ -146,9 +157,11 @@ Deno.serve(async (req) => {
       for (const a of toAward) {
         if (!insertedCodes.has(a.achievement_code)) continue;
         const def = (defs || []).find((d: any) => d.code === a.achievement_code);
-        if (!def || MISSION_PURSUIT_METRICS.has(def.metric)) continue;
-        // Special-case: 200 Heli-Beteiligungen should award 1.000.000 ingame money
-        if (def.code === "crew_participations_200") {
+        if (!def) continue;
+        if (!MILLION_REWARD_CODES.has(def.code) && MISSION_PURSUIT_METRICS.has(def.metric)) continue;
+        // Special-case: diese Codes zahlen die volle 1-Mio-Belohnung statt der
+        // normalen Tier-Belohnung (bzw. statt gar keiner, falls Mission/Pursuit-Metrik).
+        if (MILLION_REWARD_CODES.has(def.code)) {
           casinoReward += 1_000_000;
         } else {
           casinoReward += TIER_REWARDS[(def.tier || "").toLowerCase()] || 0;

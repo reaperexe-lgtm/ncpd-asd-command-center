@@ -51,8 +51,11 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
       const rows = res.data || [];
       return { count: countMissionsForUser(rows as any[], userId) } as any;
     }),
-    supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner").then(async (res) => {
-      const rows = res.data || [];
+    Promise.all([
+      supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner"),
+      supabase.from("pursuits").select("pilot, co_pilot, left_gunner, right_gunner"),
+    ]).then(([missionsCrew, pursuitsCrew]) => {
+      const rows = [...(missionsCrew.data || []), ...(pursuitsCrew.data || [])];
       return { count: countCrewParticipationsForUser(rows as any[], userName) } as any;
     }),
     supabase.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),

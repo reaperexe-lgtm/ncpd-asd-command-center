@@ -20,9 +20,11 @@ const getRewardDestination = (challenge: { title?: string; metric?: string }) =>
 const DEFAULT_WEEKLY_CHALLENGES = [
   { title: "Einsatz-Sprint", description: "Erstelle 5 Einsätze diese Woche", metric: "missions_week", target: 5, reward_amount: 50000 },
   { title: "Verfolgungs-Marathon", description: "Erstelle 10 Verfolgungen diese Woche", metric: "pursuits_week", target: 10, reward_amount: 50000 },
-  { title: "10-80-Sammler", description: "Erreiche 100 Verfolgungen insgesamt", metric: "pursuits_total", target: 100, reward_amount: 1000000 },
-  { title: "Missionen-Master", description: "Erstelle 100 Einsätze insgesamt", metric: "missions_total", target: 100, reward_amount: 1000000 },
 ];
+
+// Ehemalige Wochen-Challenges, die jetzt als Achievements laufen (Lifetime-Metriken,
+// keine Wochen-Resets). Alte Zeilen in weekly_challenges werden aufgeräumt.
+const REMOVED_CHALLENGE_TITLES = ["10-80-Sammler", "Missionen-Master"];
 
 const WeeklyChallengesCard = () => {
   const { user } = useAuth();
@@ -68,7 +70,7 @@ const WeeklyChallengesCard = () => {
   useEffect(() => {
     if (!challenges) return;
 
-    const hasLegacy = challenges.some((c: any) => c.title === "Aktiver Pilot");
+    const hasLegacy = challenges.some((c: any) => c.title === "Aktiver Pilot" || REMOVED_CHALLENGE_TITLES.includes(c.title));
     const needsUpdate = DEFAULT_WEEKLY_CHALLENGES.some((def) => {
       const existing = challenges.find((c: any) => c.title === def.title);
       if (!existing) return true;
@@ -109,6 +111,9 @@ const WeeklyChallengesCard = () => {
         try {
           if (hasLegacy) {
             await supabase.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", "Aktiver Pilot");
+            for (const title of REMOVED_CHALLENGE_TITLES) {
+              await supabase.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", title);
+            }
           }
           const rows = DEFAULT_WEEKLY_CHALLENGES.map((c) => ({
             week_start: weekStartIso,

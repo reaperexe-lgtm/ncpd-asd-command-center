@@ -31,9 +31,11 @@ function getChallengeWeekStartDateKey(reference: Date = new Date()): string {
 const DEFAULT_WEEKLY_CHALLENGES = [
   { title: "Einsatz-Sprint", description: "Erstelle 5 Einsätze diese Woche", metric: "missions_week", target: 5, reward_amount: 50000 },
   { title: "Verfolgungs-Marathon", description: "Erstelle 10 Verfolgungen diese Woche", metric: "pursuits_week", target: 10, reward_amount: 50000 },
-  { title: "10-80-Sammler", description: "Erreiche 100 Verfolgungen insgesamt", metric: "pursuits_total", target: 100, reward_amount: 1000000 },
-  { title: "Missionen-Master", description: "Erstelle 100 Einsätze insgesamt", metric: "missions_total", target: 100, reward_amount: 1000000 },
 ];
+
+// Titel, die früher als Wochen-Challenge liefen, aber eigentlich Lifetime-Metriken sind
+// und daher als Achievements geführt werden (siehe achievement_definitions).
+const REMOVED_CHALLENGE_TITLES = ["10-80-Sammler", "Missionen-Master"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -74,6 +76,9 @@ Deno.serve(async (req) => {
 
     // Legacy-Einträge aus älteren Versionen entfernen.
     await admin.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", "Aktiver Pilot");
+    for (const title of REMOVED_CHALLENGE_TITLES) {
+      await admin.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", title);
+    }
 
     const rows = DEFAULT_WEEKLY_CHALLENGES.map((c) => ({
       week_start: weekStartIso,
