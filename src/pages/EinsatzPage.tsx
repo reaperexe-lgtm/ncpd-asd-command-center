@@ -272,6 +272,16 @@ const EinsatzPage = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <Label>Kennzeichen</Label>
+                <Input className="mt-1 bg-card border-border" placeholder="z.B. AB 123 CD" value={currentVehicle.license_plate} onChange={(e) => setCurrentVehicle({ ...currentVehicle, license_plate: e.target.value })} />
+              </div>
+              <div>
+                <Label>Halter / Info</Label>
+                <Input className="mt-1 bg-card border-border" placeholder="Fahrzeughalter, Bemerkungen..." value={currentVehicle.owner_info} onChange={(e) => setCurrentVehicle({ ...currentVehicle, owner_info: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <Label>Primärfarbe</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input type="color" className="w-10 h-10 p-1 rounded bg-card border-border cursor-pointer" value={currentVehicle.primary_color} onChange={(e) => setCurrentVehicle({ ...currentVehicle, primary_color: e.target.value })} />
