@@ -32,10 +32,14 @@ const METRICS: { value: string; label: string }[] = [
 ];
 
 const ICON_OPTIONS = ["Trophy", "Target", "Car", "FileText", "ClipboardList", "GraduationCap", "BookOpen", "Award", "Zap", "Crown", "Coins", "Star"];
-const TIER_OPTIONS = ["bronze", "silver", "gold", "platinum", "diamond"];
+// Manuelles Tier-Dropdown erlaubt zusätzlich emerald/ruby/obsidian (genutzt von den
+// 8-stufigen "10-80-Sammler"/"Missionen-Master" Familien). Der automatische
+// 5-Stufen-Set-Generator (TIER_SEQUENCE/TIER_MULTIPLIERS) bleibt bewusst bei 5 Stufen.
+const TIER_OPTIONS = ["bronze", "silver", "gold", "platinum", "diamond", "emerald", "ruby", "obsidian"];
 const TIER_SEQUENCE = ["bronze", "silver", "gold", "platinum", "diamond"] as const;
 const TIER_LABELS: Record<string, string> = {
   bronze: "Bronze", silver: "Silber", gold: "Gold", platinum: "Platin", diamond: "Diamant",
+  emerald: "Smaragd", ruby: "Rubin", obsidian: "Obsidian",
 };
 // Multipliers for the auto-generated 5-tier set, applied to base threshold
 const TIER_MULTIPLIERS = [1, 2, 5, 10, 25];
@@ -50,6 +54,9 @@ const TIER_CLS: Record<string, string> = {
   gold: "from-yellow-500/30 to-yellow-700/20 border-yellow-500/60 text-yellow-300",
   platinum: "from-cyan-300/30 to-purple-500/20 border-cyan-300/60 text-cyan-200",
   diamond: "from-fuchsia-400/30 to-indigo-500/20 border-fuchsia-300/60 text-fuchsia-200",
+  emerald: "from-emerald-400/30 to-teal-600/20 border-emerald-300/60 text-emerald-200",
+  ruby: "from-red-500/30 to-rose-700/20 border-red-300/60 text-red-200",
+  obsidian: "from-neutral-200/30 via-zinc-500/20 to-black/30 border-white/60 text-white",
 };
 
 interface AchievementDef {
@@ -64,6 +71,7 @@ interface AchievementDef {
   category: string;
   sort_order: number;
   is_active: boolean;
+  reward_amount?: number | null;
 }
 
 const emptyDef: AchievementDef = {
@@ -77,6 +85,7 @@ const emptyDef: AchievementDef = {
   category: "general",
   sort_order: 0,
   is_active: true,
+  reward_amount: null,
 };
 
 function slugifyTitle(title: string): string {
@@ -168,7 +177,7 @@ const AchievementsManager = () => {
             code: def.code, title: def.title, description: def.description,
             metric: def.metric, threshold: def.threshold, tier: def.tier,
             icon: def.icon, category: def.category, sort_order: def.sort_order,
-            is_active: def.is_active,
+            is_active: def.is_active, reward_amount: def.reward_amount ?? null,
           })
           .eq("id", def.id);
         if (error) throw error;
@@ -179,7 +188,7 @@ const AchievementsManager = () => {
             code: def.code, title: def.title, description: def.description,
             metric: def.metric, threshold: def.threshold, tier: def.tier,
             icon: def.icon, category: def.category, sort_order: def.sort_order,
-            is_active: def.is_active,
+            is_active: def.is_active, reward_amount: def.reward_amount ?? null,
           });
         if (error) throw error;
       }
@@ -283,6 +292,11 @@ const AchievementsManager = () => {
                         <span className="px-1.5 py-0.5 rounded bg-background/30">{d.metric}</span>
                         <span className="px-1.5 py-0.5 rounded bg-background/30">≥ {d.threshold}</span>
                         <span className="px-1.5 py-0.5 rounded bg-background/30 uppercase">{d.tier}</span>
+                        {d.reward_amount ? (
+                          <span className="px-1.5 py-0.5 rounded bg-background/30 tabular-nums">
+                            {d.reward_amount.toLocaleString("de-DE")}$
+                          </span>
+                        ) : null}
                         {!d.is_active && <span className="px-1.5 py-0.5 rounded bg-destructive/40">inaktiv</span>}
                       </div>
                     </div>
@@ -405,6 +419,22 @@ const AchievementsManager = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div>
+                <Label>Belohnung (Gambling Cash, optional)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  placeholder="leer = normale Tier-Belohnung"
+                  value={editing.reward_amount ?? ""}
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      reward_amount: e.target.value === "" ? null : parseInt(e.target.value) || 0,
+                    })
+                  }
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

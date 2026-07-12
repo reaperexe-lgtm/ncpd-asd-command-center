@@ -13,26 +13,28 @@ import { toast } from "sonner";
 // laufenden DB (noch) nicht ausgeführt wurde, zieht ensureAchievementDefinitions() sie
 // per Edge Function (Service-Role) nach — siehe supabase/functions/ensure-achievement-definitions.
 const REQUIRED_ACHIEVEMENT_CODES = [
-  "crew_participations_200",
-  "pursuits_total_100_sammler",
-  "missions_total_100_master",
+  "pursuits_sammler_10", "pursuits_sammler_50", "pursuits_sammler_150", "pursuits_sammler_200",
+  "pursuits_sammler_300", "pursuits_sammler_400", "pursuits_sammler_500", "pursuits_sammler_1000",
+  "missions_master_10", "missions_master_50", "missions_master_150", "missions_master_200",
+  "missions_master_300", "missions_master_400", "missions_master_500", "missions_master_1000",
 ];
 const REQUIRED_ACHIEVEMENT_DEFS_FALLBACK = [
-  {
-    code: "crew_participations_200", title: "Heli-Teilnehmer", description: "200 Heli-Beteiligungen erreicht",
-    icon: "Plane", tier: "diamond", category: "missions", threshold: 200, metric: "crew_participations_total",
-    sort_order: 260, is_active: true,
-  },
-  {
-    code: "pursuits_total_100_sammler", title: "10-80-Sammler", description: "100 Verfolgungen insgesamt erreicht",
-    icon: "Car", tier: "diamond", category: "pursuits", threshold: 100, metric: "pursuits_total",
-    sort_order: 270, is_active: true,
-  },
-  {
-    code: "missions_total_100_master", title: "Missionen-Master", description: "100 Einsätze insgesamt erreicht",
-    icon: "Target", tier: "diamond", category: "missions", threshold: 100, metric: "missions_total",
-    sort_order: 280, is_active: true,
-  },
+  { code: "pursuits_sammler_10", title: "10-80-Lehrling", description: "10 Verfolgungen insgesamt erreicht", icon: "Car", tier: "bronze", category: "pursuits", threshold: 10, metric: "pursuits_total", sort_order: 271, is_active: true, base_code: "pursuits_sammler", tier_level: 1, reward_amount: 100000 },
+  { code: "pursuits_sammler_50", title: "10-80-Geselle", description: "50 Verfolgungen insgesamt erreicht", icon: "Car", tier: "silver", category: "pursuits", threshold: 50, metric: "pursuits_total", sort_order: 272, is_active: true, base_code: "pursuits_sammler", tier_level: 2, reward_amount: 250000 },
+  { code: "pursuits_sammler_150", title: "10-80-Experte", description: "150 Verfolgungen insgesamt erreicht", icon: "Car", tier: "gold", category: "pursuits", threshold: 150, metric: "pursuits_total", sort_order: 273, is_active: true, base_code: "pursuits_sammler", tier_level: 3, reward_amount: 500000 },
+  { code: "pursuits_sammler_200", title: "10-80-Spezialist", description: "200 Verfolgungen insgesamt erreicht", icon: "Car", tier: "platinum", category: "pursuits", threshold: 200, metric: "pursuits_total", sort_order: 274, is_active: true, base_code: "pursuits_sammler", tier_level: 4, reward_amount: 750000 },
+  { code: "pursuits_sammler_300", title: "10-80-Champion", description: "300 Verfolgungen insgesamt erreicht", icon: "Car", tier: "diamond", category: "pursuits", threshold: 300, metric: "pursuits_total", sort_order: 275, is_active: true, base_code: "pursuits_sammler", tier_level: 5, reward_amount: 1000000 },
+  { code: "pursuits_sammler_400", title: "10-80-Elite", description: "400 Verfolgungen insgesamt erreicht", icon: "Car", tier: "emerald", category: "pursuits", threshold: 400, metric: "pursuits_total", sort_order: 276, is_active: true, base_code: "pursuits_sammler", tier_level: 6, reward_amount: 1250000 },
+  { code: "pursuits_sammler_500", title: "10-80-Meister", description: "500 Verfolgungen insgesamt erreicht", icon: "Car", tier: "ruby", category: "pursuits", threshold: 500, metric: "pursuits_total", sort_order: 277, is_active: true, base_code: "pursuits_sammler", tier_level: 7, reward_amount: 1500000 },
+  { code: "pursuits_sammler_1000", title: "10-80-Sammler", description: "1000 Verfolgungen insgesamt erreicht", icon: "Car", tier: "obsidian", category: "pursuits", threshold: 1000, metric: "pursuits_total", sort_order: 278, is_active: true, base_code: "pursuits_sammler", tier_level: 8, reward_amount: 2650000 },
+  { code: "missions_master_10", title: "Missionen-Lehrling", description: "10 Einsätze insgesamt erreicht", icon: "Target", tier: "bronze", category: "missions", threshold: 10, metric: "missions_total", sort_order: 281, is_active: true, base_code: "missions_master", tier_level: 1, reward_amount: 100000 },
+  { code: "missions_master_50", title: "Missionen-Geselle", description: "50 Einsätze insgesamt erreicht", icon: "Target", tier: "silver", category: "missions", threshold: 50, metric: "missions_total", sort_order: 282, is_active: true, base_code: "missions_master", tier_level: 2, reward_amount: 250000 },
+  { code: "missions_master_150", title: "Missionen-Experte", description: "150 Einsätze insgesamt erreicht", icon: "Target", tier: "gold", category: "missions", threshold: 150, metric: "missions_total", sort_order: 283, is_active: true, base_code: "missions_master", tier_level: 3, reward_amount: 500000 },
+  { code: "missions_master_200", title: "Missionen-Spezialist", description: "200 Einsätze insgesamt erreicht", icon: "Target", tier: "platinum", category: "missions", threshold: 200, metric: "missions_total", sort_order: 284, is_active: true, base_code: "missions_master", tier_level: 4, reward_amount: 750000 },
+  { code: "missions_master_300", title: "Missionen-Champion", description: "300 Einsätze insgesamt erreicht", icon: "Target", tier: "diamond", category: "missions", threshold: 300, metric: "missions_total", sort_order: 285, is_active: true, base_code: "missions_master", tier_level: 5, reward_amount: 1000000 },
+  { code: "missions_master_400", title: "Missionen-Elite", description: "400 Einsätze insgesamt erreicht", icon: "Target", tier: "emerald", category: "missions", threshold: 400, metric: "missions_total", sort_order: 286, is_active: true, base_code: "missions_master", tier_level: 6, reward_amount: 1250000 },
+  { code: "missions_master_500", title: "Missionen-Meister", description: "500 Einsätze insgesamt erreicht", icon: "Target", tier: "ruby", category: "missions", threshold: 500, metric: "missions_total", sort_order: 287, is_active: true, base_code: "missions_master", tier_level: 7, reward_amount: 1500000 },
+  { code: "missions_master_1000", title: "Missionen-Master", description: "1000 Einsätze insgesamt erreicht", icon: "Target", tier: "obsidian", category: "missions", threshold: 1000, metric: "missions_total", sort_order: 288, is_active: true, base_code: "missions_master", tier_level: 8, reward_amount: 2650000 },
 ];
 
 const ICONS: Record<string, any> = {
@@ -45,10 +47,14 @@ const TIER_CLS: Record<string, string> = {
   gold: "from-yellow-500/40 to-yellow-700/30 border-yellow-400/80 text-yellow-50",
   platinum: "from-cyan-300/40 to-purple-500/30 border-cyan-200/80 text-cyan-50",
   diamond: "from-fuchsia-400/40 to-indigo-500/30 border-fuchsia-200/80 text-fuchsia-50",
+  emerald: "from-emerald-400/40 to-teal-600/30 border-emerald-200/80 text-emerald-50",
+  ruby: "from-red-500/40 to-rose-700/30 border-red-300/80 text-red-50",
+  obsidian: "from-neutral-200/40 via-zinc-500/30 to-black/40 border-white/80 text-white",
 };
 
 const TIER_LABELS: Record<string, string> = {
   bronze: "Bronze", silver: "Silber", gold: "Gold", platinum: "Platin", diamond: "Diamant",
+  emerald: "Smaragd", ruby: "Rubin", obsidian: "Obsidian",
 };
 
 const TIER_MEDAL_CLS: Record<string, string> = {
@@ -57,9 +63,16 @@ const TIER_MEDAL_CLS: Record<string, string> = {
   gold: "text-yellow-400",
   platinum: "text-cyan-300",
   diamond: "text-fuchsia-300",
+  emerald: "text-emerald-300",
+  ruby: "text-red-400",
+  obsidian: "text-white",
 };
 
-const TIER_ORDER = ["bronze", "silver", "gold", "platinum", "diamond"];
+const TIER_ORDER = ["bronze", "silver", "gold", "platinum", "diamond", "emerald", "ruby", "obsidian"];
+
+function formatMoney(amount: number): string {
+  return `${amount.toLocaleString("de-DE")}$`;
+}
 
 const AchievementsCard = () => {
   const { user } = useAuth();
@@ -95,8 +108,8 @@ const AchievementsCard = () => {
   });
 
   // Selbstheilung: falls die achievement_definitions-Migration auf der laufenden DB
-  // nicht ausgeführt wurde, fehlende Einträge (Heli-Teilnehmer, 10-80-Sammler,
-  // Missionen-Master) über eine Edge Function mit Service-Role nachziehen — läuft für
+  // nicht ausgeführt wurde, fehlende Einträge (10-80-Sammler- und Missionen-Master-
+  // Stufen) über eine Edge Function mit Service-Role nachziehen — läuft für
   // JEDEN angemeldeten Nutzer, nicht nur Admins (RLS erlaubt Insert nur Admins direkt).
   const [defsSeedAttempted, setDefsSeedAttempted] = useState(false);
   useEffect(() => {
@@ -243,10 +256,15 @@ const AchievementsCard = () => {
                         className={`flex flex-col items-center gap-0.5 flex-1 ${
                           ownedTier ? TIER_MEDAL_CLS[t.tier] || "text-foreground" : "text-foreground/30"
                         }`}
-                        title={`${TIER_LABELS[t.tier] || t.tier} · ab ${t.threshold}`}
+                        title={`${TIER_LABELS[t.tier] || t.tier} · ab ${t.threshold}${t.reward_amount ? ` · ${formatMoney(t.reward_amount)}` : ""}`}
                       >
                         <MedalIcon className={`w-5 h-5 ${ownedTier ? "drop-shadow-glow" : ""}`} />
                         <span className="text-[10px] tabular-nums font-bold">{t.threshold}</span>
+                        {t.reward_amount ? (
+                          <span className="text-[9px] tabular-nums font-semibold text-foreground/70">
+                            {formatMoney(t.reward_amount)}
+                          </span>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -257,6 +275,7 @@ const AchievementsCard = () => {
                     <Progress value={pct} className="h-1.5" />
                     <p className="text-xs mt-1 tabular-nums font-semibold text-foreground/90">
                       {value} / {next.threshold} → nächste Medaille: {TIER_LABELS[next.tier] || next.tier}
+                      {next.reward_amount ? ` (+${formatMoney(next.reward_amount)})` : ""}
                     </p>
                   </div>
                 ) : (
