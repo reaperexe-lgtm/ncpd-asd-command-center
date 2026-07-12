@@ -196,7 +196,9 @@ const WeeklyChallengesCard = () => {
     run();
   }, [user, profile, challenges, completions, refetchComp]);
 
-  const visibleChallenges = (challenges || []).filter((c: any) => c.title !== "Aktiver Pilot");
+  const visibleChallenges = (challenges || []).filter(
+    (c: any) => c.title !== "Aktiver Pilot" && !REMOVED_CHALLENGE_TITLES.includes(c.title)
+  );
   if (!visibleChallenges.length) return null;
 
   return (
