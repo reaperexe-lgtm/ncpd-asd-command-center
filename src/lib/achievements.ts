@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getChallengeWeekStart } from "@/lib/weekBoundary";
-import { countMissionsForUser } from "@/lib/missionStats";
+import { countCrewParticipationsForUser, countMissionsForUser } from "@/lib/missionStats";
 
 /**
  * Berechnet alle Achievement-Metriken für einen User und schaltet
@@ -13,6 +13,7 @@ export type Metric =
   | "pursuits_total"
   | "pursuits_week"
   | "protocols_total"
+  | "crew_participations_total"
   | "formations_total"
   | "uebungen_attended"
   | "theory_passed"
@@ -27,6 +28,7 @@ export interface MetricSnapshot {
   pursuits_total: number;
   pursuits_week: number;
   protocols_total: number;
+  crew_participations_total: number;
   formations_total: number;
   uebungen_attended: number;
   theory_passed: number;
@@ -40,7 +42,7 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
   // Wöchentlicher Reset für "diese Woche"-Metriken: Sonntag 20:00 Uhr (Berlin), nicht Mitternacht.
   const weekStart = getChallengeWeekStart().toISOString();
 
-  const [missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes, protocolsRes, formationsRes, uebungenRes, theoryRes, practicalRes, balanceRes, challengesRes] = await Promise.all([
+  const [missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes, protocolsRes, crewParticipationsRes, formationsRes, uebungenRes, theoryRes, practicalRes, balanceRes, challengesRes] = await Promise.all([
     supabase.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
     supabase.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId),
@@ -48,6 +50,10 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
     supabase.from("missions").select("created_by, protokollschreiber").then(async (res) => {
       const rows = res.data || [];
       return { count: countMissionsForUser(rows as any[], userId) } as any;
+    }),
+    supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner").then(async (res) => {
+      const rows = res.data || [];
+      return { count: countCrewParticipationsForUser(rows as any[], userName) } as any;
     }),
     supabase.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),
@@ -74,6 +80,7 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
     pursuits_total: pursuitsRes.count || 0,
     pursuits_week: pursuitsWeekRes.count || 0,
     protocols_total: protocolsRes.count || 0,
+    crew_participations_total: (crewParticipationsRes as any).count || 0,
     formations_total: formationsRes.count || 0,
     uebungen_attended: uebungenRes.count || 0,
     theory_passed: (theoryRes as any).count || 0,
@@ -99,6 +106,7 @@ const MISSION_PURSUIT_METRICS = new Set([
   "pursuits_total",
   "pursuits_week",
   "protocols_total",
+  "crew_participations_total",
 ]);
 
 export async function awardAchievements(userId: string, userName: string, dienstnummer?: string | null) {

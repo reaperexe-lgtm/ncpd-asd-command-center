@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { countCrewParticipationsForUser, countMissionsForUser } from "./missionStats.ts";
 
 // Wöchentlicher Reset für "diese Woche"-Metriken (Einsatz-Sprint, Verfolgungs-Marathon,
 // pursuits_week Achievements): jeden Sonntag 20:00 Uhr Berlin-Zeit, nicht Mitternacht.
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
 
     const [
       missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes,
-      protocolsRes, formationsRes, uebungenRes,
+      protocolsRes, crewRes, formationsRes, uebungenRes,
       theoryRes, practicalRes, balanceRes, challengesRes, jackpotRes,
     ] = await Promise.all([
       admin.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId),
@@ -79,6 +80,7 @@ Deno.serve(async (req) => {
       admin.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId),
       admin.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
       admin.from("missions").select("id", { count: "exact", head: true }).eq("protokollschreiber", userId),
+      admin.from("missions").select("pilot, co_pilot, left_gunner, right_gunner"),
       admin.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
       admin.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),
       dienstnummer
@@ -98,6 +100,7 @@ Deno.serve(async (req) => {
       pursuits_total: pursuitsRes.count || 0,
       pursuits_week: pursuitsWeekRes.count || 0,
       protocols_total: protocolsRes.count || 0,
+      crew_participations_total: countCrewParticipationsForUser((crewRes.data || []) as any[], userName),
       formations_total: formationsRes.count || 0,
       uebungen_attended: uebungenRes.count || 0,
       theory_passed: (theoryRes as any).count || 0,

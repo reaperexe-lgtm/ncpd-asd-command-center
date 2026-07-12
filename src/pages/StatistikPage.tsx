@@ -745,7 +745,7 @@ const StatistikPage = () => {
           Fluglizenz {scope === "weekly" ? "Woche" : "Monat"}
         </h2>
         <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-          Crew-Einsätze: {fTotal}
+          Heli-Beteiligungen: {fTotal}
         </span>
       </div>
       {nextDate && countdown && (
@@ -755,7 +755,7 @@ const StatistikPage = () => {
         </p>
       )}
       {ranking.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Crew-Einsätze von Lizenz-Inhabern</p>
+        <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Heli-Beteiligungen von Lizenz-Inhabern</p>
       ) : (
         <div className="space-y-3 flex-1">
           {ranking.map(([name, count], i) => (

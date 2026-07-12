@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { countMissionsForUser } from "@/lib/missionStats";
+import { countCrewParticipationsForUser, countMissionsForUser } from "@/lib/missionStats";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
@@ -92,10 +92,7 @@ const MemberPage = () => {
       const protokolle = countMissionsForUser(allMissionRows || [], uid);
       const { count: pursuitsCreated } = await supabase.from("pursuits").select("*", { count: "exact", head: true }).eq("created_by", uid);
       const { data: allMissions } = await supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner");
-      let missionsCrew = 0;
-      allMissions?.forEach((m) => {
-        if ([m.pilot, m.co_pilot, m.left_gunner, m.right_gunner].includes(name)) missionsCrew++;
-      });
+      const missionsCrew = countCrewParticipationsForUser(allMissions || [], name);
       const { data: allPursuits } = await supabase.from("pursuits").select("pilot, co_pilot, left_gunner, right_gunner");
       let pursuitsCrew = 0;
       allPursuits?.forEach((p) => {
@@ -438,7 +435,7 @@ const MemberPage = () => {
                 { icon: FileText, label: "Einsätze erstellt", value: memberStats?.missionsCreated },
                 { icon: FileText, label: "Protokolle geschrieben", value: memberStats?.protokolle },
                 { icon: Siren, label: "10-80 erstellt", value: memberStats?.pursuitsCreated },
-                { icon: Users, label: "Einsatz-Besatzung", value: memberStats?.missionsCrew },
+                { icon: Users, label: "Heli-Beteiligungen", value: memberStats?.missionsCrew },
                 { icon: Siren, label: "10-80 Besatzung", value: memberStats?.pursuitsCrew },
                 { icon: Plane, label: "Fluglizenzen", value: memberStats?.flightLicenses },
               ].map(({ icon: Icon, label, value }) => (

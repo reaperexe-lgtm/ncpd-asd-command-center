@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countMissionsForUser } from "./missionStats";
+import { countCrewParticipationsForUser, countMissionsForUser } from "./missionStats";
 
 describe("countMissionsForUser", () => {
   it("counts missions by protocol writer when present and falls back to creator for legacy rows", () => {
@@ -13,5 +13,17 @@ describe("countMissionsForUser", () => {
     expect(countMissionsForUser(missions, "user-a")).toBe(2);
     expect(countMissionsForUser(missions, "user-b")).toBe(1);
     expect(countMissionsForUser(missions, "user-e")).toBe(1);
+  });
+
+  it("counts helicopter crew participations for the matching crew role", () => {
+    const missions = [
+      { pilot: "Alice", co_pilot: null, left_gunner: null, right_gunner: null },
+      { pilot: null, co_pilot: "Alice", left_gunner: null, right_gunner: null },
+      { pilot: null, co_pilot: null, left_gunner: "Bob", right_gunner: null },
+      { pilot: null, co_pilot: null, left_gunner: null, right_gunner: "Alice" },
+    ] as any[];
+
+    expect(countCrewParticipationsForUser(missions, "Alice")).toBe(3);
+    expect(countCrewParticipationsForUser(missions, "Bob")).toBe(1);
   });
 });
