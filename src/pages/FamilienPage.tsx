@@ -13,6 +13,7 @@ import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Penc
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { GANG_CATEGORIES } from "@/lib/gangCategories";
 import { detectPrimaryAndPearl } from "@/lib/colorParser";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const CATEGORIES = GANG_CATEGORIES;
 
@@ -31,7 +32,7 @@ type Gang = {
 };
 
 const FamilienPage = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
@@ -137,11 +138,12 @@ const FamilienPage = () => {
     onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: ["gangs"] }); toast.success("Gelöscht"); logActivity("Familie/Gang gelöscht", "familie", { gang_id: id }); },
   });
 
-  const uploadImage = async (file: File): Promise<string | null> => {
-    const ext = file.name.split(".").pop();
-    const path = `gangs/${Date.now()}.${ext}`;
+  const uploadImage = async (file: File | Blob): Promise<string | null> => {
+    if (!user) { toast.error("Nicht angemeldet"); return null; }
+    const ext = file instanceof File ? file.name.split(".").pop() : "webp";
+    const path = `${user.id}/gangs-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("avatars").upload(path, file);
-    if (error) { toast.error("Upload fehlgeschlagen"); return null; }
+    if (error) { toast.error(`Upload fehlgeschlagen: ${error.message}`); return null; }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     return urlData.publicUrl;
   };
@@ -154,22 +156,42 @@ const FamilienPage = () => {
     if (pearl) setPearlColor(pearl);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropTarget, setCropTarget] = useState<"create" | "edit">("create");
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
-    const url = await uploadImage(file);
-    if (url) setImageUrl(url);
-    setUploading(false);
+    setCropTarget("create");
+    setCropFile(file);
+    setCropOpen(true);
+    e.target.value = "";
   };
 
-  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setEditUploading(true);
-    const url = await uploadImage(file);
-    if (url) setEditData({ ...editData, image_url: url });
-    setEditUploading(false);
+    setCropTarget("edit");
+    setCropFile(file);
+    setCropOpen(true);
+    e.target.value = "";
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    setCropOpen(false);
+    if (cropTarget === "create") {
+      setUploading(true);
+      const url = await uploadImage(blob);
+      if (url) setImageUrl(url);
+      setUploading(false);
+    } else {
+      setEditUploading(true);
+      const url = await uploadImage(blob);
+      if (url) setEditData((prev) => ({ ...prev, image_url: url }));
+      setEditUploading(false);
+    }
+    setCropFile(null);
   };
 
   const removeEditImage = () => {
@@ -490,7 +512,7 @@ const FamilienPage = () => {
                         </div>
                       ) : g.image_url ? (
                         <div className="aspect-video overflow-hidden">
-                          <img src={g.image_url} alt={g.name} className="w-full h-full object-cover group-hover/card:scale-[1.02] transition-transform duration-300" />
+                          <img src={g.image_url} alt={g.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover/card:scale-[1.02] transition-transform duration-300" />
                         </div>
                       ) : null}
                       <div className="p-3 space-y-1.5">
@@ -580,6 +602,14 @@ const FamilienPage = () => {
           )}
         </div>
       )}
+
+      <ImageCropDialog
+        file={cropFile}
+        open={cropOpen}
+        onOpenChange={(o) => { setCropOpen(o); if (!o) setCropFile(null); }}
+        onConfirm={handleCropConfirm}
+        aspect={16 / 9}
+      />
     </div>
   );
 };
