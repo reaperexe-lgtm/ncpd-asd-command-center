@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star, Medal, Gem } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { awardAchievements, computeMetrics, MetricSnapshot } from "@/lib/achievements";
+import { awardAchievements, MetricSnapshot } from "@/lib/achievements";
 import { toast } from "sonner";
 
 const ICONS: Record<string, any> = {
@@ -83,11 +83,6 @@ const AchievementsCard = () => {
     };
     run();
   }, [user, profile, loaded, refetchOwned]);
-
-  useEffect(() => {
-    if (!user || !profile || metrics) return;
-    computeMetrics(user.id, profile.name || "", profile.dienstnummer).then(setMetrics);
-  }, [user, profile, metrics]);
 
   const ownedSet = new Set((owned || []).map((o: any) => o.achievement_code));
   const totalAwarded = ownedSet.size;

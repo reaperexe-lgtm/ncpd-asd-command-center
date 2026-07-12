@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Trophy, Gift } from "lucide-react";
 import { computeMetrics } from "@/lib/achievements";
 import { getChallengeWeekStartDateKey } from "@/lib/weekBoundary";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { toast } from "sonner";
 
 // "cash" = Ingame-Geld, wird NICHT automatisch gutgeschrieben. Stattdessen wird
