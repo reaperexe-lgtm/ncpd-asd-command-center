@@ -14,8 +14,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 const CATEGORIES = [
   { value: "Street Gang", label: "Street Gang", icon: Skull },
-  { value: "Familie", label: "Familie", icon: Home },
-  { value: "Kartell", label: "Kartell", icon: Crosshair },
+  { value: "Familie", label: "Kartell/Mafia", icon: Home },
+  { value: "Kartell", label: "Sonstiges", icon: Crosshair },
   { value: "Biker Club", label: "Biker Club", icon: Bike },
 ] as const;
 
