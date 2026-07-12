@@ -147,7 +147,12 @@ Deno.serve(async (req) => {
         if (!insertedCodes.has(a.achievement_code)) continue;
         const def = (defs || []).find((d: any) => d.code === a.achievement_code);
         if (!def || MISSION_PURSUIT_METRICS.has(def.metric)) continue;
-        casinoReward += TIER_REWARDS[(def.tier || "").toLowerCase()] || 0;
+        // Special-case: 200 Heli-Beteiligungen should award 1.000.000 ingame money
+        if (def.code === "crew_participations_200") {
+          casinoReward += 1_000_000;
+        } else {
+          casinoReward += TIER_REWARDS[(def.tier || "").toLowerCase()] || 0;
+        }
       }
       if (casinoReward > 0) {
         const { data: bal } = await admin
