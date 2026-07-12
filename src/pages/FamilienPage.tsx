@@ -11,13 +11,9 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Plus, Trash2, Users, MapPin, Upload, Bike, Skull, Home, Crosshair, Pencil, X, Check, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { GANG_CATEGORIES } from "@/lib/gangCategories";
 
-const CATEGORIES = [
-  { value: "Street Gang", label: "Street Gang", icon: Skull },
-  { value: "Familie", label: "Kartell/Mafia", icon: Home },
-  { value: "Kartell", label: "Sonstiges", icon: Crosshair },
-  { value: "Biker Club", label: "Biker Club", icon: Bike },
-] as const;
+const CATEGORIES = GANG_CATEGORIES;
 
 type Gang = {
   id: string;

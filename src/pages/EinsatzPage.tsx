@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Car, FileText, Users, Shield, Pencil } from "lucide-react";
+import { GANG_CATEGORIES } from "@/lib/gangCategories";
 
 const LOCATIONS = ["Staatsbank","Juwelier","Human Labs","Geiselnahme","10-12 Laden","1000 Laden","Paleto Bank","Sandy Laden","Razzia","Panikbutton","Sonstiges"];
 const VEHICLE_TYPES = ["Fahrzeug","Motorrad","Helikopter","Boot"];
@@ -140,6 +141,21 @@ const EinsatzPage = () => {
     setShowVehicleForm(true);
   };
 
+  const handleGangSelect = (id: string) => {
+    setGangId(id);
+    if (id === "none") {
+      setGangInfo("");
+      return;
+    }
+    const gang = gangs?.find((g) => g.id === id);
+    setGangInfo((gang as any)?.erkennungsmerkmale || "");
+  };
+
+  const gangsByCategory = GANG_CATEGORIES.map((cat) => ({
+    ...cat,
+    items: gangs?.filter((g) => g.category === cat.value) || [],
+  })).filter((cat) => cat.items.length > 0);
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
@@ -195,11 +211,16 @@ const EinsatzPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Infos zur Bande (Familie)</Label>
-            <Select value={gangId} onValueChange={setGangId}>
+            <Select value={gangId} onValueChange={handleGangSelect}>
               <SelectTrigger className="mt-1 bg-background border-border"><SelectValue placeholder="Familie wählen..." /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Keine / Unbekannt</SelectItem>
-                {gangs?.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                {gangsByCategory.map((cat) => (
+                  <SelectGroup key={cat.value}>
+                    <SelectLabel>{cat.label}</SelectLabel>
+                    {cat.items.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectGroup>
+                ))}
               </SelectContent>
             </Select>
           </div>
