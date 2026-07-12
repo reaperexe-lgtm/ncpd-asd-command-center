@@ -4,14 +4,22 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 const DISCORD_API = "https://discord.com/api/v10";
 
 function sanitizeDiscordId(value: string | null | undefined) {
-  return value?.trim().replace(/\s+/g, "") ?? "";
+  const raw = value?.trim() ?? "";
+  const mentionMatch = raw.match(/^<@!?(\d{17,20})>$/);
+  if (mentionMatch) return mentionMatch[1];
+  return raw.replace(/\D/g, "");
 }
 
 async function sendDM(botToken: string, discordId: string, message: string) {
+  const cleanId = sanitizeDiscordId(discordId);
+  if (!/^[0-9]{17,20}$/.test(cleanId)) {
+    throw new Error(`Ungültige Discord-ID für DM: ${discordId}`);
+  }
+
   const channelRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
     method: "POST",
     headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ recipient_id: discordId }),
+    body: JSON.stringify({ recipient_id: cleanId }),
   });
   if (!channelRes.ok) {
     const err = await channelRes.text();
@@ -77,6 +85,67 @@ async function sendChannelMessage(
     throw new Error(`Nachricht konnte nicht in Discord-Channel ${cleanChannelId} gesendet werden: ${err}`);
   }
   return await msgRes.json();
+}
+
+async function sendDirectionFallback(botToken: string, message: string) {
+  const channelIds = [
+    Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID"),
+    Deno.env.get("DISCORD_CHANNEL_ID"),
+    Deno.env.get("DISCORD_DIRECTOR_CHANNEL_ID"),
+  ]
+    .map((id) => sanitizeDiscordId(id))
+    .filter((id): id is string => !!id);
+  if (channelIds.length === 0) {
+    throw new Error("Kein Discord-Fallback-Channel konfiguriert");
+  }
+
+  const announcementRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));
+  let lastError: Error | null = null;
+
+  for (const channelId of channelIds) {
+    try {
+      const mentionRoleId = channelId === sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_CHANNEL_ID")) ? announcementRoleId : undefined;
+      return await sendChannelMessage(botToken, channelId, message, mentionRoleId);
+    } catch (e) {
+      lastError = e as Error;
+    }
+  }
+
+  throw lastError || new Error("Fallback an alle konfigurierten Discord-Channels fehlgeschlagen");
+}
+
+async function loadDirectionDiscordProfiles(supabaseAdmin: any) {
+  const { data: directionRoles } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .in("role", ["director", "co_director"]);
+
+  const directionIds = (directionRoles || []).map((r: any) => r.user_id);
+  if (directionIds.length === 0) return [];
+
+  const [{ data: directionNames }, { data: directionPrivate }, { data: directionLegacy }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("id, name").in("id", directionIds),
+    supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", directionIds),
+    supabaseAdmin.from("profiles").select("id, discord_id").in("id", directionIds),
+  ]);
+
+  const nameMap: Record<string, string> = {};
+  for (const p of directionNames || []) nameMap[(p as any).id] = (p as any).name;
+
+  const discordMap: Record<string, string> = {};
+  for (const r of directionPrivate || []) {
+    if (r.discord_id) discordMap[r.user_id] = r.discord_id;
+  }
+  for (const r of directionLegacy || []) {
+    if (!discordMap[r.id] && r.discord_id) discordMap[r.id] = r.discord_id;
+  }
+
+  return directionIds
+    .map((id) => ({
+      discord_id: sanitizeDiscordId(discordMap[id] ?? null),
+      name: nameMap[id] ?? "Direction",
+    }))
+    .filter((profile) => !!profile.discord_id);
 }
 
 Deno.serve(async (req) => {
@@ -506,43 +575,34 @@ Deno.serve(async (req) => {
       // 2) Direct Messages to all Direction members (director, co_director)
       const directionResults: any[] = [];
       try {
-        const { data: directionRoles } = await supabaseAdmin
-          .from("user_roles")
-          .select("user_id")
-          .in("role", ["director", "co_director"]);
+        const directionProfiles = await loadDirectionDiscordProfiles(supabaseAdmin);
 
-        const directionIds = (directionRoles || []).map((r: any) => r.user_id);
-        if (directionIds.length > 0) {
-          const [{ data: directionNames }, { data: directionPrivate }] = await Promise.all([
-            supabaseAdmin.from("profiles").select("id, name").in("id", directionIds),
-            supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", directionIds).not("discord_id", "is", null),
-          ]);
-          const dirNameMap: Record<string, string> = {};
-          for (const p of directionNames || []) dirNameMap[(p as any).id] = (p as any).name;
-          const directionProfiles = (directionPrivate || []).map((r: any) => ({
-            discord_id: r.discord_id,
-            name: dirNameMap[r.user_id] ?? "Direction",
-          }));
+        const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
+        const directionMessage = [
+          `${emoji} **Achievement-Auszahlung erforderlich**`,
+          `🎖️ **${data.user_name}${dn}** hat ein neues Achievement freigeschaltet:`,
+          `🏆 **${data.achievement_title}**`,
+          data.achievement_description ? `_${data.achievement_description}_` : "",
+          ``,
+          `💰 **Belohnung: 50.000$**`,
+          `Bitte zahle dem Mitglied die **50.000$** aus, sobald es sich bei dir meldet.`,
+        ].filter(Boolean).join("\n");
 
-          const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
-          const directionMessage = [
-            `${emoji} **Achievement-Auszahlung erforderlich**`,
-            `🎖️ **${data.user_name}${dn}** hat ein neues Achievement freigeschaltet:`,
-            `🏆 **${data.achievement_title}**`,
-            data.achievement_description ? `_${data.achievement_description}_` : "",
-            ``,
-            `💰 **Belohnung: 50.000$**`,
-            `Bitte zahle dem Mitglied die **50.000$** aus, sobald es sich bei dir meldet.`,
-          ].filter(Boolean).join("\n");
+        for (const profile of directionProfiles) {
+          try {
+            await sendDM(botToken, profile.discord_id, directionMessage);
+            directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: true });
+          } catch (e) {
+            directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: false, error: (e as Error).message });
+          }
+        }
 
-          for (const profile of directionProfiles || []) {
-            if (!profile.discord_id) continue;
-            try {
-              await sendDM(botToken, profile.discord_id, directionMessage);
-              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: true });
-            } catch (e) {
-              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: false, error: (e as Error).message });
-            }
+        if (!directionResults.some((r) => r.sent === true)) {
+          try {
+            const fallbackMsg = await sendDirectionFallback(botToken, directionMessage);
+            directionResults.push({ fallback: "channel", sent: true, channel: fallbackMsg.channel_id ?? fallbackMsg.id });
+          } catch (e) {
+            directionResults.push({ fallback: "channel", sent: false, error: (e as Error).message });
           }
         }
       } catch (e) {
@@ -588,43 +648,34 @@ Deno.serve(async (req) => {
       // 2) Direct Messages to all Direction members (director, co_director)
       const directionResults: any[] = [];
       try {
-        const { data: directionRoles } = await supabaseAdmin
-          .from("user_roles")
-          .select("user_id")
-          .in("role", ["director", "co_director"]);
+        const directionProfiles = await loadDirectionDiscordProfiles(supabaseAdmin);
 
-        const directionIds = (directionRoles || []).map((r: any) => r.user_id);
-        if (directionIds.length > 0) {
-          const [{ data: directionNames }, { data: directionPrivate }] = await Promise.all([
-            supabaseAdmin.from("profiles").select("id, name").in("id", directionIds),
-            supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", directionIds).not("discord_id", "is", null),
-          ]);
-          const dirNameMap: Record<string, string> = {};
-          for (const p of directionNames || []) dirNameMap[(p as any).id] = (p as any).name;
-          const directionProfiles = (directionPrivate || []).map((r: any) => ({
-            discord_id: r.discord_id,
-            name: dirNameMap[r.user_id] ?? "Direction",
-          }));
+        const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
+        const directionMessage = [
+          `🏆 **Challenge-Auszahlung erforderlich**`,
+          `🎖️ **${data.user_name}${dn}** hat die Wochen-Challenge geschafft:`,
+          `📌 **${data.challenge_title}**`,
+          data.challenge_description ? `_${data.challenge_description}_` : "",
+          ``,
+          `💰 **Belohnung: ${rewardStr} Ingame-Geld**`,
+          `Bitte zahle dem Mitglied die **${rewardStr}** aus, sobald es sich bei dir meldet.`,
+        ].filter(Boolean).join("\n");
 
-          const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
-          const directionMessage = [
-            `🏆 **Challenge-Auszahlung erforderlich**`,
-            `🎖️ **${data.user_name}${dn}** hat die Wochen-Challenge geschafft:`,
-            `📌 **${data.challenge_title}**`,
-            data.challenge_description ? `_${data.challenge_description}_` : "",
-            ``,
-            `💰 **Belohnung: ${rewardStr} Ingame-Geld**`,
-            `Bitte zahle dem Mitglied die **${rewardStr}** aus, sobald es sich bei dir meldet.`,
-          ].filter(Boolean).join("\n");
+        for (const profile of directionProfiles) {
+          try {
+            await sendDM(botToken, profile.discord_id, directionMessage);
+            directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: true });
+          } catch (e) {
+            directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: false, error: (e as Error).message });
+          }
+        }
 
-          for (const profile of directionProfiles || []) {
-            if (!profile.discord_id) continue;
-            try {
-              await sendDM(botToken, profile.discord_id, directionMessage);
-              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: true });
-            } catch (e) {
-              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: false, error: (e as Error).message });
-            }
+        if (!directionResults.some((r) => r.sent === true)) {
+          try {
+            const fallbackMsg = await sendDirectionFallback(botToken, directionMessage);
+            directionResults.push({ fallback: "channel", sent: true, channel: fallbackMsg.channel_id ?? fallbackMsg.id });
+          } catch (e) {
+            directionResults.push({ fallback: "channel", sent: false, error: (e as Error).message });
           }
         }
       } catch (e) {
