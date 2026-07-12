@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getChallengeWeekStart } from "@/lib/weekBoundary";
 
 /**
  * Berechnet alle Achievement-Metriken für einen User und schaltet
@@ -34,16 +35,9 @@ export interface MetricSnapshot {
   challenges_total: number;
 }
 
-const startOfWeek = () => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0=So
-  d.setDate(d.getDate() - day);
-  return d;
-};
-
 export async function computeMetrics(userId: string, userName: string, dienstnummer?: string | null): Promise<MetricSnapshot> {
-  const weekStart = startOfWeek().toISOString();
+  // Wöchentlicher Reset für "diese Woche"-Metriken: Sonntag 20:00 Uhr (Berlin), nicht Mitternacht.
+  const weekStart = getChallengeWeekStart().toISOString();
 
   const [missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes, protocolsRes, formationsRes, uebungenRes, theoryRes, practicalRes, balanceRes, challengesRes] = await Promise.all([
     supabase.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId),

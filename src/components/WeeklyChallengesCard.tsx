@@ -6,15 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Gift } from "lucide-react";
 import { computeMetrics } from "@/lib/achievements";
+import { getChallengeWeekStartDateKey } from "@/lib/weekBoundary";
 import { toast } from "sonner";
 
-const startOfWeek = () => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
-};
-
+// "cash" = Ingame-Geld, wird NICHT automatisch gutgeschrieben. Stattdessen wird
+// die Direction per Discord benachrichtigt und zahlt manuell aus.
+// "casino" = wird direkt aufs Gambling-Konto gutgeschrieben.
 const getRewardDestination = (challenge: { title?: string; metric?: string }) => {
   if (challenge.title === "Einsatz-Sprint" || challenge.title === "Verfolgungs-Marathon") return "cash";
   return "casino";
@@ -22,14 +19,15 @@ const getRewardDestination = (challenge: { title?: string; metric?: string }) =>
 
 const DEFAULT_WEEKLY_CHALLENGES = [
   { title: "Einsatz-Sprint", description: "Erstelle 5 Einsätze diese Woche", metric: "missions_week", target: 5, reward_amount: 50000 },
-  { title: "Verfolgungs-Marathon", description: "Erstelle 10 Verfolgungen diese Woche", metric: "pursuits_week", target: 10, reward_amount: 100000 },
-  { title: "10-80-Sammler", description: "Erreiche 100 Verfolgungen insgesamt", metric: "pursuits_total", target: 100, reward_amount: 100000 },
-  { title: "Missionen-Master", description: "Erstelle 100 Einsätze insgesamt", metric: "missions_total", target: 100, reward_amount: 100000 },
+  { title: "Verfolgungs-Marathon", description: "Erstelle 10 Verfolgungen diese Woche", metric: "pursuits_week", target: 10, reward_amount: 50000 },
+  { title: "10-80-Sammler", description: "Erreiche 100 Verfolgungen insgesamt", metric: "pursuits_total", target: 100, reward_amount: 1000000 },
+  { title: "Missionen-Master", description: "Erstelle 100 Einsätze insgesamt", metric: "missions_total", target: 100, reward_amount: 1000000 },
 ];
 
 const WeeklyChallengesCard = () => {
   const { user } = useAuth();
-  const weekStartIso = startOfWeek().toISOString().slice(0, 10);
+  // Wochen-Reset für Einsatz-Sprint & Verfolgungs-Marathon: jeden Sonntag 20:00 Uhr (Berlin)
+  const weekStartIso = getChallengeWeekStartDateKey();
 
   const { data: profile } = useQuery({
     queryKey: ["profile-for-challenges", user?.id],
@@ -47,6 +45,9 @@ const WeeklyChallengesCard = () => {
       const { data } = await supabase.from("weekly_challenges").select("*").eq("week_start", weekStartIso).eq("is_active", true);
       return data || [];
     },
+    // Sorgt dafür, dass eine offen gelassene Seite den Sonntag-20-Uhr-Reset
+    // auch ohne manuelles Neuladen mitbekommt.
+    refetchInterval: 5 * 60 * 1000,
   });
 
   const { data: completions, refetch: refetchComp } = useQuery({
@@ -59,12 +60,33 @@ const WeeklyChallengesCard = () => {
     enabled: !!user,
   });
 
-  // Auto-seed default challenges for this week and remove legacy entries
+  // Idempotent seeding: legt fehlende Default-Challenges an und korrigiert
+  // veraltete Beträge/Texte bei bestehenden Zeilen. Nutzt UPSERT auf
+  // (week_start, title), damit bei gleichzeitigen Aufrufen (z.B. mehrere
+  // offene Tabs) KEINE Duplikate mehr entstehen. Legacy "Aktiver Pilot"
+  // Einträge werden gezielt entfernt statt alles zu löschen und neu anzulegen.
   useEffect(() => {
-    const shouldSeed = !challenges || challenges.length === 0 || (challenges || []).some((c: any) => c.title === "Aktiver Pilot");
-    if (!shouldSeed) return;
+    if (!challenges) return;
+
+    const hasLegacy = challenges.some((c: any) => c.title === "Aktiver Pilot");
+    const needsUpdate = DEFAULT_WEEKLY_CHALLENGES.some((def) => {
+      const existing = challenges.find((c: any) => c.title === def.title);
+      if (!existing) return true;
+      return (
+        existing.reward_amount !== def.reward_amount ||
+        existing.description !== def.description ||
+        existing.target !== def.target ||
+        existing.metric !== def.metric
+      );
+    });
+
+    if (!hasLegacy && !needsUpdate) return;
 
     const seed = async () => {
+      if (hasLegacy) {
+        await supabase.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("title", "Aktiver Pilot");
+      }
+
       const rows = DEFAULT_WEEKLY_CHALLENGES.map((c) => ({
         week_start: weekStartIso,
         title: c.title,
@@ -75,8 +97,9 @@ const WeeklyChallengesCard = () => {
         is_active: true,
       }));
 
-      await supabase.from("weekly_challenges").delete().eq("week_start", weekStartIso).eq("is_active", true);
-      await supabase.from("weekly_challenges").insert(rows);
+      // onConflict auf den UNIQUE(week_start, title) Constraint: bestehende
+      // Zeilen werden aktualisiert statt dupliziert, fehlende werden angelegt.
+      await supabase.from("weekly_challenges").upsert(rows, { onConflict: "week_start,title" });
       refetch();
     };
     seed();
@@ -98,12 +121,31 @@ const WeeklyChallengesCard = () => {
 
           const destination = getRewardDestination(c);
           if (destination === "casino") {
+            // Direkt aufs Gambling-Konto gutschreiben
             const { data: bal } = await supabase.from("casino_balances").select("balance").eq("user_id", user.id).maybeSingle();
             const newBal = (bal?.balance || 0) + c.reward_amount;
             await supabase.from("casino_balances").upsert({ user_id: user.id, balance: newBal } as any, { onConflict: "user_id" });
             toast.success(`🏆 Challenge "${c.title}" geschafft! +$${c.reward_amount.toLocaleString()} auf das Gambling-Konto`);
           } else {
-            toast.success(`🏆 Challenge "${c.title}" geschafft! Auszahlung in $${c.reward_amount.toLocaleString()} erfolgt`);
+            // Ingame-Geld: keine automatische Gutschrift, stattdessen Discord-Benachrichtigung an die Direction
+            try {
+              await supabase.functions.invoke("discord-notify", {
+                body: {
+                  type: "challenge_completed",
+                  data: {
+                    user_id: user.id,
+                    user_name: profile.name || "",
+                    dienstnummer: profile.dienstnummer ?? null,
+                    challenge_title: c.title,
+                    challenge_description: c.description,
+                    reward_amount: c.reward_amount,
+                  },
+                },
+              });
+              toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
+            } catch (e) {
+              toast.success(`🏆 Challenge "${c.title}" geschafft! Bitte melde dich bei der Direction für deine $${c.reward_amount.toLocaleString()}.`);
+            }
           }
 
           await supabase.from("challenge_completions").update({ reward_paid: true }).eq("challenge_id", c.id).eq("user_id", user.id);
@@ -140,9 +182,9 @@ const WeeklyChallengesCard = () => {
                 </span>
               </div>
               <p className="text-[10px] mt-1 text-muted-foreground">
-                {rewardDestination === "cash" ? "Auszahlung in $" : "Gutschrift auf das Gambling-Konto"}
+                {rewardDestination === "cash" ? "Auszahlung durch Direction (Discord-Benachrichtigung)" : "Gutschrift auf das Gambling-Konto"}
               </p>
-              {done && <p className="text-[10px] text-emerald-400 mt-1">Belohnung kassiert ✓</p>}
+              {done && <p className="text-[10px] text-emerald-400 mt-1">Belohnung {rewardDestination === "cash" ? "gemeldet" : "kassiert"} ✓</p>}
             </div>
           );
         })}

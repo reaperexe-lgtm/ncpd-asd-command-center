@@ -554,6 +554,88 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (type === "challenge_completed") {
+      const rewardStr = `${Number(data.reward_amount || 0).toLocaleString("de-DE")}$`;
+
+      // 1) DM to the user (if discord_id set)
+      let dmStatus: any = { sent: false };
+      try {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles_private")
+          .select("discord_id")
+          .eq("user_id", data.user_id)
+          .maybeSingle();
+
+        if (profile?.discord_id) {
+          const dmMessage = [
+            `🏆 **Challenge geschafft: ${data.challenge_title}**`,
+            data.challenge_description ? `_${data.challenge_description}_` : "",
+            ``,
+            `💰 **Belohnung: ${rewardStr} Ingame-Geld**`,
+            `Die **ASD Direction** wurde benachrichtigt. Bitte melde dich dort, um deine Belohnung zu erhalten.`,
+          ].filter(Boolean).join("\n");
+          try {
+            await sendDM(botToken, profile.discord_id, dmMessage);
+            dmStatus = { sent: true, discord_id: profile.discord_id };
+          } catch (e) {
+            dmStatus = { sent: false, error: (e as Error).message };
+          }
+        }
+      } catch (e) {
+        dmStatus = { sent: false, error: (e as Error).message };
+      }
+
+      // 2) Direct Messages to all Direction members (director, co_director)
+      const directionResults: any[] = [];
+      try {
+        const { data: directionRoles } = await supabaseAdmin
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["director", "co_director"]);
+
+        const directionIds = (directionRoles || []).map((r: any) => r.user_id);
+        if (directionIds.length > 0) {
+          const [{ data: directionNames }, { data: directionPrivate }] = await Promise.all([
+            supabaseAdmin.from("profiles").select("id, name").in("id", directionIds),
+            supabaseAdmin.from("profiles_private").select("user_id, discord_id").in("user_id", directionIds).not("discord_id", "is", null),
+          ]);
+          const dirNameMap: Record<string, string> = {};
+          for (const p of directionNames || []) dirNameMap[(p as any).id] = (p as any).name;
+          const directionProfiles = (directionPrivate || []).map((r: any) => ({
+            discord_id: r.discord_id,
+            name: dirNameMap[r.user_id] ?? "Direction",
+          }));
+
+          const dn = data.dienstnummer ? ` (#${data.dienstnummer})` : "";
+          const directionMessage = [
+            `🏆 **Challenge-Auszahlung erforderlich**`,
+            `🎖️ **${data.user_name}${dn}** hat die Wochen-Challenge geschafft:`,
+            `📌 **${data.challenge_title}**`,
+            data.challenge_description ? `_${data.challenge_description}_` : "",
+            ``,
+            `💰 **Belohnung: ${rewardStr} Ingame-Geld**`,
+            `Bitte zahle dem Mitglied die **${rewardStr}** aus, sobald es sich bei dir meldet.`,
+          ].filter(Boolean).join("\n");
+
+          for (const profile of directionProfiles || []) {
+            if (!profile.discord_id) continue;
+            try {
+              await sendDM(botToken, profile.discord_id, directionMessage);
+              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: true });
+            } catch (e) {
+              directionResults.push({ name: profile.name, discord_id: profile.discord_id, sent: false, error: (e as Error).message });
+            }
+          }
+        }
+      } catch (e) {
+        directionResults.push({ sent: false, error: (e as Error).message });
+      }
+
+      return new Response(JSON.stringify({ success: true, dm: dmStatus, direction_dms: directionResults }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (type === "stats_report") {
       // Send stats report to a Discord CHANNEL (not DMs)
       const channelId = Deno.env.get("DISCORD_CHANNEL_ID");

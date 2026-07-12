@@ -1,3 +1,9 @@
+// ⚠️ SUPERSEDED (12.07.2026): Dieses System lief parallel zu den Wochen-Challenges
+// (WeeklyChallengesCard: "Einsatz-Sprint" / "Verfolgungs-Marathon") und hätte bei
+// jedem Einsatz/jeder Verfolgung eine ZWEITE, redundante Discord-Auszahlungsanfrage
+// an die Direction geschickt. Die Aufrufe in EinsatzPage.tsx / VerfolgungPage.tsx
+// wurden entfernt. Datei bewusst nicht gelöscht, falls sie referenziert wird —
+// bitte NICHT wieder verdrahten, ohne vorher mit WeeklyChallengesCard abzugleichen.
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 

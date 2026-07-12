@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
-import { checkWeeklyPerformance } from "@/lib/weeklyPerformance";
 import { createEmptyVehicleForm, normalizeVehicleForm, type VehicleFormData } from "@/lib/vehicleForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,7 +95,6 @@ const EinsatzPage = () => {
       queryClient.invalidateQueries({ queryKey: ["missions"] });
       logActivity("Einsatz erstellt", "einsatz", { location: location === "Sonstiges" ? customLocation : location, suspects: parseInt(suspects), hostages: parseInt(hostages) });
       resetForm();
-      checkWeeklyPerformance();
     },
     onError: (e: any) => toast.error(e.message),
   });

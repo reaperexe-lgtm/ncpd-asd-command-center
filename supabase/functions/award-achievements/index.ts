@@ -1,6 +1,31 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
+// Wöchentlicher Reset für "diese Woche"-Metriken (Einsatz-Sprint, Verfolgungs-Marathon,
+// pursuits_week Achievements): jeden Sonntag 20:00 Uhr Berlin-Zeit, nicht Mitternacht.
+// Muss identisch zu src/lib/weekBoundary.ts bleiben.
+function getBerlinOffsetMs(date: Date): number {
+  const utcAsLocal = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+  const berlinAsLocal = new Date(date.toLocaleString("en-US", { timeZone: "Europe/Berlin" }));
+  return berlinAsLocal.getTime() - utcAsLocal.getTime();
+}
+
+function getChallengeWeekStart(reference: Date = new Date()): Date {
+  const offset = getBerlinOffsetMs(reference);
+  const berlinNow = new Date(reference.getTime() + offset);
+
+  const dayOfWeek = berlinNow.getUTCDay(); // 0 = Sonntag
+  const candidate = new Date(berlinNow);
+  candidate.setUTCDate(candidate.getUTCDate() - dayOfWeek);
+  candidate.setUTCHours(20, 0, 0, 0);
+
+  if (candidate.getTime() > berlinNow.getTime()) {
+    candidate.setUTCDate(candidate.getUTCDate() - 7);
+  }
+
+  return new Date(candidate.getTime() - offset);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -42,12 +67,7 @@ Deno.serve(async (req) => {
     const userName = profile?.name || "";
     const dienstnummer = profile?.dienstnummer ?? null;
 
-    const weekStart = (() => {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - d.getDay());
-      return d.toISOString();
-    })();
+    const weekStart = getChallengeWeekStart().toISOString();
 
     const [
       missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes,
