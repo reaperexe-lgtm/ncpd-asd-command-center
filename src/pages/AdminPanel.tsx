@@ -125,6 +125,10 @@ const AdminPanel = () => {
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
+  const [inactivityEnabled, setInactivityEnabled] = useState(true);
+  const [inactivityChannelId, setInactivityChannelId] = useState("");
+  const [savingInactivity, setSavingInactivity] = useState(false);
+  const [testingInactivity, setTestingInactivity] = useState(false);
   const [applicantFilter, setApplicantFilter] = useState<"all" | "asd_applicant" | "flight_applicant">("all");
   const [cleanupCountdown, setCleanupCountdown] = useState<string>("--:--:--");
 
@@ -161,6 +165,8 @@ const AdminPanel = () => {
       "aufstellung_auto_enabled",
       "stats_ping_director_id",
       "stats_ping_codirector_id",
+      "inactivity_check_enabled",
+      "inactivity_director_channel_id",
     ];
     supabase
       .from("permission_settings")
@@ -169,7 +175,7 @@ const AdminPanel = () => {
       .then(({ data }) => {
         for (const r of data || []) {
           const v = r.role;
-          if (!v && r.permission_key !== "aufstellung_auto_enabled") continue;
+          if (!v && r.permission_key !== "aufstellung_auto_enabled" && r.permission_key !== "inactivity_check_enabled") continue;
           switch (r.permission_key) {
             case "discord_invite_link": setDiscordInviteLink(v); break;
             case "discord_invite_description": setDiscordInviteDescription(v); break;
@@ -187,6 +193,8 @@ const AdminPanel = () => {
             case "aufstellung_auto_enabled": setAufstellungAuto(v === "true"); break;
             case "stats_ping_director_id": setStatsPingDirector(v); break;
             case "stats_ping_codirector_id": setStatsPingCoDirector(v); break;
+            case "inactivity_check_enabled": setInactivityEnabled(v === "true"); break;
+            case "inactivity_director_channel_id": setInactivityChannelId(v); break;
           }
         }
       });
@@ -1959,6 +1967,97 @@ const AdminPanel = () => {
                     }
                   }}
                   disabled={savingStatsPings}
+                  className="gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
+            {/* Wöchentliche Inaktivitäts-Warnung */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Bell className="w-4 h-4" /> Wöchentliche Inaktivitäts-Warnung
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Prüft jeden Sonntag zum ASD-Wochenreset, ob ein Mitglied diese Woche <strong>keine Einsätze und keine Verfolgungen</strong> protokolliert
+                hat. Betroffene Mitglieder erhalten eine DM, dass dies nicht der von der Direction erwünschten Arbeitsmoral entspricht.
+                Zusätzlich wird die ASD Direction im hier hinterlegten Channel gepingt.
+              </p>
+
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={inactivityEnabled}
+                  onChange={(e) => setInactivityEnabled(e.target.checked)}
+                  className="accent-primary"
+                />
+                Wöchentliche Inaktivitäts-Warnung aktivieren
+              </label>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Director-Chat Channel-ID</label>
+                <Input
+                  value={inactivityChannelId}
+                  onChange={(e) => setInactivityChannelId(e.target.value)}
+                  placeholder="z. B. 123456789012345678"
+                  className="bg-background border-border"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Rechtsklick auf den Director-Chat-Channel in Discord → "ID kopieren" (Entwicklermodus aktivieren).
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setTestingInactivity(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("weekly-inactivity-check", {
+                        body: { dry_run: true, force: true },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      toast.success(`Vorschau: ${data?.inactive ?? 0} von ${data?.checked ?? 0} Mitgliedern ohne Aktivität`);
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler bei der Vorschau");
+                    } finally {
+                      setTestingInactivity(false);
+                    }
+                  }}
+                  disabled={testingInactivity}
+                  className="gap-1.5"
+                >
+                  <Activity className="w-3.5 h-3.5" /> Vorschau (ohne Versand)
+                </Button>
+                <Button
+                  onClick={async () => {
+                    setSavingInactivity(true);
+                    try {
+                      const updates = [
+                        { permission_key: "inactivity_check_enabled", role: inactivityEnabled ? "true" : "false" },
+                        { permission_key: "inactivity_director_channel_id", role: inactivityChannelId.trim() },
+                      ];
+                      for (const u of updates) {
+                        const { error } = await supabase
+                          .from("permission_settings")
+                          .update({ role: u.role } as any)
+                          .eq("permission_key", u.permission_key);
+                        if (error) throw error;
+                      }
+                      toast.success("Einstellungen gespeichert");
+                      logActivity("Inaktivitäts-Warnung Einstellungen aktualisiert", "admin", {
+                        enabled: inactivityEnabled,
+                        channel_id: inactivityChannelId,
+                      });
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Speichern");
+                    } finally {
+                      setSavingInactivity(false);
+                    }
+                  }}
+                  disabled={savingInactivity}
                   className="gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Speichern
