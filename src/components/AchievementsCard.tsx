@@ -6,7 +6,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star, Medal, Gem } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { awardAchievements, MetricSnapshot } from "@/lib/achievements";
+import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { toast } from "sonner";
+
+// Achievements, die per SQL-Migration existieren sollten. Falls die Migration auf der
+// laufenden DB (noch) nicht ausgeführt wurde, zieht ensureAchievementDefinitions() sie
+// per Edge Function (Service-Role) nach — siehe supabase/functions/ensure-achievement-definitions.
+const REQUIRED_ACHIEVEMENT_CODES = [
+  "crew_participations_200",
+  "pursuits_total_100_sammler",
+  "missions_total_100_master",
+];
+const REQUIRED_ACHIEVEMENT_DEFS_FALLBACK = [
+  {
+    code: "crew_participations_200", title: "Heli-Teilnehmer", description: "200 Heli-Beteiligungen erreicht",
+    icon: "Plane", tier: "diamond", category: "missions", threshold: 200, metric: "crew_participations_total",
+    sort_order: 260, is_active: true,
+  },
+  {
+    code: "pursuits_total_100_sammler", title: "10-80-Sammler", description: "100 Verfolgungen insgesamt erreicht",
+    icon: "Car", tier: "diamond", category: "pursuits", threshold: 100, metric: "pursuits_total",
+    sort_order: 270, is_active: true,
+  },
+  {
+    code: "missions_total_100_master", title: "Missionen-Master", description: "100 Einsätze insgesamt erreicht",
+    icon: "Target", tier: "diamond", category: "missions", threshold: 100, metric: "missions_total",
+    sort_order: 280, is_active: true,
+  },
+];
 
 const ICONS: Record<string, any> = {
   Trophy, Target, Car, FileText, ClipboardList, GraduationCap, BookOpen, Award, Zap, Crown, Coins, Star,
@@ -49,7 +76,7 @@ const AchievementsCard = () => {
     enabled: !!user,
   });
 
-  const { data: defs } = useQuery({
+  const { data: defs, refetch: refetchDefs } = useQuery({
     queryKey: ["achievement-defs"],
     queryFn: async () => {
       const { data } = await supabase.from("achievement_definitions").select("*").eq("is_active", true).order("sort_order");
@@ -66,6 +93,56 @@ const AchievementsCard = () => {
     },
     enabled: !!user,
   });
+
+  // Selbstheilung: falls die achievement_definitions-Migration auf der laufenden DB
+  // nicht ausgeführt wurde, fehlende Einträge (Heli-Teilnehmer, 10-80-Sammler,
+  // Missionen-Master) über eine Edge Function mit Service-Role nachziehen — läuft für
+  // JEDEN angemeldeten Nutzer, nicht nur Admins (RLS erlaubt Insert nur Admins direkt).
+  const [defsSeedAttempted, setDefsSeedAttempted] = useState(false);
+  useEffect(() => {
+    if (!user || !defs || defsSeedAttempted) return;
+    const existingCodes = new Set(defs.map((d: any) => d.code));
+    const missingCodes = REQUIRED_ACHIEVEMENT_CODES.filter((c) => !existingCodes.has(c));
+    if (!missingCodes.length) return;
+    setDefsSeedAttempted(true);
+
+    const seedDefs = async () => {
+      let edgeFnOk = false;
+      try {
+        const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+        const { error } = await supabase.functions.invoke("ensure-achievement-definitions", { headers });
+        if (error) throw error;
+        edgeFnOk = true;
+      } catch (e) {
+        console.error(
+          "[AchievementsCard] ensure-achievement-definitions Edge Function fehlgeschlagen " +
+          "(evtl. noch nicht deployed?). Fallback auf Direct-Write (nur für Admins).",
+          e,
+        );
+      }
+
+      if (!edgeFnOk) {
+        try {
+          const rows = REQUIRED_ACHIEVEMENT_DEFS_FALLBACK.filter((d) => missingCodes.includes(d.code));
+          const { error: fallbackError } = await supabase
+            .from("achievement_definitions")
+            .upsert(rows, { onConflict: "code" });
+          if (fallbackError) {
+            console.error(
+              "[AchievementsCard] Fallback-Write ebenfalls fehlgeschlagen (kein Admin? RLS?). " +
+              "Achievement-Definitionen bleiben unvollständig, bis ensure-achievement-definitions deployed ist.",
+              fallbackError,
+            );
+          }
+        } catch (e) {
+          console.error("[AchievementsCard] Fallback-Write Exception:", e);
+        }
+      }
+
+      refetchDefs();
+    };
+    seedDefs();
+  }, [user, defs, defsSeedAttempted, refetchDefs]);
 
   useEffect(() => {
     const run = async () => {
