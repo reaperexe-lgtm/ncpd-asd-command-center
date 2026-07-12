@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, TrendingUp, TrendingDown, Minus, FileText, Car } from "lucide-react";
+import { countMissionsForUser } from "@/lib/missionStats";
 
 function getASDWeekStart() {
   const now = new Date();
@@ -51,7 +52,7 @@ const MyWeekCard = () => {
         return d >= effectivePursuitStart;
       });
 
-      const myMissions = weeklyMissions.filter((m: any) => m.protokollschreiber === user?.id).length;
+      const myMissions = countMissionsForUser(weeklyMissions, user?.id || "");
       const myPursuits = weeklyPursuits.filter((p: any) => p.created_by === user?.id).length;
       const myTotal = myMissions + myPursuits;
 

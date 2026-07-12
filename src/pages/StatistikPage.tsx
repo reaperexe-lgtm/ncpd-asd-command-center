@@ -312,7 +312,9 @@ const StatistikPage = () => {
 
   const weeklyCounts: Record<string, number> = {};
   weeklyMissions.forEach((m) => {
-    if (m.protokollschreiber) weeklyCounts[m.protokollschreiber] = (weeklyCounts[m.protokollschreiber] || 0) + 1;
+    const writer = m.protokollschreiber?.trim();
+    const targetId = writer || m.created_by;
+    if (targetId) weeklyCounts[targetId] = (weeklyCounts[targetId] || 0) + 1;
   });
   const weeklyRanking = Object.entries(weeklyCounts).sort((a, b) => b[1] - a[1]);
 
@@ -346,7 +348,9 @@ const StatistikPage = () => {
 
   const allTimeCounts: Record<string, number> = {};
   monthlyMissions.forEach((m) => {
-    if (m.protokollschreiber) allTimeCounts[m.protokollschreiber] = (allTimeCounts[m.protokollschreiber] || 0) + 1;
+    const writer = m.protokollschreiber?.trim();
+    const targetId = writer || m.created_by;
+    if (targetId) allTimeCounts[targetId] = (allTimeCounts[targetId] || 0) + 1;
   });
   const allTimeRanking = Object.entries(allTimeCounts).sort((a, b) => b[1] - a[1]);
   const maxAllTime = allTimeRanking[0]?.[1] || 1;
@@ -447,11 +451,19 @@ const StatistikPage = () => {
 
   // Top-Schreiber (Lizenz-Inhaber): Missionen + Verfolgungen
   const flWeeklyWriterCounts: Record<string, number> = {};
-  flWeeklyMissions.forEach((m: any) => { if (m.protokollschreiber) flWeeklyWriterCounts[m.protokollschreiber] = (flWeeklyWriterCounts[m.protokollschreiber] || 0) + 1; });
+  flWeeklyMissions.forEach((m: any) => {
+    const writer = m.protokollschreiber?.trim();
+    const targetId = writer || m.created_by;
+    if (targetId) flWeeklyWriterCounts[targetId] = (flWeeklyWriterCounts[targetId] || 0) + 1;
+  });
   const flWeeklyWriterRanking = Object.entries(flWeeklyWriterCounts).sort((a, b) => b[1] - a[1]);
 
   const flMonthlyWriterCounts: Record<string, number> = {};
-  flMonthlyMissions.forEach((m: any) => { if (m.protokollschreiber) flMonthlyWriterCounts[m.protokollschreiber] = (flMonthlyWriterCounts[m.protokollschreiber] || 0) + 1; });
+  flMonthlyMissions.forEach((m: any) => {
+    const writer = m.protokollschreiber?.trim();
+    const targetId = writer || m.created_by;
+    if (targetId) flMonthlyWriterCounts[targetId] = (flMonthlyWriterCounts[targetId] || 0) + 1;
+  });
   const flMonthlyWriterRanking = Object.entries(flMonthlyWriterCounts).sort((a, b) => b[1] - a[1]);
 
   // 10-80 Verfolgungen (nur Lizenz-Inhaber)

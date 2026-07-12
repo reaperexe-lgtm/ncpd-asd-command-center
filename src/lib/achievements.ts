@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getChallengeWeekStart } from "@/lib/weekBoundary";
+import { countMissionsForUser } from "@/lib/missionStats";
 
 /**
  * Berechnet alle Achievement-Metriken für einen User und schaltet
@@ -44,7 +45,10 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
     supabase.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
     supabase.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("pursuits").select("id", { count: "exact", head: true }).eq("created_by", userId).gte("created_at", weekStart),
-    supabase.from("missions").select("id", { count: "exact", head: true }).eq("protokollschreiber", userId),
+    supabase.from("missions").select("created_by, protokollschreiber").then(async (res) => {
+      const rows = res.data || [];
+      return { count: countMissionsForUser(rows as any[], userId) } as any;
+    }),
     supabase.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),
     dienstnummer

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { countMissionsForUser } from "@/lib/missionStats";
 
 const ROLE_LABELS: Record<string, string> = {
   director: "Director", co_director: "Co-Director", supervisor: "Supervisor",
@@ -87,7 +88,8 @@ const MemberPage = () => {
       const uid = selectedMember.id;
       const name = selectedMember.name;
       const { count: missionsCreated } = await supabase.from("missions").select("*", { count: "exact", head: true }).eq("created_by", uid);
-      const { count: protokolle } = await supabase.from("missions").select("*", { count: "exact", head: true }).eq("protokollschreiber", uid);
+      const { data: allMissionRows } = await supabase.from("missions").select("created_by, protokollschreiber, pilot, co_pilot, left_gunner, right_gunner");
+      const protokolle = countMissionsForUser(allMissionRows || [], uid);
       const { count: pursuitsCreated } = await supabase.from("pursuits").select("*", { count: "exact", head: true }).eq("created_by", uid);
       const { data: allMissions } = await supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner");
       let missionsCrew = 0;

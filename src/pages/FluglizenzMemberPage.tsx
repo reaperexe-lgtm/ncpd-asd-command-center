@@ -4,6 +4,7 @@ import { Plane, Search, FileText, Siren, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { countMissionsForUser } from "@/lib/missionStats";
 
 const FluglizenzMemberPage = () => {
   const [search, setSearch] = useState("");
@@ -33,7 +34,8 @@ const FluglizenzMemberPage = () => {
       const uid = selectedMember.id;
       const name = selectedMember.name;
       const { count: missionsCreated } = await supabase.from("missions").select("*", { count: "exact", head: true }).eq("created_by", uid);
-      const { count: protokolle } = await supabase.from("missions").select("*", { count: "exact", head: true }).eq("protokollschreiber", uid);
+      const { data: allMissionRows } = await supabase.from("missions").select("created_by, protokollschreiber, pilot, co_pilot, left_gunner, right_gunner");
+      const protokolle = countMissionsForUser(allMissionRows || [], uid);
       const { count: pursuitsCreated } = await supabase.from("pursuits").select("*", { count: "exact", head: true }).eq("created_by", uid);
       const { data: allMissions } = await supabase.from("missions").select("pilot, co_pilot, left_gunner, right_gunner");
       let missionsCrew = 0;
