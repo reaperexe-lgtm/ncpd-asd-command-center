@@ -60,6 +60,16 @@ async function getTopProtokollschreiber(supabaseAdmin: any, startDate: Date, now
   return { sorted, totalMissions: missions?.length || 0, totalPursuits: pursuits?.length || 0 };
 }
 
+// Prüft, ob es gerade 12 Uhr (Stunde 12) Berlin-Zeit ist — unabhängig von
+// Sommer-/Winterzeit. Der Cron-Job ruft diese Function zweimal auf
+// (10 Uhr und 11 Uhr UTC), damit exakt ein Aufruf pro Woche wirklich zutrifft.
+function isNoonInBerlin(now: Date): boolean {
+  const berlinHour = Number(
+    new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", hour12: false }).format(now),
+  );
+  return berlinHour === 12;
+}
+
 function getAsdWeekStart(now: Date): Date {
   const startDate = new Date(now);
   const dayOfWeek = now.getDay();
@@ -86,6 +96,19 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date();
+
+    // Der Cron-Job ruft diese Function 2x an, um Sommer-/Winterzeit abzudecken
+    // (10 Uhr & 11 Uhr UTC). Nur der Aufruf, der wirklich 12 Uhr Berlin-Zeit
+    // trifft, postet tatsächlich. Mit ?force=true (manueller Test) wird das
+    // ignoriert und sofort gepostet.
+    const url = new URL(req.url);
+    const force = url.searchParams.get("force") === "true";
+    if (!force && !isNoonInBerlin(now)) {
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: "not 12:00 Europe/Berlin yet" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const weekStart = getAsdWeekStart(now);
 
     const { sorted, totalMissions, totalPursuits } = await getTopProtokollschreiber(supabaseAdmin, weekStart, now);
