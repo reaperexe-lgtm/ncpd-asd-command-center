@@ -83,6 +83,7 @@ const ProtokollePage = () => {
       const { data } = await supabase.from("missions").select("*, mission_vehicles(id), gangs(name, category, image_url)").order("created_at", { ascending: false }).limit(300);
       return data || [];
     },
+    pollInterval: 60000,
   });
 
   const { data: pursuits, isLoading: pursuitsLoading } = useQuery({
@@ -91,6 +92,7 @@ const ProtokollePage = () => {
       const { data } = await supabase.from("pursuits").select("*, pursuit_photos(id)").order("pursuit_date", { ascending: false }).limit(300);
       return data || [];
     },
+    pollInterval: 60000,
   });
 
   // Volle Fahrzeug-/Foto-Details werden erst nachgeladen, wenn ein Eintrag tatsächlich aufgeklappt wird
@@ -314,11 +316,11 @@ const ProtokollePage = () => {
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm font-medium tabular-nums">
-                            {new Date(m.tatzeit).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                            {new Date(m.tatzeit).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" })}
                           </span>
                           <span className="text-muted-foreground/50">·</span>
                           <span className="text-sm font-bold tabular-nums">
-                            {new Date(m.tatzeit).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(m.tatzeit).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
                           </span>
                         </div>
 
@@ -542,11 +544,11 @@ const ProtokollePage = () => {
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm font-medium tabular-nums">
-                            {new Date(p.pursuit_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                            {new Date(p.pursuit_date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" })}
                           </span>
                           <span className="text-muted-foreground/50">·</span>
                           <span className="text-sm font-bold tabular-nums">
-                            {new Date(p.pursuit_date).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(p.pursuit_date).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
                           </span>
                         </div>
                         {p.vehicle_model && (

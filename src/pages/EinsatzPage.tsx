@@ -59,6 +59,7 @@ const EinsatzPage = () => {
       const { data } = await supabase.from("profiles").select("id, name, dienstnummer, internal_dienstnummer").eq("is_approved", true);
       return data || [];
     },
+    pollInterval: 60000,
   });
 
   const saveMission = useMutation({
