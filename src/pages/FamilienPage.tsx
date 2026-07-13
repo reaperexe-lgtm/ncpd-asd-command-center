@@ -117,7 +117,7 @@ const FamilienPage = () => {
         const updates: Record<string, string> = {};
         if (primary) updates.primary_color = primary;
         if (pearl) updates.pearl_color = pearl;
-        const { error } = await supabase.from("gangs").update(updates).eq("id", g.id);
+        const { error } = await supabase.from("gangs").update(updates as any).eq("id", g.id);
         if (!error) updated++;
       }
       return updated;
