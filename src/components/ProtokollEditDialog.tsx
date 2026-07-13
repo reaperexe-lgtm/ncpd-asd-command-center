@@ -85,6 +85,17 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
   const [pLeftGunner, setPLeftGunner] = useState("");
   const [pRightGunner, setPRightGunner] = useState("");
 
+  // Fetch FULL vehicle rows when opening — the list query only loads {id}, so
+  // relying on data.mission_vehicles would overwrite plate/colors/owner with defaults.
+  const { data: fullVehicles } = useQuery({
+    queryKey: ["edit-mission-vehicles", data?.id],
+    queryFn: async () => {
+      const { data: rows } = await supabase.from("mission_vehicles").select("*").eq("mission_id", data.id);
+      return rows || [];
+    },
+    enabled: open && type === "mission" && !!data?.id,
+  });
+
   useEffect(() => {
     if (!open || !data) return;
     if (type === "mission") {
@@ -102,22 +113,28 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
       setMCoPilot(data.co_pilot || "");
       setMLeftGunner(data.left_gunner || "");
       setMRightGunner(data.right_gunner || "");
-      const vs = (data.mission_vehicles || []) as any[];
-      setMVehicles(
-        vs.map((v) => {
-          const isCustomModel = !VEHICLE_MODELS.includes(v.model);
-          return {
-            id: v.id,
-            vehicle_type: v.vehicle_type || "Fahrzeug",
-            model: isCustomModel ? "Sonstiges" : v.model,
-            custom_model: isCustomModel ? v.model : (v.custom_model || ""),
-            license_plate: v.license_plate || "",
-            owner_info: v.owner_info || "",
-            primary_color: v.primary_color || "#000000",
-            pearl_color: v.pearl_color || "#000000",
-          };
-        })
-      );
+      // Only populate vehicles once the full rows have loaded — the parent list
+      // query only selects {id}, so using data.mission_vehicles here would flood
+      // the form (and the subsequent save) with empty defaults.
+      if (fullVehicles) {
+        setMVehicles(
+          fullVehicles.map((v: any) => {
+            const isCustomModel = !VEHICLE_MODELS.includes(v.model);
+            return {
+              id: v.id,
+              vehicle_type: v.vehicle_type || "Fahrzeug",
+              model: isCustomModel ? "Sonstiges" : v.model,
+              custom_model: isCustomModel ? v.model : (v.custom_model || ""),
+              license_plate: v.license_plate || "",
+              owner_info: v.owner_info || "",
+              primary_color: v.primary_color || "#000000",
+              pearl_color: v.pearl_color || "#000000",
+            };
+          })
+        );
+      } else {
+        setMVehicles([]);
+      }
     } else {
       setPDesc(data.description || "");
       setPVehicleModel(data.vehicle_model || "");
@@ -128,7 +145,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
       setPLeftGunner(data.left_gunner || "");
       setPRightGunner(data.right_gunner || "");
     }
-  }, [open, data, type]);
+  }, [open, data, type, fullVehicles]);
 
   const saveMission = useMutation({
     mutationFn: async () => {
