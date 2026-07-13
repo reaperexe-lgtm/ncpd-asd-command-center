@@ -237,18 +237,7 @@ const EinsatzPage = () => {
                       <SelectLabel className="flex items-center gap-1.5 py-2 pl-2 text-[11px] font-black uppercase tracking-wider text-primary bg-primary/10 rounded-sm mx-1">
                         <Icon className="w-3.5 h-3.5" /> {cat.label}
                       </SelectLabel>
-                      {cat.items.map((g) => (
-                        <SelectItem key={g.id} value={g.id}>
-                          <span className="flex items-center gap-2">
-                            {(g as any).image_url ? (
-                              <img src={(g as any).image_url} alt="" loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-border shrink-0" />
-                            ) : (
-                              <span className="w-5 h-5 rounded-full bg-muted shrink-0" />
-                            )}
-                            {g.name}
-                          </span>
-                        </SelectItem>
-                      ))}
+                      {cat.items.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                     </SelectGroup>
                   );
                 })}
