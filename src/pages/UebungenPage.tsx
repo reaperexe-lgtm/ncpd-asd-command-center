@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { convertLocalToUTC } from "@/lib/dateUtils";
 import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,7 @@ export default function UebungenPage() {
       beschreibung: beschreibung.trim() || null,
       ort: ort.trim() || null,
       kategorie,
-      start_at: new Date(startAt).toISOString(),
+      start_at: startAt ? convertLocalToUTC(startAt) : new Date().toISOString(),
       max_teilnehmer: maxTeilnehmer ? parseInt(maxTeilnehmer) : null,
       created_by: user.id,
     };

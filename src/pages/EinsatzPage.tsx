@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
 import { createEmptyVehicleForm, normalizeVehicleForm, type VehicleFormData } from "@/lib/vehicleForm";
-import { nowRoundedForInput } from "@/lib/dateUtils";
+import { nowRoundedForInput, convertLocalToUTC } from "@/lib/dateUtils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,7 +66,7 @@ const EinsatzPage = () => {
       const { data: mission, error } = await supabase.from("missions").insert({
         location_type: location === "Sonstiges" ? customLocation : location,
         custom_location: location === "Sonstiges" ? customLocation : null,
-        tatzeit: tatzeit || new Date().toISOString(),
+        tatzeit: tatzeit ? convertLocalToUTC(tatzeit) : new Date().toISOString(),
         suspects_count: parseInt(suspects),
         hostages_count: parseInt(hostages),
         gang_id: gangId && gangId !== "none" ? gangId : null,

@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { logActivity } from "@/lib/activityLog";
+import { toDatetimeLocalValue } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteUserAccount, getSupabaseFunctionAuthHeaders, invokeEdgeFunction } from "@/lib/supabaseFunctions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -184,8 +185,7 @@ const AdminPanel = () => {
               try {
                 const d = new Date(v);
                 if (!isNaN(d.getTime())) {
-                  const pad = (n: number) => String(n).padStart(2, "0");
-                  setAufstellungAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+                  setAufstellungAt(toDatetimeLocalValue(d));
                 }
               } catch {}
               break;

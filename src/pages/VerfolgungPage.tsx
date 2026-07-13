@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
-import { nowRoundedForInput } from "@/lib/dateUtils";
+import { nowRoundedForInput, convertLocalToUTC } from "@/lib/dateUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,7 +60,7 @@ const VerfolgungPage = () => {
         pursuer: "–",
         vehicle_model: vehicleModel || null,
         license_plate: licensePlate || null,
-        pursuit_date: pursuitDate || new Date().toISOString(),
+        pursuit_date: pursuitDate ? convertLocalToUTC(pursuitDate) : new Date().toISOString(),
         pilot: pilot?.trim() || null,
         co_pilot: coPilot?.trim() || null,
         left_gunner: leftGunner?.trim() || null,
