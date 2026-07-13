@@ -9,97 +9,8 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
-import { nowRoundedForInput } from "@/lib/dateUtils";
+import { nowRoundedForInput, convertLocalToUTC, convertUTCToLocalInput } from "@/lib/dateUtils";
 
-/**
- * Converts a datetime-local string (e.g., "2025-07-13T14:30") which represents Berlin time
- * to an ISO UTC string.
- */
-function convertLocalToUTC(localString: string): string {
-  if (!localString) return new Date().toISOString();
-
-  // Parse the datetime-local value (format: "2025-07-13T14:30")
-  const [datePart, timePart] = localString.split("T");
-  const [year, month, day] = datePart.split("-");
-  const [hours, minutes] = timePart.split(":");
-
-  // Create a date object with Berlin timezone
-  // We interpret the input as Berlin time, then convert to UTC
-  const formatter = new Intl.DateTimeFormat("de-DE", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    timeZone: "Europe/Berlin",
-  });
-
-  // Create a temporary date (any date in UTC)
-  const tempDate = new Date(
-    parseInt(year),
-    parseInt(month) - 1,
-    parseInt(day),
-    parseInt(hours),
-    parseInt(minutes),
-    0
-  );
-
-  // Get the Berlin time parts
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-    timeZone: "Europe/Berlin",
-  }).formatToParts(tempDate);
-
-  const berlSeconds = Object.fromEntries(parts.map((p) => [p.type, p.value]));
-  const offsetMs =
-    new Date(
-      parseInt(berlSeconds.year),
-      parseInt(berlSeconds.month) - 1,
-      parseInt(berlSeconds.day),
-      parseInt(berlSeconds.hour),
-      parseInt(berlSeconds.minute),
-      parseInt(berlSeconds.second)
-    ).getTime() - tempDate.getTime();
-
-  const utcDate = new Date(tempDate.getTime() + offsetMs);
-  return utcDate.toISOString();
-}
-
-/**
- * Converts a UTC ISO string to a datetime-local string in Berlin timezone.
- * E.g., "2025-07-13T12:30:00Z" → "2025-07-13T14:30"
- */
-function toLocalInput(isoString: string): string {
-  if (!isoString) return "";
-
-  const date = new Date(isoString);
-
-  // Format as Berlin time
-  const berlinFormatter = new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Europe/Berlin",
-  });
-
-  const parts = berlinFormatter.formatToParts(date);
-  const partMap = Object.fromEntries(parts.map((p) => [p.type, p.value]));
-
-  const dateStr = `${partMap.year}-${partMap.month}-${partMap.day}`;
-  const timeStr = `${partMap.hour}:${partMap.minute}`;
-
-  return `${dateStr}T${timeStr}`;
-}
 
 interface ProtokollEditDialogProps {
   open: boolean;
@@ -164,7 +75,7 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
       setMissionData({
         location_type: data.location_type || "",
         custom_location: data.custom_location || "",
-        tatzeit: toLocalInput(data.tatzeit),
+        tatzeit: convertUTCToLocalInput(data.tatzeit),
         suspects_count: data.suspects_count || 1,
         hostages_count: data.hostages_count || 0,
         gang_info: data.gang_info || "",
@@ -177,7 +88,7 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
     } else {
       setPursuitData({
         pursuer: data.pursuer || "",
-        pursuit_date: toLocalInput(data.pursuit_date),
+        pursuit_date: convertUTCToLocalInput(data.pursuit_date),
         vehicle_model: data.vehicle_model || "",
         license_plate: data.license_plate || "",
         pilot: data.pilot || "",

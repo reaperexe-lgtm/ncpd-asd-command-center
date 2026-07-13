@@ -85,3 +85,15 @@ export function convertLocalToUTC(datetimeLocalValue: string): string {
 export function nowRoundedForInput(): string {
   return toDatetimeLocalValue(roundDownTo5Minutes());
 }
+
+/**
+ * Konvertiert einen UTC-ISO-Wert in das datetime-local-Format für Berlin-Zeit.
+ */
+export function convertUTCToLocalInput(isoString: string): string {
+  if (!isoString) return "";
+
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return toDatetimeLocalValue(date);
+}
