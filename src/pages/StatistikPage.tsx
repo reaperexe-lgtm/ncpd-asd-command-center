@@ -967,6 +967,12 @@ const StatistikPage = () => {
             nextDate={weekEnd}
             countdown={weeklyCountdown}
           />
+          <BeiseinCard
+            title="Beisein (Woche)"
+            subtitle="Co-Pilot + Left- & Right-Gunner (ohne Protokollschreiber)"
+            ranking={beiseinWeekly}
+            total={beiseinWeeklyTotal}
+          />
         </TabsContent>
 
         {/* ===== MONTH TAB ===== */}
