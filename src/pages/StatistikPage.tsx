@@ -821,8 +821,27 @@ const StatistikPage = () => {
 
   const BeiseinCard = ({ title, ranking, total, subtitle }: { title: string; ranking: [string, number][]; total: number; subtitle?: string }) => {
     const max = ranking[0]?.[1] || 1;
-    const [expanded, setExpanded] = useState(false);
-    const shown = expanded ? ranking : ranking.slice(0, 10);
+    const preview = ranking.slice(0, 10);
+    const rest = ranking.slice(10);
+    const Row = ([name, count]: [string, number], i: number) => (
+      <div key={name} className="flex items-center justify-between">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+            {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+          </span>
+          <div
+            className="h-9 rounded-md flex items-center px-3 transition-all duration-500 min-w-0"
+            style={{
+              width: `${Math.max((count / max) * 100, 20)}%`,
+              backgroundColor: `hsl(160, 55%, ${45 + (i % 8) * 3}%)`,
+            }}
+          >
+            <span className="text-xs font-bold text-white truncate drop-shadow-md">{name}</span>
+          </div>
+        </div>
+        <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+      </div>
+    );
     return (
       <div className="bg-card border border-border rounded-lg p-5 h-full flex flex-col">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -839,41 +858,23 @@ const StatistikPage = () => {
         {ranking.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Beisein-Einträge</p>
         ) : (
-          <>
-            <div className="space-y-3 flex-1">
-              {shown.map(([name, count], i) => (
-                <div key={name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
-                      {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
-                    </span>
-                    <div
-                      className="h-9 rounded-md flex items-center px-3 transition-all duration-500 min-w-0"
-                      style={{
-                        width: `${Math.max((count / max) * 100, 20)}%`,
-                        backgroundColor: `hsl(160, 55%, ${45 + (i % 8) * 3}%)`,
-                      }}
-                    >
-                      <span className="text-xs font-bold text-white truncate drop-shadow-md">{name}</span>
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
-                </div>
-              ))}
-            </div>
-            {ranking.length > 10 && (
-              <button
-                className="text-xs text-primary hover:underline mt-3 self-start"
-                onClick={() => setExpanded((v) => !v)}
-              >
-                {expanded ? "Weniger anzeigen" : `Alle ${ranking.length} anzeigen`}
-              </button>
+          <div className="space-y-3 flex-1">
+            {preview.map((r, i) => Row(r, i))}
+            {rest.length > 0 && (
+              <details className="group">
+                <summary className="text-xs text-primary hover:underline cursor-pointer list-none mt-1">
+                  <span className="group-open:hidden">Alle {ranking.length} anzeigen</span>
+                  <span className="hidden group-open:inline">Weniger anzeigen</span>
+                </summary>
+                <div className="space-y-3 mt-3">{rest.map((r, i) => Row(r, i + preview.length))}</div>
+              </details>
             )}
-          </>
+          </div>
         )}
       </div>
     );
   };
+
 
   return (
     <div className="space-y-6">
