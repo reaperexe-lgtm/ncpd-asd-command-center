@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { logActivity } from "@/lib/activityLog";
-import { toDatetimeLocalValue } from "@/lib/dateUtils";
+import { toDatetimeLocalValue, convertLocalToUTC } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteUserAccount, getSupabaseFunctionAuthHeaders, invokeEdgeFunction } from "@/lib/supabaseFunctions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1829,7 +1829,7 @@ const AdminPanel = () => {
                     try {
                       await invokeEdgeFunction(supabase as any, "discord-notify", {
                         type: "aufstellung_announcement",
-                        data: { start_at: new Date(aufstellungAt).toISOString(), ort: aufstellungOrt },
+                        data: { start_at: aufstellungAt ? convertLocalToUTC(aufstellungAt) : new Date().toISOString(), ort: aufstellungOrt },
                       });
                       toast.success("Ankündigung gepostet");
                       logActivity("Aufstellungs-Ankündigung manuell gesendet", "admin");
