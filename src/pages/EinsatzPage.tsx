@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
 import { createEmptyVehicleForm, normalizeVehicleForm, type VehicleFormData } from "@/lib/vehicleForm";
+import { nowRoundedForInput } from "@/lib/dateUtils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +29,11 @@ const EinsatzPage = () => {
   const [location, setLocation] = usePersistedState<string>("einsatz_location", "");
   const [customLocation, setCustomLocation] = usePersistedState<string>("einsatz_customLocation", "");
   const [tatzeit, setTatzeit] = usePersistedState<string>("einsatz_tatzeit", "");
+
+  useEffect(() => {
+    if (!tatzeit) setTatzeit(nowRoundedForInput());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [suspects, setSuspects] = usePersistedState<string>("einsatz_suspects", "1");
   const [hostages, setHostages] = usePersistedState<string>("einsatz_hostages", "0");
   const [gangId, setGangId] = usePersistedState<string>("einsatz_gangId", "");
@@ -101,7 +107,7 @@ const EinsatzPage = () => {
   });
 
   const resetForm = () => {
-    setLocation(""); setCustomLocation(""); setTatzeit("");
+    setLocation(""); setCustomLocation(""); setTatzeit(nowRoundedForInput());
     setSuspects("1"); setHostages("0"); setGangId(""); setGangInfo("");
     setPilot(""); setCoPilot(""); setLeftGunner(""); setRightGunner("");
     setVehicles([]); setShowVehicleForm(false);
@@ -195,7 +201,7 @@ const EinsatzPage = () => {
           </div>
           <div>
             <Label>Tatzeitraum</Label>
-            <Input type="datetime-local" value={tatzeit} onChange={(e) => setTatzeit(e.target.value)} className="mt-1 bg-background border-border" />
+            <Input type="datetime-local" step={300} value={tatzeit} onChange={(e) => setTatzeit(e.target.value)} className="mt-1 bg-background border-border" />
           </div>
         </div>
 

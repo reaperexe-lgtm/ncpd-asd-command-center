@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePersistedState, clearPersistedKeys } from "@/hooks/usePersistedState";
 import { logActivity } from "@/lib/activityLog";
+import { nowRoundedForInput } from "@/lib/dateUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +25,11 @@ const VerfolgungPage = () => {
   const [vehicleModel, setVehicleModel] = usePersistedState<string>("verfolgung_vehicleModel", "");
   const [licensePlate, setLicensePlate] = usePersistedState<string>("verfolgung_licensePlate", "");
   const [pursuitDate, setPursuitDate] = usePersistedState<string>("verfolgung_pursuitDate", "");
+
+  useEffect(() => {
+    if (!pursuitDate) setPursuitDate(nowRoundedForInput());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [pilot, setPilot] = usePersistedState<string>("verfolgung_pilot", "");
   const [coPilot, setCoPilot] = usePersistedState<string>("verfolgung_coPilot", "");
   const [leftGunner, setLeftGunner] = usePersistedState<string>("verfolgung_leftGunner", "");
@@ -168,7 +174,7 @@ const VerfolgungPage = () => {
 
   const resetForm = () => {
     setVehicleModel(""); setLicensePlate("");
-    setPursuitDate(""); setPilot(""); setCoPilot("");
+    setPursuitDate(nowRoundedForInput()); setPilot(""); setCoPilot("");
     setLeftGunner(""); setRightGunner(""); setPhotos([]); setPhotoPreviewUrls([]); setShowForm(false);
     clearPersistedKeys([
       "verfolgung_vehicleModel","verfolgung_licensePlate",
@@ -216,7 +222,7 @@ const VerfolgungPage = () => {
             </div>
             <div>
               <Label>Datum & Uhrzeit</Label>
-              <Input type="datetime-local" className="mt-1 bg-background border-border" value={pursuitDate} onChange={(e) => setPursuitDate(e.target.value)} />
+              <Input type="datetime-local" step={300} className="mt-1 bg-background border-border" value={pursuitDate} onChange={(e) => setPursuitDate(e.target.value)} />
             </div>
           </div>
 
