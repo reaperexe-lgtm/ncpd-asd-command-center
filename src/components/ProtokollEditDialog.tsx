@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from "@/components/ui/select";
+import { GANG_CATEGORIES } from "@/lib/gangCategories";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Car } from "lucide-react";
 import { logActivity } from "@/lib/activityLog";
@@ -52,7 +53,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
   const { data: gangs } = useQuery({
     queryKey: ["gangs-edit"],
     queryFn: async () => {
-      const { data } = await supabase.from("gangs").select("id, name, image_url");
+      const { data } = await supabase.from("gangs").select("id, name, category");
       return data || [];
     },
     enabled: type === "mission",
@@ -390,18 +391,20 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
                   <SelectTrigger className="mt-1 bg-background border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Keine / Unbekannt</SelectItem>
-                    {gangs?.map((g: any) => (
-                      <SelectItem key={g.id} value={g.id}>
-                        <span className="flex items-center gap-2">
-                          {g.image_url ? (
-                            <img src={g.image_url} alt="" loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-border shrink-0" />
-                          ) : (
-                            <span className="w-5 h-5 rounded-full bg-muted shrink-0" />
-                          )}
-                          {g.name}
-                        </span>
-                      </SelectItem>
-                    ))}
+                    {GANG_CATEGORIES.map((cat, idx) => {
+                      const items = gangs?.filter((g: any) => g.category === cat.value) || [];
+                      if (items.length === 0) return null;
+                      const Icon = cat.icon;
+                      return (
+                        <SelectGroup key={cat.value}>
+                          {idx > 0 && <SelectSeparator />}
+                          <SelectLabel className="flex items-center gap-1.5 py-2 pl-2 text-[11px] font-black uppercase tracking-wider text-primary bg-primary/10 rounded-sm mx-1">
+                            <Icon className="w-3.5 h-3.5" /> {cat.label}
+                          </SelectLabel>
+                          {items.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                        </SelectGroup>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
