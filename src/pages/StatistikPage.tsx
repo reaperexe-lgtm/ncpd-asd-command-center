@@ -438,6 +438,43 @@ const StatistikPage = () => {
   };
   const flightWeeklyRanking = computeCrewCounts(weeklyMissions, weeklyPursuits);
   const flightMonthlyRanking = computeCrewCounts(monthlyMissions, monthlyPursuits);
+
+  // --- Beisein (Co-Pilot + Left/Right Gunner, ohne Pilot & ohne Protokollschreiber-Doppelzählung) ---
+  // Nutzt Name-Feld (Freitext) — alle bestehenden Protokolle werden automatisch mitgezählt.
+  const computeBeiseinCounts = (
+    ms: Array<{ co_pilot?: string | null; left_gunner?: string | null; right_gunner?: string | null; protokollschreiber?: string | null; created_by?: string | null }>,
+    ps: Array<{ co_pilot?: string | null; left_gunner?: string | null; right_gunner?: string | null; protokollschreiber?: string | null; created_by?: string | null }>,
+  ) => {
+    const counts = new Map<string, { display: string; count: number }>();
+    const bump = (raw?: string | null, writerId?: string | null) => {
+      const name = raw?.trim();
+      if (!name) return;
+      // Protokollschreiber nicht zusätzlich als "Beisein" zählen
+      const writerName = writerId ? profileName(writerId).trim().toLowerCase() : "";
+      if (writerName && name.toLowerCase() === writerName) return;
+      const key = name.toLowerCase();
+      const existing = counts.get(key);
+      if (existing) existing.count += 1;
+      else counts.set(key, { display: name, count: 1 });
+    };
+    const process = (e: any) => {
+      const writer = e.protokollschreiber || e.created_by;
+      bump(e.co_pilot, writer);
+      bump(e.left_gunner, writer);
+      bump(e.right_gunner, writer);
+    };
+    ms.forEach(process);
+    ps.forEach(process);
+    return Array.from(counts.values())
+      .map((v) => [v.display, v.count] as [string, number])
+      .sort((a, b) => b[1] - a[1]);
+  };
+  const beiseinWeekly = computeBeiseinCounts(weeklyMissions, weeklyPursuits);
+  const beiseinMonthly = computeBeiseinCounts(monthlyMissions, monthlyPursuits);
+  const beiseinAll = computeBeiseinCounts(missions || [], pursuits || []);
+  const beiseinWeeklyTotal = beiseinWeekly.reduce((s, [, c]) => s + c, 0);
+  const beiseinMonthlyTotal = beiseinMonthly.reduce((s, [, c]) => s + c, 0);
+  const beiseinAllTotal = beiseinAll.reduce((s, [, c]) => s + c, 0);
   const flightWeeklyMax = flightWeeklyRanking[0]?.[1] || 1;
   const flightMonthlyMax = flightMonthlyRanking[0]?.[1] || 1;
   const flightWeeklyTotal = flightWeeklyRanking.reduce((s, [, c]) => s + c, 0);
