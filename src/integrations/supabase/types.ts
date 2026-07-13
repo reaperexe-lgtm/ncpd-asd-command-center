@@ -465,6 +465,8 @@ export type Database = {
           image_url: string | null
           location: string | null
           name: string
+          pearl_color: string | null
+          primary_color: string | null
         }
         Insert: {
           category?: string
@@ -476,6 +478,8 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           name: string
+          pearl_color?: string | null
+          primary_color?: string | null
         }
         Update: {
           category?: string
@@ -487,6 +491,8 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           name?: string
+          pearl_color?: string | null
+          primary_color?: string | null
         }
         Relationships: []
       }
@@ -1624,6 +1630,33 @@ export type Database = {
           reward_amount?: number
           target?: number
           title?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      weekly_inactivity_warnings: {
+        Row: {
+          id: string
+          missions_count: number
+          pursuits_count: number
+          user_id: string
+          warned_at: string
+          week_start: string
+        }
+        Insert: {
+          id?: string
+          missions_count?: number
+          pursuits_count?: number
+          user_id: string
+          warned_at?: string
+          week_start: string
+        }
+        Update: {
+          id?: string
+          missions_count?: number
+          pursuits_count?: number
+          user_id?: string
+          warned_at?: string
           week_start?: string
         }
         Relationships: []
