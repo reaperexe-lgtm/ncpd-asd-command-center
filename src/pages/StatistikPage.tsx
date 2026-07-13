@@ -1014,6 +1014,19 @@ const StatistikPage = () => {
             countdown={monthlyCountdown}
           />
 
+          <BeiseinCard
+            title="Beisein (Monat)"
+            subtitle="Co-Pilot + Left- & Right-Gunner (ohne Protokollschreiber)"
+            ranking={beiseinMonthly}
+            total={beiseinMonthlyTotal}
+          />
+          <BeiseinCard
+            title="Beisein (Gesamt / Alle Protokolle)"
+            subtitle="Alle bisherigen Einsätze & 10-80 zusammen — inkl. Nachtrag aus alten Protokollen"
+            ranking={beiseinAll}
+            total={beiseinAllTotal}
+          />
+
           {monthlyEntries.length > 1 && (
             <div className="bg-card border border-border rounded-lg p-5">
               <h2 className="font-semibold text-primary mb-5">Monatliche Entwicklung</h2>
