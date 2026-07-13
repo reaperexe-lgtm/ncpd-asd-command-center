@@ -59,7 +59,6 @@ const EinsatzPage = () => {
       const { data } = await supabase.from("profiles").select("id, name, dienstnummer, internal_dienstnummer").eq("is_approved", true);
       return data || [];
     },
-    pollInterval: 60000,
   });
 
   const saveMission = useMutation({
@@ -202,7 +201,10 @@ const EinsatzPage = () => {
           </div>
           <div>
             <Label>Tatzeitraum</Label>
-            <Input type="datetime-local" step={300} value={tatzeit} onChange={(e) => setTatzeit(e.target.value)} className="mt-1 bg-background border-border" />
+            <div className="flex gap-2">
+              <Input type="datetime-local" step={300} value={tatzeit} onChange={(e) => setTatzeit(e.target.value)} className="mt-1 bg-background border-border flex-1" />
+              <Button type="button" variant="outline" onClick={() => setTatzeit(nowRoundedForInput())} className="mt-1">Jetzt</Button>
+            </div>
           </div>
         </div>
 

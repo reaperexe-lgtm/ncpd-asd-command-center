@@ -83,7 +83,6 @@ const ProtokollePage = () => {
       const { data } = await supabase.from("missions").select("*, mission_vehicles(id), gangs(name, category, image_url)").order("created_at", { ascending: false }).limit(300);
       return data || [];
     },
-    pollInterval: 60000,
   });
 
   const { data: pursuits, isLoading: pursuitsLoading } = useQuery({
@@ -92,7 +91,6 @@ const ProtokollePage = () => {
       const { data } = await supabase.from("pursuits").select("*, pursuit_photos(id)").order("pursuit_date", { ascending: false }).limit(300);
       return data || [];
     },
-    pollInterval: 60000,
   });
 
   // Volle Fahrzeug-/Foto-Details werden erst nachgeladen, wenn ein Eintrag tatsächlich aufgeklappt wird

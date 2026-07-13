@@ -43,7 +43,6 @@ const VerfolgungPage = () => {
       const { data } = await supabase.from("pursuits").select("*, pursuit_photos(*)").order("pursuit_date", { ascending: false });
       return data || [];
     },
-    pollInterval: 60000,
   });
 
   const { data: members } = useQuery({
@@ -223,7 +222,10 @@ const VerfolgungPage = () => {
             </div>
             <div>
               <Label>Datum & Uhrzeit</Label>
-              <Input type="datetime-local" step={300} className="mt-1 bg-background border-border" value={pursuitDate} onChange={(e) => setPursuitDate(e.target.value)} />
+              <div className="flex gap-2">
+                <Input type="datetime-local" step={300} className="mt-1 bg-background border-border flex-1" value={pursuitDate} onChange={(e) => setPursuitDate(e.target.value)} />
+                <Button type="button" variant="outline" onClick={() => setPursuitDate(nowRoundedForInput())} className="mt-1">Jetzt</Button>
+              </div>
             </div>
           </div>
 

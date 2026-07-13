@@ -9,6 +9,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activityLog";
+import { nowRoundedForInput } from "@/lib/dateUtils";
 
 /**
  * Converts a datetime-local string (e.g., "2025-07-13T14:30") which represents Berlin time
@@ -330,13 +331,17 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
             {/* DateTime */}
             <div className="space-y-2">
               <Label>Tatzeit (Berlin-Zeit)</Label>
-              <Input
-                type="datetime-local"
-                value={missionData.tatzeit}
-                onChange={(e) =>
-                  setMissionData({ ...missionData, tatzeit: e.target.value })
-                }
-              />
+              <div className="flex gap-2">
+                <Input
+                  type="datetime-local"
+                  value={missionData.tatzeit}
+                  onChange={(e) =>
+                    setMissionData({ ...missionData, tatzeit: e.target.value })
+                  }
+                  className="flex-1"
+                />
+                <Button type="button" variant="outline" onClick={() => setMissionData({ ...missionData, tatzeit: nowRoundedForInput() })}>Jetzt</Button>
+              </div>
             </div>
 
             {/* Suspects & Hostages */}
@@ -454,13 +459,17 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
             {/* DateTime */}
             <div className="space-y-2">
               <Label>Verfolgungsdatum (Berlin-Zeit)</Label>
-              <Input
-                type="datetime-local"
-                value={pursuitData.pursuit_date}
-                onChange={(e) =>
-                  setPursuitData({ ...pursuitData, pursuit_date: e.target.value })
-                }
-              />
+              <div className="flex gap-2">
+                <Input
+                  type="datetime-local"
+                  value={pursuitData.pursuit_date}
+                  onChange={(e) =>
+                    setPursuitData({ ...pursuitData, pursuit_date: e.target.value })
+                  }
+                  className="flex-1"
+                />
+                <Button type="button" variant="outline" onClick={() => setPursuitData({ ...pursuitData, pursuit_date: nowRoundedForInput() })}>Jetzt</Button>
+              </div>
             </div>
 
             {/* Vehicle */}
