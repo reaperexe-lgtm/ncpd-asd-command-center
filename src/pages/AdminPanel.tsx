@@ -454,7 +454,7 @@ const AdminPanel = () => {
       if (nextRoles.size) {
         const { error } = await supabase
           .from("user_roles")
-          .upsert(Array.from(nextRoles).map((role) => ({ user_id: userId, role })), { onConflict: "user_id,role" });
+          .upsert(Array.from(nextRoles).map((role) => ({ user_id: userId, role })) as any, { onConflict: "user_id,role" });
         if (error) throw error;
       }
     },
