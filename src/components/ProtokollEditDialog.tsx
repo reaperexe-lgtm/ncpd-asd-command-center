@@ -331,7 +331,7 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
             {/* DateTime */}
             <div className="space-y-2">
               <Label>Tatzeit (Berlin-Zeit)</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Input
                   type="datetime-local"
                   value={missionData.tatzeit}
@@ -340,7 +340,7 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
                   }
                   className="flex-1"
                 />
-                <Button type="button" variant="outline" onClick={() => setMissionData({ ...missionData, tatzeit: nowRoundedForInput() })}>Jetzt</Button>
+                <Button type="button" size="sm" onClick={() => setMissionData({ ...missionData, tatzeit: nowRoundedForInput() })} className="whitespace-nowrap">Jetzt</Button>
               </div>
             </div>
 
@@ -459,7 +459,7 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
             {/* DateTime */}
             <div className="space-y-2">
               <Label>Verfolgungsdatum (Berlin-Zeit)</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Input
                   type="datetime-local"
                   value={pursuitData.pursuit_date}
@@ -468,7 +468,7 @@ export function ProtokollEditDialog({ open, onOpenChange, type, data }: Protokol
                   }
                   className="flex-1"
                 />
-                <Button type="button" variant="outline" onClick={() => setPursuitData({ ...pursuitData, pursuit_date: nowRoundedForInput() })}>Jetzt</Button>
+                <Button type="button" size="sm" onClick={() => setPursuitData({ ...pursuitData, pursuit_date: nowRoundedForInput() })} className="whitespace-nowrap">Jetzt</Button>
               </div>
             </div>
 
