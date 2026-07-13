@@ -59,7 +59,7 @@ function canEditUser(currentRole: string | null, targetRole: string, isAdmin: bo
 }
 
 /** Sortiert Mitglieder nach Rang-Hierarchie, dann nach interner DN (numerisch). */
-function sortByRankAndDn<T extends { role: string; internal_dienstnummer?: string | null; name?: string }>(arr: T[]): T[] {
+function sortByRankAndDn(arr: any[]): any[] {
   return [...arr].sort((a, b) => {
     const rankDiff = (ROLE_HIERARCHY[a.role] ?? 999) - (ROLE_HIERARCHY[b.role] ?? 999);
     if (rankDiff !== 0) return rankDiff;
@@ -201,7 +201,7 @@ const AdminPanel = () => {
       });
   }, [isAdmin, activeTab]);
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users = [] as any[], isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
       const { data: profiles } = await supabase.from("profiles").select("*");
