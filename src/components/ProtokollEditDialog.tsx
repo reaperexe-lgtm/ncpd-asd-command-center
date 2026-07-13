@@ -52,7 +52,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
   const { data: gangs } = useQuery({
     queryKey: ["gangs-edit"],
     queryFn: async () => {
-      const { data } = await supabase.from("gangs").select("id, name");
+      const { data } = await supabase.from("gangs").select("id, name, image_url");
       return data || [];
     },
     enabled: type === "mission",
@@ -390,7 +390,18 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
                   <SelectTrigger className="mt-1 bg-background border-border"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Keine / Unbekannt</SelectItem>
-                    {gangs?.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                    {gangs?.map((g: any) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        <span className="flex items-center gap-2">
+                          {g.image_url ? (
+                            <img src={g.image_url} alt="" loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-border shrink-0" />
+                          ) : (
+                            <span className="w-5 h-5 rounded-full bg-muted shrink-0" />
+                          )}
+                          {g.name}
+                        </span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

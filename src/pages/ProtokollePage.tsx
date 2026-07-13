@@ -303,8 +303,13 @@ const ProtokollePage = () => {
 
                         {/* Gang badge */}
                         {(m.gangs as any)?.name && (
-                          <span className="text-sm px-3 py-1.5 rounded-lg border-2 font-black bg-purple-500/20 text-purple-300 border-purple-500/40 flex items-center gap-1.5 shadow-md shadow-purple-500/10">
-                            <Siren className="w-4 h-4" />{(m.gangs as any).name}
+                          <span className="text-sm pl-1.5 pr-3 py-1.5 rounded-lg border-2 font-black bg-purple-500/20 text-purple-300 border-purple-500/40 flex items-center gap-1.5 shadow-md shadow-purple-500/10">
+                            {(m.gangs as any)?.image_url ? (
+                              <img src={(m.gangs as any).image_url} alt="" loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-purple-400/40 shrink-0" />
+                            ) : (
+                              <Siren className="w-4 h-4" />
+                            )}
+                            {(m.gangs as any).name}
                           </span>
                         )}
                         {m.gang_info && (
