@@ -80,7 +80,7 @@ const ProtokollePage = () => {
   const { data: missions, isLoading: missionsLoading } = useQuery({
     queryKey: ["missions"],
     queryFn: async () => {
-      const { data } = await supabase.from("missions").select("*, mission_vehicles(*), gangs(name, category, image_url)").order("created_at", { ascending: false }).limit(300);
+      const { data } = await supabase.from("missions").select("*, mission_vehicles(id), gangs(name, category, image_url)").order("created_at", { ascending: false }).limit(300);
       return data || [];
     },
   });
@@ -88,9 +88,32 @@ const ProtokollePage = () => {
   const { data: pursuits, isLoading: pursuitsLoading } = useQuery({
     queryKey: ["pursuits"],
     queryFn: async () => {
-      const { data } = await supabase.from("pursuits").select("*, pursuit_photos(*)").order("pursuit_date", { ascending: false }).limit(300);
+      const { data } = await supabase.from("pursuits").select("*, pursuit_photos(id)").order("pursuit_date", { ascending: false }).limit(300);
       return data || [];
     },
+  });
+
+  // Volle Fahrzeug-/Foto-Details werden erst nachgeladen, wenn ein Eintrag tatsächlich aufgeklappt wird
+  // (statt sie für alle bis zu 300 Einträge sofort mitzuladen) -> deutlich kleinerer initialer Payload.
+  const expandedMissionId = expandedId && !expandedId.startsWith("p-") ? expandedId : null;
+  const expandedPursuitId = expandedId && expandedId.startsWith("p-") ? expandedId.slice(2) : null;
+
+  const { data: expandedVehicles, isLoading: expandedVehiclesLoading } = useQuery({
+    queryKey: ["mission-vehicles-detail", expandedMissionId],
+    queryFn: async () => {
+      const { data } = await supabase.from("mission_vehicles").select("*").eq("mission_id", expandedMissionId as string);
+      return data || [];
+    },
+    enabled: !!expandedMissionId,
+  });
+
+  const { data: expandedPhotos, isLoading: expandedPhotosLoading } = useQuery({
+    queryKey: ["pursuit-photos-detail", expandedPursuitId],
+    queryFn: async () => {
+      const { data } = await supabase.from("pursuit_photos").select("*").eq("pursuit_id", expandedPursuitId as string);
+      return data || [];
+    },
+    enabled: !!expandedPursuitId,
   });
 
   const { data: profiles } = useQuery({
@@ -414,8 +437,11 @@ const ProtokollePage = () => {
                           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3 flex items-center gap-2 font-black">
                             <Car className="w-4 h-4" /> Fahrzeuge ({vehicles.length})
                           </p>
+                          {expandedVehiclesLoading ? (
+                            <p className="text-xs text-muted-foreground italic">Lade Fahrzeugdetails...</p>
+                          ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {vehicles.map((v: any) => (
+                            {(expandedVehicles || []).map((v: any) => (
                               <div key={v.id} className="bg-gradient-to-br from-background/90 to-background/50 border border-border rounded-xl p-4 space-y-3 hover:border-primary/20 transition-all shadow-md shadow-black/5">
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="text-sm font-bold text-primary">{v.vehicle_type} – {v.model}</p>
@@ -442,6 +468,7 @@ const ProtokollePage = () => {
                               </div>
                             ))}
                           </div>
+                          )}
                         </div>
                       )}
 
@@ -571,8 +598,11 @@ const ProtokollePage = () => {
                           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3 flex items-center gap-2 font-black">
                             <Image className="w-4 h-4" /> Fotos ({pPhotos.length})
                           </p>
+                          {expandedPhotosLoading ? (
+                            <p className="text-xs text-muted-foreground italic">Lade Fotos...</p>
+                          ) : (
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {pPhotos.map((ph: any) => (
+                            {(expandedPhotos || []).map((ph: any) => (
                               <img
                                 key={ph.id}
                                 src={ph.image_url}
@@ -582,6 +612,7 @@ const ProtokollePage = () => {
                               />
                             ))}
                           </div>
+                          )}
                         </div>
                       )}
 

@@ -51,9 +51,9 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
   });
 
   const { data: gangs } = useQuery({
-    queryKey: ["gangs-edit"],
+    queryKey: ["gangs"],
     queryFn: async () => {
-      const { data } = await supabase.from("gangs").select("id, name, category");
+      const { data } = await supabase.from("gangs").select("*");
       return data || [];
     },
     enabled: type === "mission",
@@ -240,6 +240,7 @@ export const ProtokollEditDialog = ({ open, onOpenChange, type, data }: Props) =
     onSuccess: (result) => {
       toast.success("Protokoll aktualisiert");
       qc.invalidateQueries({ queryKey: ["missions"] });
+      qc.invalidateQueries({ queryKey: ["mission-vehicles-detail"] });
       const fieldChanges = result?.fieldChanges || [];
       const vehicleChanges = result?.vehicleChanges || [];
       const summary: string[] = [];
