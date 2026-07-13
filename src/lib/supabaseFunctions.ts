@@ -21,6 +21,53 @@ export async function getSupabaseFunctionAuthHeaders(
   };
 }
 
+/**
+ * Invokes a Supabase Edge Function with the current user's auth header and
+ * unwraps the REAL error message.
+ *
+ * supabase-js only surfaces a generic "Edge Function returned a non-2xx
+ * status code" whenever the function responds with a non-2xx status — the
+ * actual reason (e.g. a Discord API error) is in the response body, which
+ * gets discarded unless we read it out of `error.context` ourselves.
+ */
+export async function invokeEdgeFunction<T = any>(
+  supabase: Pick<SupabaseClient, "auth" | "functions">,
+  functionName: string,
+  body: Record<string, unknown>,
+): Promise<T> {
+  const headers = await getSupabaseFunctionAuthHeaders(supabase);
+  const { data, error } = await supabase.functions.invoke(functionName, {
+    body,
+    headers,
+  });
+
+  if (error) {
+    let detail = error.message;
+    const context = (error as any)?.context;
+    try {
+      if (context && typeof context.clone === "function") {
+        const parsed = await context.clone().json();
+        if (parsed?.error) detail = parsed.error;
+      } else if (context && typeof context.json === "function") {
+        const parsed = await context.json();
+        if (parsed?.error) detail = parsed.error;
+      } else if (context && typeof context.text === "function") {
+        const text = await context.text();
+        if (text) detail = text;
+      }
+    } catch (_e) {
+      // Response body couldn't be parsed — fall back to the generic message.
+    }
+    throw new Error(detail);
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data as T;
+}
+
 export async function cleanupOldTrialMemberExamResults(
   supabase: Pick<SupabaseClient, "from">,
 ) {

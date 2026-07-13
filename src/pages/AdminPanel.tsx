@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { logActivity } from "@/lib/activityLog";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteUserAccount, getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
+import { deleteUserAccount, getSupabaseFunctionAuthHeaders, invokeEdgeFunction } from "@/lib/supabaseFunctions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -1827,22 +1827,10 @@ const AdminPanel = () => {
                     }
                     setSendingAufstellung(true);
                     try {
-                      try {
-                        const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
-                        const { data, error } = await supabase.functions.invoke("discord-notify", {
-                          body: {
-                            type: "aufstellung_announcement",
-                            data: { start_at: new Date(aufstellungAt).toISOString(), ort: aufstellungOrt },
-                          },
-                          headers,
-                        });
-                        if (error) throw error;
-                        if (data?.error) throw new Error(data.error);
-                      } catch (e) {
-                        throw e;
-                      }
-                      if (error) throw error;
-                      if (data?.error) throw new Error(data.error);
+                      await invokeEdgeFunction(supabase as any, "discord-notify", {
+                        type: "aufstellung_announcement",
+                        data: { start_at: new Date(aufstellungAt).toISOString(), ort: aufstellungOrt },
+                      });
                       toast.success("Ankündigung gepostet");
                       logActivity("Aufstellungs-Ankündigung manuell gesendet", "admin");
                     } catch (e: any) {
@@ -1905,16 +1893,10 @@ const AdminPanel = () => {
                   onClick={async () => {
                     setSendingSaturdayTest(true);
                     try {
-                      const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
-                      const { data, error } = await supabase.functions.invoke("discord-notify", {
-                        body: {
-                          type: "aufstellung_saturday_thread",
-                          data: { force: true },
-                        },
-                        headers,
+                      await invokeEdgeFunction(supabase as any, "discord-notify", {
+                        type: "aufstellung_saturday_thread",
+                        data: { force: true },
                       });
-                      if (error) throw error;
-                      if (data?.error) throw new Error(data.error);
                       toast.success("Samstags-Thread gepostet");
                       logActivity("Samstags-Aufstellungs-Thread manuell getestet", "admin");
                     } catch (e: any) {
@@ -1946,13 +1928,10 @@ const AdminPanel = () => {
                     try {
                       const triggeredBy =
                         (user?.user_metadata as any)?.name || user?.email || "Admin";
-                      const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
-                      const { data, error } = await supabase.functions.invoke("discord-notify", {
-                        body: { type: "test_channel_message", data: { triggered_by: triggeredBy } },
-                        headers,
+                      await invokeEdgeFunction(supabase as any, "discord-notify", {
+                        type: "test_channel_message",
+                        data: { triggered_by: triggeredBy },
                       });
-                      if (error) throw error;
-                      if (data?.error) throw new Error(data.error);
                       toast.success("Testnachricht gesendet");
                       logActivity("Discord Testnachricht gesendet", "admin");
                     } catch (e: any) {
