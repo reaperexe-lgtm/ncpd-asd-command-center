@@ -261,15 +261,26 @@ const ProtokollePage = () => {
                       : "border border-border hover:border-primary/25 shadow-md shadow-black/10"
                   }`}
                 >
-                  {/* Header - gradient bar based on location type */}
+                  {/* Header - gradient bar based on location type, or gang photo banner if linked */}
                   <button
                     onClick={() => setExpandedId(expanded ? null : m.id)}
-                    className={`w-full text-left group relative bg-gradient-to-r ${style.bg} backdrop-blur-sm`}
+                    className={`w-full text-left group relative ${(m.gangs as any)?.image_url ? "bg-background" : `bg-gradient-to-r ${style.bg}`} backdrop-blur-sm overflow-hidden`}
                   >
+                    {(m.gangs as any)?.image_url && (
+                      <>
+                        <div
+                          className="absolute inset-0 bg-cover bg-center opacity-45 group-hover:opacity-55 transition-opacity duration-300"
+                          style={{ backgroundImage: `url(${(m.gangs as any).image_url})` }}
+                        />
+                        <div className={`absolute inset-0 bg-gradient-to-r ${style.bg} opacity-70`} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+                      </>
+                    )}
+
                     {/* Subtle top accent line */}
                     <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${style.bg} opacity-60`} />
 
-                    <div className="px-5 py-4 flex items-center justify-between">
+                    <div className="relative z-10 px-5 py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-wrap">
                         {/* Location badge - bold & vivid */}
                         <span className={`text-sm px-4 py-1.5 rounded-lg font-black tracking-wide border-2 ${style.border} ${style.text} bg-background/40 backdrop-blur-sm shadow-inner`}>
@@ -303,17 +314,12 @@ const ProtokollePage = () => {
 
                         {/* Gang badge */}
                         {(m.gangs as any)?.name && (
-                          <span className="text-sm pl-1.5 pr-3 py-1.5 rounded-lg border-2 font-black bg-purple-500/20 text-purple-300 border-purple-500/40 flex items-center gap-1.5 shadow-md shadow-purple-500/10">
-                            {(m.gangs as any)?.image_url ? (
-                              <img src={(m.gangs as any).image_url} alt="" loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-purple-400/40 shrink-0" />
-                            ) : (
-                              <Siren className="w-4 h-4" />
-                            )}
-                            {(m.gangs as any).name}
+                          <span className="text-sm px-3 py-1.5 rounded-lg border-2 font-black bg-purple-500/20 text-purple-300 border-purple-500/40 flex items-center gap-1.5 shadow-md shadow-purple-500/10 backdrop-blur-sm">
+                            <Siren className="w-4 h-4" />{(m.gangs as any).name}
                           </span>
                         )}
                         {m.gang_info && (
-                          <span className="text-xs px-2.5 py-1 rounded-lg border bg-red-500/15 text-red-300 border-red-500/30 font-semibold">{m.gang_info}</span>
+                          <span className="text-xs px-2.5 py-1 rounded-lg border bg-red-500/15 text-red-300 border-red-500/30 font-semibold backdrop-blur-sm">{m.gang_info}</span>
                         )}
                       </div>
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 group-hover:text-foreground ${expanded ? "rotate-180" : ""}`} />
