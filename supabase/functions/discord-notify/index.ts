@@ -300,7 +300,9 @@ Deno.serve(async (req) => {
       // Fixed channel for Übungen announcements
       const channelId = "1374418517968945243";
 
-      const startDate = new Date(data.start_at);
+      const startDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(data.start_at) && !data.start_at.endsWith('Z')
+        ? new Date(data.start_at + 'Z')
+        : new Date(data.start_at);
       const dateStr = startDate.toLocaleString("de-DE", {
         weekday: "long",
         day: "2-digit",
@@ -430,7 +432,11 @@ Deno.serve(async (req) => {
       }
       if (!startAt) throw new Error("Kein Aufstellungs-Datum konfiguriert");
 
-      const startDate = new Date(startAt);
+      // If startAt is datetime-local format (not ISO), handle it as UTC
+      // data.start_at should be already ISO if from client, but database values may be datetime-local
+      const startDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(startAt) && !startAt.endsWith('Z')
+        ? new Date(startAt + 'Z')  // Treat as UTC if no Z suffix
+        : new Date(startAt);
       const dateStr = startDate.toLocaleString("de-DE", {
         weekday: "long",
         day: "2-digit",
@@ -514,11 +520,16 @@ Deno.serve(async (req) => {
       }
 
       const timeStr = startAt
-        ? new Date(startAt).toLocaleString("de-DE", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Europe/Berlin",
-          }) + " Uhr"
+        ? (() => {
+            const date = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(startAt) && !startAt.endsWith('Z')
+              ? new Date(startAt + 'Z')
+              : new Date(startAt);
+            return date.toLocaleString("de-DE", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Europe/Berlin",
+            }) + " Uhr";
+          })()
         : "18:00 Uhr";
 
       const mentionRoleId = sanitizeDiscordId(Deno.env.get("DISCORD_ANNOUNCEMENTS_ROLE_ID"));

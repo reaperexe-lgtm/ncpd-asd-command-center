@@ -1848,7 +1848,7 @@ const AdminPanel = () => {
                   onClick={async () => {
                     setSavingAufstellung(true);
                     try {
-                      const isoAt = aufstellungAt ? new Date(aufstellungAt).toISOString() : "";
+                      const isoAt = aufstellungAt ? convertLocalToUTC(aufstellungAt) : "";
                       const updates = [
                         { permission_key: "aufstellung_next_at", role: isoAt },
                         { permission_key: "aufstellung_ort", role: aufstellungOrt.trim() || "Vespucci Police Department Dach" },
