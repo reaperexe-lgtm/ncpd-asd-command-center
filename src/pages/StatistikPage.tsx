@@ -819,6 +819,62 @@ const StatistikPage = () => {
     </div>
   );
 
+  const BeiseinCard = ({ title, ranking, total, subtitle }: { title: string; ranking: [string, number][]; total: number; subtitle?: string }) => {
+    const max = ranking[0]?.[1] || 1;
+    const [expanded, setExpanded] = useState(false);
+    const shown = expanded ? ranking : ranking.slice(0, 10);
+    return (
+      <div className="bg-card border border-border rounded-lg p-5 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <div>
+            <h2 className="font-semibold text-primary flex items-center gap-2">
+              <Plane className="w-5 h-5" /> {title}
+            </h2>
+            {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
+          </div>
+          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+            Gesamt: {total}
+          </span>
+        </div>
+        {ranking.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6 flex-1">Noch keine Beisein-Einträge</p>
+        ) : (
+          <>
+            <div className="space-y-3 flex-1">
+              {shown.map(([name, count], i) => (
+                <div key={name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+                      {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+                    </span>
+                    <div
+                      className="h-9 rounded-md flex items-center px-3 transition-all duration-500 min-w-0"
+                      style={{
+                        width: `${Math.max((count / max) * 100, 20)}%`,
+                        backgroundColor: `hsl(160, 55%, ${45 + (i % 8) * 3}%)`,
+                      }}
+                    >
+                      <span className="text-xs font-bold text-white truncate drop-shadow-md">{name}</span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+                </div>
+              ))}
+            </div>
+            {ranking.length > 10 && (
+              <button
+                className="text-xs text-primary hover:underline mt-3 self-start"
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? "Weniger anzeigen" : `Alle ${ranking.length} anzeigen`}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
