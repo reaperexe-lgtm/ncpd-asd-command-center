@@ -121,6 +121,7 @@ const AdminPanel = () => {
   const [aufstellungAuto, setAufstellungAuto] = useState(true);
   const [savingAufstellung, setSavingAufstellung] = useState(false);
   const [sendingAufstellung, setSendingAufstellung] = useState(false);
+  const [sendingSaturdayTest, setSendingSaturdayTest] = useState(false);
   const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
@@ -1777,7 +1778,9 @@ const AdminPanel = () => {
                 <Megaphone className="w-4 h-4" /> Wöchentliche Aufstellung — Discord Ankündigung
               </h2>
               <p className="text-xs text-muted-foreground">
-                Diese Ankündigung wird automatisch jeden <strong>Freitag um 18:00 Uhr</strong> (deutsche Zeit) im Ankündigungs-Channel gepostet.
+                Diese Ankündigung wird automatisch jeden <strong>Freitag um 12:00 Uhr</strong> (deutsche Zeit) im Ankündigungs-Channel gepostet —
+                für die Aufstellung, die dann am darauffolgenden <strong>Sonntag um 18:00 Uhr</strong> stattfindet.
+                Der Bot fügt der Nachricht automatisch die Reaktionen ✅ und ❌ hinzu.
                 Setze hier das Datum & die Uhrzeit der nächsten Aufstellung sowie den Ort.
               </p>
 
@@ -1851,7 +1854,7 @@ const AdminPanel = () => {
                   disabled={sendingAufstellung || !aufstellungAt}
                   className="gap-1.5"
                 >
-                  <Send className="w-3.5 h-3.5" /> Jetzt testen / senden
+                  <Send className="w-3.5 h-3.5" /> Sonntagsaufstellung jetzt testen / senden
                 </Button>
                 <Button
                   onClick={async () => {
@@ -1882,6 +1885,48 @@ const AdminPanel = () => {
                   className="gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
+            {/* Samstags-Aufstellungs-Thread */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Megaphone className="w-4 h-4" /> Samstags-Aufstellungs-Thread — Discord
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Wird automatisch jeden <strong>Samstag um 10:00 Uhr</strong> (deutsche Zeit) im dafür vorgesehenen
+                Channel gepostet und öffnet dort einen Thread mit Ping der Leitungsrolle. Unabhängig von der
+                Sonntagsaufstellung — hier separat testbar.
+              </p>
+              <div className="flex justify-end pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setSendingSaturdayTest(true);
+                    try {
+                      const headers = await getSupabaseFunctionAuthHeaders(supabase as any);
+                      const { data, error } = await supabase.functions.invoke("discord-notify", {
+                        body: {
+                          type: "aufstellung_saturday_thread",
+                          data: { force: true },
+                        },
+                        headers,
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      toast.success("Samstags-Thread gepostet");
+                      logActivity("Samstags-Aufstellungs-Thread manuell getestet", "admin");
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Senden");
+                    } finally {
+                      setSendingSaturdayTest(false);
+                    }
+                  }}
+                  disabled={sendingSaturdayTest}
+                  className="gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Samstags-Thread jetzt testen
                 </Button>
               </div>
             </div>

@@ -397,6 +397,23 @@ Deno.serve(async (req) => {
       );
       if (!channelId) throw new Error("DISCORD_ANNOUNCEMENTS_CHANNEL_ID not set");
 
+      // Der Cron-Job ruft diese Function 2x auf (Freitag 10 & 11 Uhr UTC), um
+      // Sommer-/Winterzeit abzudecken. Nur der Aufruf, der wirklich 12 Uhr
+      // Berlin-Zeit trifft, postet tatsächlich. Manuelles Senden/Testen aus dem
+      // Admin-Panel (data.start_at gesetzt) sowie data.force = true ignorieren
+      // das und posten sofort.
+      if (data?.auto === true && data?.force !== true) {
+        const now = new Date();
+        const berlinHour = Number(
+          new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", hour12: false }).format(now),
+        );
+        if (berlinHour !== 12) {
+          return new Response(JSON.stringify({ success: true, skipped: true, reason: "not 12:00 Europe/Berlin yet" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
       // Load configured datetime + location from settings if not provided
       let startAt: string | undefined = data?.start_at;
       let ort: string = data?.ort ?? "Vespucci Police Department Dach";
