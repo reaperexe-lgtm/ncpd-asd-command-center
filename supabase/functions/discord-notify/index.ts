@@ -534,6 +534,93 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (type === "aufstellung_saturday_thread") {
+      // Fester Channel für die samstägliche Aufstellungs-Ankündigung inkl. Thread
+      const channelId = sanitizeDiscordId(
+        Deno.env.get("DISCORD_SATURDAY_AUFSTELLUNG_CHANNEL_ID") || "1380293890732458124"
+      );
+      if (!channelId) throw new Error("Kein Channel für die Samstags-Aufstellung konfiguriert");
+
+      const ASD_LEITUNG_ROLE_ID = "1354392542178840686";
+
+      // Der Cron-Job ruft diese Function 2x auf (08 & 09 Uhr UTC), um Sommer-/
+      // Winterzeit abzudecken. Nur der Aufruf, der wirklich 10 Uhr Berlin-Zeit
+      // trifft, postet tatsächlich. Mit data.force = true (manueller Test) wird
+      // das ignoriert und sofort gepostet.
+      const now = new Date();
+      const berlinHour = Number(
+        new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", hour12: false }).format(now),
+      );
+      const force = data?.force === true;
+      if (!force && berlinHour !== 10) {
+        return new Response(JSON.stringify({ success: true, skipped: true, reason: "not 10:00 Europe/Berlin yet" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const dateStr = now.toLocaleDateString("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: "Europe/Berlin",
+      });
+
+      const content = `ASD Aufstellung ${dateStr}`;
+
+      try {
+        // 1) Hauptnachricht im Channel posten
+        const msg = await sendChannelMessage(botToken, channelId, content);
+
+        // 2) Thread auf dieser Nachricht öffnen
+        const threadRes = await fetch(
+          `${DISCORD_API}/channels/${channelId}/messages/${msg.id}/threads`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bot ${botToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: `ASD Aufstellung ${dateStr}`,
+              auto_archive_duration: 1440,
+            }),
+          },
+        );
+        if (!threadRes.ok) {
+          const err = await threadRes.text();
+          throw new Error(`Thread konnte nicht erstellt werden: ${err}`);
+        }
+        const thread = await threadRes.json();
+
+        // 3) Leitungsrolle im Thread pingen
+        const pingRes = await fetch(`${DISCORD_API}/channels/${thread.id}/messages`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: `<@&${ASD_LEITUNG_ROLE_ID}>`,
+            allowed_mentions: { parse: [], roles: [ASD_LEITUNG_ROLE_ID] },
+          }),
+        });
+        if (!pingRes.ok) {
+          const err = await pingRes.text();
+          throw new Error(`Ping im Thread fehlgeschlagen: ${err}`);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message_id: msg.id, thread_id: thread.id }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (type === "achievement_unlocked") {
       const tierEmoji: Record<string, string> = {
         bronze: "🥉",
