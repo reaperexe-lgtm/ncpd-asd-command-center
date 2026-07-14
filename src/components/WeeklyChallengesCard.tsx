@@ -154,42 +154,64 @@ const WeeklyChallengesCard = () => {
         const value = (metrics as any)[c.metric] || 0;
         const existing = completions?.find((x: any) => x.challenge_id === c.id);
         if (existing?.reward_paid) continue;
-        if (value >= c.target) {
-          if (!existing) {
-            await supabase.from("challenge_completions").insert({ challenge_id: c.id, user_id: user.id, reward_paid: false });
-          }
+          if (value >= c.target) {
+          // Ensure a completion row exists and atomically flip reward_paid=false -> true.
+          // This avoids duplicate notifications when multiple clients/runs race.
+          try {
+            await supabase.from("challenge_completions").upsert(
+              { challenge_id: c.id, user_id: user.id, reward_paid: false },
+              { onConflict: "challenge_id,user_id" },
+            );
 
-          const destination = getRewardDestination(c);
-          if (destination === "casino") {
-            // Direkt aufs Gambling-Konto gutschreiben
-            const { data: bal } = await supabase.from("casino_balances").select("balance").eq("user_id", user.id).maybeSingle();
-            const newBal = (bal?.balance || 0) + c.reward_amount;
-            await supabase.from("casino_balances").upsert({ user_id: user.id, balance: newBal } as any, { onConflict: "user_id" });
-            toast.success(`🏆 Challenge "${c.title}" geschafft! +$${c.reward_amount.toLocaleString()} auf das Gambling-Konto`);
-          } else {
-            // Ingame-Geld: keine automatische Gutschrift, stattdessen Discord-Benachrichtigung an die Direction
-            try {
-              await supabase.functions.invoke("discord-notify", {
-                body: {
-                  type: "challenge_completed",
-                  data: {
-                    user_id: user.id,
-                    user_name: profile.name || "",
-                    dienstnummer: profile.dienstnummer ?? null,
-                    challenge_title: c.title,
-                    challenge_description: c.description,
-                    reward_amount: c.reward_amount,
-                  },
-                },
-              });
-              toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
-            } catch (e) {
-              toast.success(`🏆 Challenge "${c.title}" geschafft! Bitte melde dich bei der Direction für deine $${c.reward_amount.toLocaleString()}.`);
+            const { data: updated } = await supabase
+              .from("challenge_completions")
+              .update({ reward_paid: true })
+              .eq("challenge_id", c.id)
+              .eq("user_id", user.id)
+              .eq("reward_paid", false)
+              .select("id");
+
+            // If we updated a row (i.e. transitioned false->true), we're the first actor
+            // and should perform the reward logic (notify / credit casino).
+            if (!updated || (Array.isArray(updated) && updated.length === 0)) {
+              // Someone else already processed this completion
+              refetchComp();
+              continue;
             }
-          }
 
-          await supabase.from("challenge_completions").update({ reward_paid: true }).eq("challenge_id", c.id).eq("user_id", user.id);
-          refetchComp();
+            const destination = getRewardDestination(c);
+            if (destination === "casino") {
+              const { data: bal } = await supabase.from("casino_balances").select("balance").eq("user_id", user.id).maybeSingle();
+              const newBal = (bal?.balance || 0) + c.reward_amount;
+              await supabase.from("casino_balances").upsert({ user_id: user.id, balance: newBal } as any, { onConflict: "user_id" });
+              toast.success(`🏆 Challenge "${c.title}" geschafft! +$${c.reward_amount.toLocaleString()} auf das Gambling-Konto`);
+            } else {
+              try {
+                await supabase.functions.invoke("discord-notify", {
+                  body: {
+                    type: "challenge_completed",
+                    data: {
+                      user_id: user.id,
+                      user_name: profile.name || "",
+                      dienstnummer: profile.dienstnummer ?? null,
+                      challenge_title: c.title,
+                      challenge_description: c.description,
+                      reward_amount: c.reward_amount,
+                    },
+                  },
+                });
+                toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
+              } catch (e) {
+                toast.success(`🏆 Challenge "${c.title}" geschafft! Bitte melde dich bei der Direction für deine $${c.reward_amount.toLocaleString()}.`);
+              }
+            }
+
+            refetchComp();
+          } catch (e) {
+            console.error("[WeeklyChallenges] error processing completion:", e);
+            // Best effort: refresh completions so UI reflects current state
+            refetchComp();
+          }
         }
       }
     };
