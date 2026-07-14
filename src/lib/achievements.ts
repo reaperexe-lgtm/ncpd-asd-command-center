@@ -54,9 +54,15 @@ export async function computeMetrics(userId: string, userName: string, dienstnum
     Promise.all([
       supabase.from("missions").select("co_pilot, left_gunner, right_gunner, protokollschreiber, created_by"),
       supabase.from("pursuits").select("co_pilot, left_gunner, right_gunner, protokollschreiber, created_by"),
-    ]).then(([missionsCrew, pursuitsCrew]) => {
+      supabase.from("profiles").select("id, name"),
+    ]).then(([missionsCrew, pursuitsCrew, profilesRes]) => {
       const rows = [...(missionsCrew.data || []), ...(pursuitsCrew.data || [])];
-      return { count: countHeliTeilnehmerForUser(rows as any[], userName, userId) } as any;
+      const writerNameById = new Map<string, string>(
+        ((profilesRes.data || []) as Array<{ id: string; name: string | null }>)
+          .filter((p) => p.id && p.name)
+          .map((p) => [p.id, p.name as string]),
+      );
+      return { count: countHeliTeilnehmerForUser(rows as any[], userName, userId, writerNameById) } as any;
     }),
     supabase.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
     supabase.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),
