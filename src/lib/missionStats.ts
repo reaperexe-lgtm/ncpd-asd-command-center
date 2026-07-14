@@ -40,6 +40,14 @@ export function countCrewParticipationsForUser(
 // zählt ein Eintrag nicht, wenn dieselbe Person für diese Mission/Verfolgung auch der
 // Protokollschreiber ist (sonst würde man für die eigene Meldung zusätzlich als
 // "Teilnehmer" gutgeschrieben werden).
+type WriterNameLookup = Map<string, string> | Record<string, string>;
+
+function resolveWriterName(lookup: WriterNameLookup | undefined, id: string): string {
+  if (!lookup || !id) return "";
+  if (lookup instanceof Map) return lookup.get(id) || "";
+  return lookup[id] || "";
+}
+
 export function countHeliTeilnehmerForUser(
   entries: Array<{
     co_pilot?: string | null;
@@ -50,15 +58,20 @@ export function countHeliTeilnehmerForUser(
   }>,
   userName: string,
   userId?: string | null,
+  writerNameById?: WriterNameLookup,
 ) {
   const normalizedUserName = normalizeName(userName);
   if (!normalizedUserName) return 0;
 
   return entries.filter((entry) => {
-    const writer = entry.protokollschreiber?.trim() || entry.created_by?.trim() || "";
-    const normalizedWriter = normalizeName(writer);
+    const writerId = entry.protokollschreiber?.trim() || entry.created_by?.trim() || "";
+    // Statistik-Parität: Protokollschreiber wird per ID ODER per aufgelöstem
+    // Profilnamen ausgeschlossen (normalisiert, damit Groß/Kleinschreibung
+    // und diakritische Zeichen egal sind).
+    const resolvedWriterName = resolveWriterName(writerNameById, writerId);
+    const normalizedWriter = normalizeName(resolvedWriterName);
     const isWriter = Boolean(
-      (userId && writer && writer === userId) ||
+      (userId && writerId && writerId === userId) ||
       (normalizedWriter && normalizedWriter === normalizedUserName),
     );
 

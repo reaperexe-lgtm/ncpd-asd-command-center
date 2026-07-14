@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     const [
       missionsRes, missionsWeekRes, pursuitsRes, pursuitsWeekRes,
-      protocolsRes, crewMissionsRes, crewPursuitsRes, formationsRes, uebungenRes,
+      protocolsRes, crewMissionsRes, crewPursuitsRes, profilesRes, formationsRes, uebungenRes,
       theoryRes, practicalRes, balanceRes, challengesRes, jackpotRes,
     ] = await Promise.all([
       admin.from("missions").select("id", { count: "exact", head: true }).eq("created_by", userId),
@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
       admin.from("missions").select("id", { count: "exact", head: true }).eq("protokollschreiber", userId),
       admin.from("missions").select("co_pilot, left_gunner, right_gunner, protokollschreiber, created_by"),
       admin.from("pursuits").select("co_pilot, left_gunner, right_gunner, protokollschreiber, created_by"),
+      admin.from("profiles").select("id, name"),
       admin.from("formation_protocols").select("id", { count: "exact", head: true }).eq("created_by", userId),
       admin.from("uebung_teilnahmen").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "zusage"),
       dienstnummer
@@ -95,6 +96,12 @@ Deno.serve(async (req) => {
       admin.from("activity_logs").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("action", "casino_jackpot"),
     ]);
 
+    const writerNameById = new Map<string, string>(
+      ((profilesRes.data || []) as Array<{ id: string; name: string | null }>)
+        .filter((p) => p.id && p.name)
+        .map((p) => [p.id, p.name as string]),
+    );
+
     const metrics = {
       missions_total: missionsRes.count || 0,
       missions_week: missionsWeekRes.count || 0,
@@ -105,6 +112,7 @@ Deno.serve(async (req) => {
         [...(crewMissionsRes.data || []), ...(crewPursuitsRes.data || [])] as any[],
         userName,
         userId,
+        writerNameById,
       ),
       formations_total: formationsRes.count || 0,
       uebungen_attended: uebungenRes.count || 0,
