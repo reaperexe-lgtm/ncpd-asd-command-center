@@ -43,15 +43,17 @@ export function countHeliTeilnehmerForUser(
   userId?: string | null,
 ) {
   if (!userName?.trim()) return 0;
+
   const normalized = userName.trim().toLowerCase();
   return entries.filter((entry) => {
-    const crew = [entry.co_pilot, entry.left_gunner, entry.right_gunner]
-      .filter((value): value is string => Boolean(value));
-    const isCrew = crew.some((value) => value.trim().toLowerCase() === normalized);
-    if (!isCrew) return false;
-    if (!userId) return true;
-    const writer = entry.protokollschreiber?.trim();
-    const isWriter = writer ? writer === userId : entry.created_by === userId;
-    return !isWriter;
+    const writer = entry.protokollschreiber?.trim() || entry.created_by?.trim() || "";
+    const isWriter = Boolean(userId && writer && writer === userId);
+
+    const matchingRoles = [entry.co_pilot, entry.left_gunner, entry.right_gunner].filter(
+      (value): value is string => Boolean(value?.trim()),
+    );
+
+    const isCrew = matchingRoles.some((value) => value.trim().toLowerCase() === normalized);
+    return isCrew && !isWriter;
   }).length;
 }

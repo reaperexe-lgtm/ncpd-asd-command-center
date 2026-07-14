@@ -60,4 +60,15 @@ describe("countHeliTeilnehmerForUser", () => {
 
     expect(countHeliTeilnehmerForUser(entries, "Alice")).toBe(1);
   });
+
+  it("counts only co-pilot, left gunner, and right gunner roles", () => {
+    const entries = [
+      { pilot: "Alice", co_pilot: null, left_gunner: null, right_gunner: null },
+      { pilot: null, co_pilot: "Alice", left_gunner: null, right_gunner: null },
+      { pilot: null, co_pilot: null, left_gunner: "Alice", right_gunner: null },
+      { pilot: null, co_pilot: null, left_gunner: null, right_gunner: "Alice" },
+    ] as any[];
+
+    expect(countHeliTeilnehmerForUser(entries, "Alice")).toBe(3);
+  });
 });
