@@ -59,6 +59,8 @@ describe("countHeliTeilnehmerForUser", () => {
     ] as any[];
 
     expect(countHeliTeilnehmerForUser(entries, "Alice")).toBe(1);
+  });
+
   it("excludes writer via resolved profile name (Statistik parity, case/diacritics insensitive)", () => {
     const entries = [
       // Writer id differs from user id, but the writer's resolved name matches the crew name
