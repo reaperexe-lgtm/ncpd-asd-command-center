@@ -1,3 +1,12 @@
+function normalizeName(value?: string | null): string {
+  return value
+    ?.normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim() || "";
+}
+
 export function countMissionsForUser(missions: Array<{ created_by?: string | null; protokollschreiber?: string | null }>, userId: string) {
   return missions.filter((mission) => {
     const writer = mission.protokollschreiber?.trim();
@@ -42,18 +51,22 @@ export function countHeliTeilnehmerForUser(
   userName: string,
   userId?: string | null,
 ) {
-  if (!userName?.trim()) return 0;
+  const normalizedUserName = normalizeName(userName);
+  if (!normalizedUserName) return 0;
 
-  const normalized = userName.trim().toLowerCase();
   return entries.filter((entry) => {
     const writer = entry.protokollschreiber?.trim() || entry.created_by?.trim() || "";
-    const isWriter = Boolean(userId && writer && writer === userId);
-
-    const matchingRoles = [entry.co_pilot, entry.left_gunner, entry.right_gunner].filter(
-      (value): value is string => Boolean(value?.trim()),
+    const normalizedWriter = normalizeName(writer);
+    const isWriter = Boolean(
+      (userId && writer && writer === userId) ||
+      (normalizedWriter && normalizedWriter === normalizedUserName),
     );
 
-    const isCrew = matchingRoles.some((value) => value.trim().toLowerCase() === normalized);
+    const matchingRoles = [entry.co_pilot, entry.left_gunner, entry.right_gunner].filter(
+      (value): value is string => Boolean(normalizeName(value)),
+    );
+
+    const isCrew = matchingRoles.some((value) => normalizeName(value) === normalizedUserName);
     return isCrew && !isWriter;
   }).length;
 }
