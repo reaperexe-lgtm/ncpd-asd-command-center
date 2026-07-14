@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
     const MISSION_PURSUIT_METRICS = new Set([
       "missions_total", "pursuits_total", "pursuits_week", "protocols_total",
     ]);
+    const MISSION_PARTICIPATION_METRICS = new Set(["crew_participations_total"]);
     // Achievements mit eigener, fest hinterlegter Stufen-Belohnung (Spalte
     // reward_amount) statt der normalen Tier-Belohnung — z.B. die "10-80-Sammler"
     // und "Missionen-Master" Stufenfamilien (aufsteigend, Ø 1.000.000 $/Stufe).
@@ -156,6 +157,7 @@ Deno.serve(async (req) => {
         const def = (defs || []).find((d: any) => d.code === a.achievement_code);
         if (!def) continue;
         if (def.reward_amount == null && MISSION_PURSUIT_METRICS.has(def.metric)) continue;
+        if (def.reward_amount == null && MISSION_PARTICIPATION_METRICS.has(def.metric)) continue;
         // reward_amount (falls gesetzt) überschreibt die normale Tier-Belohnung —
         // genutzt für individuell abgestufte Belohnungen (z.B. Stufenfamilien).
         if (def.reward_amount != null) {

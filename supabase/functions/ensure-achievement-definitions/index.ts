@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { MISSIONS_PARTICIPATION_ACHIEVEMENT_DEFS } from "../../../src/lib/achievementDefinitions.ts";
 
 // Achievements, die per SQL-Migration angelegt werden sollten, aber falls diese
 // Migration auf der laufenden DB (noch) nicht ausgeführt wurde, hier per
@@ -26,6 +27,7 @@ const REQUIRED_ACHIEVEMENT_DEFS = [
   { code: "missions_master_400", title: "Missionen-Elite", description: "400 Einsätze insgesamt erreicht", icon: "Target", tier: "emerald", category: "missions", threshold: 400, metric: "missions_total", sort_order: 286, is_active: true, base_code: "missions_master", tier_level: 6, reward_amount: 1250000 },
   { code: "missions_master_500", title: "Missionen-Meister", description: "500 Einsätze insgesamt erreicht", icon: "Target", tier: "ruby", category: "missions", threshold: 500, metric: "missions_total", sort_order: 287, is_active: true, base_code: "missions_master", tier_level: 7, reward_amount: 1500000 },
   { code: "missions_master_1000", title: "Missionen-Master", description: "1000 Einsätze insgesamt erreicht", icon: "Target", tier: "obsidian", category: "missions", threshold: 1000, metric: "missions_total", sort_order: 288, is_active: true, base_code: "missions_master", tier_level: 8, reward_amount: 2650000 },
+  ...MISSIONS_PARTICIPATION_ACHIEVEMENT_DEFS,
 ];
 
 Deno.serve(async (req) => {

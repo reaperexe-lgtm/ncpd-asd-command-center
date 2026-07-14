@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { awardAchievements, MetricSnapshot } from "@/lib/achievements";
 import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
 import { toast } from "sonner";
+import { MISSIONS_PARTICIPATION_ACHIEVEMENT_DEFS } from "@/lib/achievementDefinitions";
 
 // Achievements, die per SQL-Migration existieren sollten. Falls die Migration auf der
 // laufenden DB (noch) nicht ausgeführt wurde, zieht ensureAchievementDefinitions() sie
@@ -17,6 +18,8 @@ const REQUIRED_ACHIEVEMENT_CODES = [
   "pursuits_sammler_300", "pursuits_sammler_400", "pursuits_sammler_500", "pursuits_sammler_1000",
   "missions_master_10", "missions_master_50", "missions_master_150", "missions_master_200",
   "missions_master_300", "missions_master_400", "missions_master_500", "missions_master_1000",
+  "missions_presence_10", "missions_presence_50", "missions_presence_150", "missions_presence_200",
+  "missions_presence_300", "missions_presence_400", "missions_presence_500", "missions_presence_1000",
 ];
 const REQUIRED_ACHIEVEMENT_DEFS_FALLBACK = [
   { code: "pursuits_sammler_10", title: "10-80-Lehrling", description: "10 Verfolgungen insgesamt erreicht", icon: "Car", tier: "bronze", category: "pursuits", threshold: 10, metric: "pursuits_total", sort_order: 271, is_active: true, base_code: "pursuits_sammler", tier_level: 1, reward_amount: 100000 },
@@ -35,6 +38,7 @@ const REQUIRED_ACHIEVEMENT_DEFS_FALLBACK = [
   { code: "missions_master_400", title: "Missionen-Elite", description: "400 Einsätze insgesamt erreicht", icon: "Target", tier: "emerald", category: "missions", threshold: 400, metric: "missions_total", sort_order: 286, is_active: true, base_code: "missions_master", tier_level: 6, reward_amount: 1250000 },
   { code: "missions_master_500", title: "Missionen-Meister", description: "500 Einsätze insgesamt erreicht", icon: "Target", tier: "ruby", category: "missions", threshold: 500, metric: "missions_total", sort_order: 287, is_active: true, base_code: "missions_master", tier_level: 7, reward_amount: 1500000 },
   { code: "missions_master_1000", title: "Missionen-Master", description: "1000 Einsätze insgesamt erreicht", icon: "Target", tier: "obsidian", category: "missions", threshold: 1000, metric: "missions_total", sort_order: 288, is_active: true, base_code: "missions_master", tier_level: 8, reward_amount: 2650000 },
+  ...MISSIONS_PARTICIPATION_ACHIEVEMENT_DEFS,
 ];
 
 const ICONS: Record<string, any> = {

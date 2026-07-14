@@ -1,0 +1,138 @@
+export interface AchievementDefinitionSeed {
+  code: string;
+  title: string;
+  description: string;
+  icon: string;
+  tier: string;
+  category: string;
+  threshold: number;
+  metric: string;
+  sort_order: number;
+  is_active: boolean;
+  base_code: string;
+  tier_level: number;
+  reward_amount: number;
+}
+
+export const MISSIONS_PARTICIPATION_ACHIEVEMENT_DEFS: AchievementDefinitionSeed[] = [
+  {
+    code: "missions_presence_10",
+    title: "Einsatz-Teilnehmer",
+    description: "10 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "bronze",
+    category: "missions",
+    threshold: 10,
+    metric: "crew_participations_total",
+    sort_order: 291,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 1,
+    reward_amount: 100000,
+  },
+  {
+    code: "missions_presence_50",
+    title: "Einsatz-Geselle",
+    description: "50 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "silver",
+    category: "missions",
+    threshold: 50,
+    metric: "crew_participations_total",
+    sort_order: 292,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 2,
+    reward_amount: 250000,
+  },
+  {
+    code: "missions_presence_150",
+    title: "Einsatz-Experte",
+    description: "150 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "gold",
+    category: "missions",
+    threshold: 150,
+    metric: "crew_participations_total",
+    sort_order: 293,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 3,
+    reward_amount: 500000,
+  },
+  {
+    code: "missions_presence_200",
+    title: "Einsatz-Spezialist",
+    description: "200 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "platinum",
+    category: "missions",
+    threshold: 200,
+    metric: "crew_participations_total",
+    sort_order: 294,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 4,
+    reward_amount: 750000,
+  },
+  {
+    code: "missions_presence_300",
+    title: "Einsatz-Champion",
+    description: "300 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "diamond",
+    category: "missions",
+    threshold: 300,
+    metric: "crew_participations_total",
+    sort_order: 295,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 5,
+    reward_amount: 1000000,
+  },
+  {
+    code: "missions_presence_400",
+    title: "Einsatz-Elite",
+    description: "400 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "emerald",
+    category: "missions",
+    threshold: 400,
+    metric: "crew_participations_total",
+    sort_order: 296,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 6,
+    reward_amount: 1250000,
+  },
+  {
+    code: "missions_presence_500",
+    title: "Einsatz-Meister",
+    description: "500 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "ruby",
+    category: "missions",
+    threshold: 500,
+    metric: "crew_participations_total",
+    sort_order: 297,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 7,
+    reward_amount: 1500000,
+  },
+  {
+    code: "missions_presence_1000",
+    title: "Einsatz-Master",
+    description: "1000 Einsätze als Beteiligter erreicht",
+    icon: "Award",
+    tier: "obsidian",
+    category: "missions",
+    threshold: 1000,
+    metric: "crew_participations_total",
+    sort_order: 298,
+    is_active: true,
+    base_code: "missions_presence",
+    tier_level: 8,
+    reward_amount: 2650000,
+  },
+];
