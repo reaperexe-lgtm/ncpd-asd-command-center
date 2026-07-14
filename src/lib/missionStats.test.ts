@@ -59,7 +59,23 @@ describe("countHeliTeilnehmerForUser", () => {
     ] as any[];
 
     expect(countHeliTeilnehmerForUser(entries, "Alice")).toBe(1);
+  it("excludes writer via resolved profile name (Statistik parity, case/diacritics insensitive)", () => {
+    const entries = [
+      // Writer id differs from user id, but the writer's resolved name matches the crew name
+      { co_pilot: "Álice", left_gunner: null, right_gunner: null, protokollschreiber: "user-writer", created_by: "user-x" },
+      // Different writer name -> zählt
+      { co_pilot: "Alice", left_gunner: null, right_gunner: null, protokollschreiber: "user-writer2", created_by: "user-x" },
+    ] as any[];
+
+    const lookup = new Map<string, string>([
+      ["user-writer", "alice"], // matches "Alice" normalized
+      ["user-writer2", "Bob"],
+    ]);
+
+    // Ohne userId, aber mit Name-Lookup: erste Zeile ausgeschlossen, zweite zählt.
+    expect(countHeliTeilnehmerForUser(entries, "Alice", null, lookup)).toBe(1);
   });
+
 
   it("counts only co-pilot, left gunner, and right gunner roles", () => {
     const entries = [
