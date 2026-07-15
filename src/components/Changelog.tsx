@@ -104,7 +104,6 @@ const STATIC_CHANGELOGS = [
       "10-80 Verfolgungsseite für Einsätze",
       "Achievements-Tracker und Belohnungssystem",
       "Gambling-, Roulette- und Minispiel-Inhalte",
-      "Ortskunde mit versteckten Bereichen und Passwortschutz",
     ],
   },
   {
