@@ -496,204 +496,25 @@ export type Database = {
         }
         Relationships: []
       }
-      map_areas: {
+      heli_data_embeds: {
         Row: {
-          background_id: string | null
-          category: string
-          color: string
-          created_at: string
-          created_by: string | null
-          fill_opacity: number
-          id: string
-          is_hidden: boolean
-          name: string
-          points: Json
-          updated_at: string
-        }
-        Insert: {
-          background_id?: string | null
-          category?: string
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          fill_opacity?: number
-          id?: string
-          is_hidden?: boolean
-          name: string
-          points?: Json
-          updated_at?: string
-        }
-        Update: {
-          background_id?: string | null
-          category?: string
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          fill_opacity?: number
-          id?: string
-          is_hidden?: boolean
-          name?: string
-          points?: Json
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      map_backgrounds: {
-        Row: {
-          created_at: string
-          id: string
-          image_url: string
-          name: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          image_url: string
-          name: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          image_url?: string
-          name?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      map_drawings: {
-        Row: {
-          background_id: string | null
-          color: string
-          created_at: string
-          created_by: string | null
-          id: string
-          is_hidden: boolean
-          name: string
-          points: Json
-          stroke_width: number
-        }
-        Insert: {
-          background_id?: string | null
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_hidden?: boolean
-          name?: string
-          points?: Json
-          stroke_width?: number
-        }
-        Update: {
-          background_id?: string | null
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_hidden?: boolean
-          name?: string
-          points?: Json
-          stroke_width?: number
-        }
-        Relationships: []
-      }
-      map_hidden_password: {
-        Row: {
-          id: string
-          password: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          password?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          password?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      map_locations: {
-        Row: {
-          background_id: string | null
-          category: string
-          color: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          icon: string | null
-          icon_type: string
-          id: string
-          is_hidden: boolean
-          name: string
-          sort_order: number
-          updated_at: string
-          x_percent: number
-          y_percent: number
-        }
-        Insert: {
-          background_id?: string | null
-          category?: string
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          icon?: string | null
-          icon_type?: string
-          id?: string
-          is_hidden?: boolean
-          name: string
-          sort_order?: number
-          updated_at?: string
-          x_percent: number
-          y_percent: number
-        }
-        Update: {
-          background_id?: string | null
-          category?: string
-          color?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          icon?: string | null
-          icon_type?: string
-          id?: string
-          is_hidden?: boolean
-          name?: string
-          sort_order?: number
-          updated_at?: string
-          x_percent?: number
-          y_percent?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "map_locations_background_id_fkey"
-            columns: ["background_id"]
-            isOneToOne: false
-            referencedRelation: "map_backgrounds"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      map_settings: {
-        Row: {
-          background_url: string | null
+          channel_id: string
+          discord_message_id: string | null
+          embed_json: Json
           id: string
           updated_at: string
         }
         Insert: {
-          background_url?: string | null
-          id?: string
+          channel_id: string
+          discord_message_id?: string | null
+          embed_json: Json
+          id: string
           updated_at?: string
         }
         Update: {
-          background_url?: string | null
+          channel_id?: string
+          discord_message_id?: string | null
+          embed_json?: Json
           id?: string
           updated_at?: string
         }
@@ -991,7 +812,6 @@ export type Database = {
           created_at: string
           dienstnummer: string | null
           discord_notifications: Json
-          has_sr_training: boolean
           id: string
           image_url: string | null
           internal_dienstnummer: string | null
@@ -1005,7 +825,6 @@ export type Database = {
           created_at?: string
           dienstnummer?: string | null
           discord_notifications?: Json
-          has_sr_training?: boolean
           id: string
           image_url?: string | null
           internal_dienstnummer?: string | null
@@ -1019,7 +838,6 @@ export type Database = {
           created_at?: string
           dienstnummer?: string | null
           discord_notifications?: Json
-          has_sr_training?: boolean
           id?: string
           image_url?: string | null
           internal_dienstnummer?: string | null
@@ -1194,102 +1012,6 @@ export type Database = {
           is_active?: boolean
           name?: string | null
           sort_order?: number
-        }
-        Relationships: []
-      }
-      sr_theory_exam_results: {
-        Row: {
-          answers: Json
-          created_at: string
-          id: string
-          max_score: number
-          passed: boolean
-          score: number
-          user_id: string
-        }
-        Insert: {
-          answers?: Json
-          created_at?: string
-          id?: string
-          max_score?: number
-          passed?: boolean
-          score?: number
-          user_id: string
-        }
-        Update: {
-          answers?: Json
-          created_at?: string
-          id?: string
-          max_score?: number
-          passed?: boolean
-          score?: number
-          user_id?: string
-        }
-        Relationships: []
-      }
-      sr_training_progress: {
-        Row: {
-          completed: boolean
-          completed_at: string
-          completed_by: string | null
-          id: string
-          module_code: string
-          note: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          completed?: boolean
-          completed_at?: string
-          completed_by?: string | null
-          id?: string
-          module_code: string
-          note?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          completed?: boolean
-          completed_at?: string
-          completed_by?: string | null
-          id?: string
-          module_code?: string
-          note?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      sr_training_signups: {
-        Row: {
-          created_at: string
-          id: string
-          note: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          note?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          note?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
