@@ -145,6 +145,15 @@ const StatistikPage = () => {
     queryFn: async () => { const { data } = await supabase.from("pursuits").select("*"); return data || []; },
   });
 
+  // Einsatz-Fahrzeuge (ASD-eigene Fahrzeuge/Helis pro Einsatz) — für Fahrzeug-Statistik
+  const { data: missionVehicles } = useQuery({
+    queryKey: ["mission-vehicles-stats"],
+    queryFn: async () => {
+      const { data } = await supabase.from("mission_vehicles").select("mission_id, vehicle_type, model");
+      return data || [];
+    },
+  });
+
   const { data: profiles } = useQuery({
     queryKey: ["profiles-map"],
     queryFn: async () => { const { data } = await supabase.from("profiles").select("id, name"); return data || []; },
@@ -386,6 +395,36 @@ const StatistikPage = () => {
   const overviewAll = buildOverview(filteredMissions, filteredPursuits);
   const overviewWeek = buildOverview(weeklyOverviewMissions, weeklyOverviewPursuits);
   const overviewMonth = buildOverview(monthlyOverviewMissions, monthlyOverviewPursuits);
+
+  // Helper: Fahrzeug-Statistik für einen beliebigen Zeitraum berechnen
+  // - ASD-Fahrzeuge: aus mission_vehicles, gefiltert auf die Missionen des Zeitraums
+  // - Fluchtfahrzeuge: aus pursuits.vehicle_model (Freitext) des Zeitraums
+  const buildVehicleStats = (ms: typeof filteredMissions, ps: typeof filteredPursuits) => {
+    const missionIds = new Set(ms.map((m) => m.id));
+    const asdCounts: Record<string, number> = {};
+    (missionVehicles || []).forEach((v) => {
+      if (!missionIds.has(v.mission_id)) return;
+      const label = (v.model || "Unbekannt").trim() || "Unbekannt";
+      asdCounts[label] = (asdCounts[label] || 0) + 1;
+    });
+    const fleeingCounts: Record<string, number> = {};
+    ps.forEach((p) => {
+      const label = ((p as any).vehicle_model || "").trim();
+      if (!label) return;
+      fleeingCounts[label] = (fleeingCounts[label] || 0) + 1;
+    });
+    const asdSorted = Object.entries(asdCounts).sort((a, b) => b[1] - a[1]);
+    const fleeingSorted = Object.entries(fleeingCounts).sort((a, b) => b[1] - a[1]);
+    return {
+      asdSorted,
+      asdTotal: asdSorted.reduce((s, [, c]) => s + c, 0),
+      fleeingSorted,
+      fleeingTotal: fleeingSorted.reduce((s, [, c]) => s + c, 0),
+    };
+  };
+
+  const vehicleStatsWeek = buildVehicleStats(weeklyOverviewMissions, weeklyOverviewPursuits);
+  const vehicleStatsMonth = buildVehicleStats(monthlyOverviewMissions, monthlyOverviewPursuits);
 
   // Backwards-compat aliases
   const sortedLocations = overviewAll.sorted;
@@ -765,6 +804,65 @@ const StatistikPage = () => {
     </div>
   );
 
+  const VehicleStatsCard = ({ data, title }: { data: ReturnType<typeof buildVehicleStats>; title: string }) => {
+    const maxAsd = data.asdSorted[0]?.[1] || 1;
+    const maxFleeing = data.fleeingSorted[0]?.[1] || 1;
+    const Row = (label: string, count: number, max: number, i: number, hue: number) => (
+      <div key={label} className="flex items-center justify-between">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-sm font-bold w-6 text-center shrink-0 tabular-nums">
+            {i < 3 ? MEDAL[i] : <span className="text-muted-foreground">{i + 1}.</span>}
+          </span>
+          <div
+            className="h-9 rounded-md flex items-center px-3 transition-all duration-500 min-w-0"
+            style={{
+              width: `${Math.max((count / max) * 100, 20)}%`,
+              backgroundColor: `hsl(${hue}, 60%, ${45 + (i % 8) * 3}%)`,
+            }}
+          >
+            <span className="text-xs font-bold text-white truncate drop-shadow-md">{label}</span>
+          </div>
+        </div>
+        <span className="text-sm font-bold text-primary tabular-nums ml-4 shrink-0">{count}</span>
+      </div>
+    );
+    return (
+      <div className="bg-card border border-border rounded-lg p-5">
+        <h2 className="font-semibold text-primary mb-4 flex items-center gap-2">
+          <Car className="w-5 h-5" /> {title}
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-muted-foreground">ASD-Fahrzeuge im Einsatz</h3>
+              <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Gesamt: {data.asdTotal}</span>
+            </div>
+            {data.asdSorted.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Noch keine Einsatz-Fahrzeuge erfasst</p>
+            ) : (
+              <div className="space-y-3">
+                {data.asdSorted.map(([model, count], i) => Row(model, count, maxAsd, i, 200))}
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Meistgesichtete Fluchtfahrzeuge</h3>
+              <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">Gesamt: {data.fleeingTotal}</span>
+            </div>
+            {data.fleeingSorted.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Noch keine Fluchtfahrzeuge erfasst</p>
+            ) : (
+              <div className="space-y-3">
+                {data.fleeingSorted.map(([model, count], i) => Row(model, count, maxFleeing, i, 10))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const FlightLicenseCard = ({
     scope, ranking, max, total: fTotal, countdown, nextDate,
   }: {
@@ -973,6 +1071,7 @@ const StatistikPage = () => {
             ranking={beiseinWeekly}
             total={beiseinWeeklyTotal}
           />
+          <VehicleStatsCard data={vehicleStatsWeek} title="Fahrzeuge (Woche)" />
         </TabsContent>
 
         {/* ===== MONTH TAB ===== */}
@@ -1026,6 +1125,7 @@ const StatistikPage = () => {
             ranking={beiseinAll}
             total={beiseinAllTotal}
           />
+          <VehicleStatsCard data={vehicleStatsMonth} title="Fahrzeuge (Monat)" />
 
           {monthlyEntries.length > 1 && (
             <div className="bg-card border border-border rounded-lg p-5">
