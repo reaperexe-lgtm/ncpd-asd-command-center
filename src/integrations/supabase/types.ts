@@ -520,6 +520,54 @@ export type Database = {
         }
         Relationships: []
       }
+      meldeaufforderungen: {
+        Row: {
+          contacts: Json
+          created_at: string
+          discord_message_id: string | null
+          discord_reason_message_id: string | null
+          id: string
+          issued_by: string | null
+          issued_by_discord_id: string | null
+          issued_by_name: string
+          notiz: string | null
+          target_dienstnummer: string | null
+          target_discord_id: string | null
+          target_name: string
+          target_user_id: string | null
+        }
+        Insert: {
+          contacts?: Json
+          created_at?: string
+          discord_message_id?: string | null
+          discord_reason_message_id?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_by_discord_id?: string | null
+          issued_by_name: string
+          notiz?: string | null
+          target_dienstnummer?: string | null
+          target_discord_id?: string | null
+          target_name: string
+          target_user_id?: string | null
+        }
+        Update: {
+          contacts?: Json
+          created_at?: string
+          discord_message_id?: string | null
+          discord_reason_message_id?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_by_discord_id?: string | null
+          issued_by_name?: string
+          notiz?: string | null
+          target_dienstnummer?: string | null
+          target_discord_id?: string | null
+          target_name?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       member_of_month: {
         Row: {
           created_at: string

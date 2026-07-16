@@ -9,6 +9,7 @@ export type LogCategory =
   | "familie"
   | "admin"
   | "sanktion"
+  | "meldung"
   | "general";
 
 export async function logActivity(

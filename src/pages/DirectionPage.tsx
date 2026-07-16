@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle } from "lucide-react";
 
 const SanktionenPage = lazy(() => import("./SanktionenPage"));
+const MeldeaufforderungPage = lazy(() => import("./MeldeaufforderungPage"));
 
 const Fallback = () => (
   <div className="p-8 text-primary animate-pulse">Laden...</div>
@@ -15,7 +16,7 @@ export default function DirectionPage() {
 
   if (loading) return <Fallback />;
 
-  const allowed = isAdmin || role === "director" || role === "co_director";
+  const allowed = isAdmin || role === "director" || role === "co_director" || role === "supervisor";
   if (!allowed) return <Navigate to="/" replace />;
 
   return (
@@ -27,10 +28,16 @@ export default function DirectionPage() {
       <Tabs defaultValue="sanktionen" className="w-full">
         <TabsList>
           <TabsTrigger value="sanktionen">Sanktionen</TabsTrigger>
+          <TabsTrigger value="meldeaufforderung">Meldeaufforderung</TabsTrigger>
         </TabsList>
         <TabsContent value="sanktionen" className="mt-4">
           <Suspense fallback={<Fallback />}>
             <SanktionenPage />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="meldeaufforderung" className="mt-4">
+          <Suspense fallback={<Fallback />}>
+            <MeldeaufforderungPage />
           </Suspense>
         </TabsContent>
       </Tabs>
