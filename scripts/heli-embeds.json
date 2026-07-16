@@ -11,22 +11,8 @@
         { "name": "Überlebensfähigkeit", "value": "Hält leichten Beschuss und kleinere Unfallschäden aus", "inline": false },
         { "name": "Panzerung", "value": "Keine Vollpanzerung, Türen zum Schutz für Left-/Right-Gunner", "inline": false },
         { "name": "Rolle im Einsatz", "value": "Vielseitig einsetzbar: Aufklärung, Feuerunterstützung, Personen Transportaufgaben", "inline": false }
-      ]
-    }
-  },
-  {
-    "id": "jcon-2",
-    "channelId": "1421880750902476871",
-    "embed": {
-      "title": "Police Department Helikopter Daten [JCON]",
-      "color": 2278750,
-      "fields": [
-        { "name": "Top Speed", "value": "300 km/h", "inline": false },
-        { "name": "Besatzung", "value": "1 × Pilot\n1 × Pistol-Gunner\n1 × Left-Gunner\n1 × Right-Gunner", "inline": false },
-        { "name": "Überlebensfähigkeit", "value": "Hält leichten Beschuss und kleinere Unfallschäden aus", "inline": false },
-        { "name": "Panzerung", "value": "Keine Vollpanzerung, Türen zum Schutz für Left-/Right-Gunner", "inline": false },
-        { "name": "Rolle im Einsatz", "value": "Vielseitig einsetzbar: Aufklärung, Feuerunterstützung, Personen Transportaufgaben", "inline": false }
-      ]
+      ],
+      "image": { "url": "https://example.com/image_7.png" }
     }
   },
   {
@@ -41,7 +27,22 @@
         { "name": "Überlebensfähigkeit", "value": "Hält mittleren Beschuss und mittlere Unfallschäden aus", "inline": false },
         { "name": "Panzerung", "value": "Mittlere Panzerung", "inline": false },
         { "name": "Rolle im Einsatz", "value": "Vielseitig einsetzbar: Highspeed-Verfolgungen, Feuerunterstützung, Personen Transportaufgaben", "inline": false }
-      ]
+      ],
+      "image": { "url": "https://example.com/image_8.png" }
+    }
+  }
+    "channelId": "1421880750902476871",
+    "embed": {
+      "title": "Police Department Helikopter Daten [Maverick]",
+      "color": 2278750,
+      "fields": [
+        { "name": "Top Speed", "value": "320 km/h", "inline": false },
+        { "name": "Besatzung", "value": "1 × Pilot\n1 × Pistol-Gunner\n1 × Left-Gunner\n1 × Right-Gunner", "inline": false },
+        { "name": "Überlebensfähigkeit", "value": "Hält mittleren Beschuss und mittlere Unfallschäden aus", "inline": false },
+        { "name": "Panzerung", "value": "Mittlere Panzerung", "inline": false },
+        { "name": "Rolle im Einsatz", "value": "Vielseitig einsetzbar: Highspeed-Verfolgungen, Feuerunterstützung, Personen Transportaufgaben", "inline": false }
+      ],
+      "image": { "url": "https://example.com/image_8.png" }
     }
   }
 ]
