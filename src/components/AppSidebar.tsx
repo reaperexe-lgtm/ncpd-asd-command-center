@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Shield, User as UserIcon } from "lucide-react";
+import { LogOut, Shield, User as UserIcon, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -46,6 +46,7 @@ export function AppSidebar() {
   const { isAdmin, signOut, role } = useAuth();
   const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
   const isFlightLicense = role === "flight_license";
+  const isDirection = role === "director" || role === "co_director";
 
   const { data: navOrder } = useQuery({
     queryKey: ["nav-order"],
@@ -140,6 +141,20 @@ export function AppSidebar() {
                       >
                         <span className="text-base shrink-0">🎓</span>
                         <span>Ausbilder</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {isDirection && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive("/sanktionen")} tooltip="Sanktionen">
+                      <NavLink
+                        to="/sanktionen"
+                        data-active={isActive("/sanktionen")}
+                        className={`hud-nav-item ${navClass(isActive("/sanktionen"))}`}
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>Sanktionen</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

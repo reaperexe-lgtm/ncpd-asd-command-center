@@ -985,6 +985,81 @@ export type Database = {
         }
         Relationships: []
       }
+      sanctions: {
+        Row: {
+          amount: number
+          created_at: string
+          discord_message_id: string | null
+          discord_reason_message_id: string | null
+          due_at: string
+          id: string
+          issued_by: string | null
+          issued_by_discord_id: string | null
+          issued_by_name: string
+          notiz: string | null
+          paid_at: string | null
+          paragraph: string
+          reminder_sent_at: string | null
+          status: string
+          target_dienstnummer: string | null
+          target_discord_id: string | null
+          target_name: string
+          target_user_id: string | null
+          tatzeitraum_end: string
+          tatzeitraum_start: string
+          updated_at: string
+          zeugen: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          discord_message_id?: string | null
+          discord_reason_message_id?: string | null
+          due_at?: string
+          id?: string
+          issued_by?: string | null
+          issued_by_discord_id?: string | null
+          issued_by_name: string
+          notiz?: string | null
+          paid_at?: string | null
+          paragraph: string
+          reminder_sent_at?: string | null
+          status?: string
+          target_dienstnummer?: string | null
+          target_discord_id?: string | null
+          target_name: string
+          target_user_id?: string | null
+          tatzeitraum_end: string
+          tatzeitraum_start: string
+          updated_at?: string
+          zeugen?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          discord_message_id?: string | null
+          discord_reason_message_id?: string | null
+          due_at?: string
+          id?: string
+          issued_by?: string | null
+          issued_by_discord_id?: string | null
+          issued_by_name?: string
+          notiz?: string | null
+          paid_at?: string | null
+          paragraph?: string
+          reminder_sent_at?: string | null
+          status?: string
+          target_dienstnummer?: string | null
+          target_discord_id?: string | null
+          target_name?: string
+          target_user_id?: string | null
+          tatzeitraum_end?: string
+          tatzeitraum_start?: string
+          updated_at?: string
+          zeugen?: string | null
+        }
+        Relationships: []
+      }
       slideshow_images: {
         Row: {
           created_at: string

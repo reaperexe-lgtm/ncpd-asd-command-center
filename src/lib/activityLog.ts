@@ -8,6 +8,7 @@ export type LogCategory =
   | "bewerbungssperre"
   | "familie"
   | "admin"
+  | "sanktion"
   | "general";
 
 export async function logActivity(
