@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Send, Save, Loader2, Plus, X, Image as ImageIcon, Code2, LayoutList } from "lucide-react";
 import { invokeEdgeFunction } from "@/lib/supabaseFunctions";
+import { applyHeliEmbedImageBinding } from "@/lib/heliEmbedImageMap";
 
 interface HeliEmbedRow {
   id: string;
@@ -53,6 +54,11 @@ function toStructured(embedJson: any): StructuredEmbed {
   };
 }
 
+function withBoundImage(rowId: string, embedJson: any): any {
+  const bound = applyHeliEmbedImageBinding(embedJson, rowId);
+  return bound ?? embedJson;
+}
+
 function fromStructured(s: StructuredEmbed): any {
   const json: any = {
     title: s.title,
@@ -89,8 +95,9 @@ export default function HeliEmbedsSection() {
       const d: Record<string, string> = {};
       const s: Record<string, StructuredEmbed> = {};
       list.forEach((r) => {
-        d[r.id] = JSON.stringify(r.embed_json, null, 2);
-        s[r.id] = toStructured(r.embed_json);
+        const boundEmbed = withBoundImage(r.id, r.embed_json);
+        d[r.id] = JSON.stringify(boundEmbed, null, 2);
+        s[r.id] = toStructured(boundEmbed);
       });
       setDrafts(d);
       setStructured(s);
@@ -113,7 +120,7 @@ export default function HeliEmbedsSection() {
     }
     const s = structured[rowId];
     if (!s) return null;
-    return fromStructured(s);
+    return withBoundImage(rowId, fromStructured(s));
   };
 
   const updateField = (rowId: string, index: number, patch: Partial<EmbedField>) => {
