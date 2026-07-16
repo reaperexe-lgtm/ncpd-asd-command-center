@@ -46,7 +46,7 @@ export function AppSidebar() {
   const { isAdmin, signOut, role } = useAuth();
   const canReviewExams = ["admin", "director", "co_director", "supervisor", "ausbilder", "trial_ausbilder", "team_red"].includes(role || "");
   const isFlightLicense = role === "flight_license";
-  const isDirection = role === "director" || role === "co_director";
+  const isDirection = role === "director" || role === "co_director" || isAdmin;
 
   const { data: navOrder } = useQuery({
     queryKey: ["nav-order"],
@@ -147,14 +147,14 @@ export function AppSidebar() {
                 )}
                 {isDirection && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive("/sanktionen")} tooltip="Sanktionen">
+                    <SidebarMenuButton asChild isActive={isActive("/direction")} tooltip="Direction">
                       <NavLink
-                        to="/sanktionen"
-                        data-active={isActive("/sanktionen")}
-                        className={`hud-nav-item ${navClass(isActive("/sanktionen"))}`}
+                        to="/direction"
+                        data-active={isActive("/direction")}
+                        className={`hud-nav-item ${navClass(isActive("/direction"))}`}
                       >
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span>Sanktionen</span>
+                        <span>Direction</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

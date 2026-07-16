@@ -29,6 +29,7 @@ const ASDApplicantDashboard = lazy(() => import("./pages/ASDApplicantDashboard")
 const FlightApplicantDashboard = lazy(() => import("./pages/FlightApplicantDashboard"));
 const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
 const SanktionenPage = lazy(() => import("./pages/SanktionenPage"));
+const DirectionPage = lazy(() => import("./pages/DirectionPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +84,7 @@ const ProtectedRoutes = () => {
         <Route path="/ausbilder" element={<AusbilderPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="/sanktionen" element={<SanktionenPage />} />
+        <Route path="/direction" element={<DirectionPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
