@@ -1,6 +1,6 @@
 export const HELI_EMBED_IMAGE_URLS: Record<string, string> = {
-  "jcon-1": "https://example.com/image_7.png",
-  "maverick-1": "https://example.com/image_8.png",
+  "jcon-1": "https://ostuzusncwkmfwzuhhmc.supabase.co/storage/v1/object/public/assets/heli-embeds/jcon.png",
+  "maverick-1": "https://ostuzusncwkmfwzuhhmc.supabase.co/storage/v1/object/public/assets/heli-embeds/maverick.png",
 };
 
 export function getHeliEmbedImageUrl(rowId: string, fallback = ""): string {
