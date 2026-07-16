@@ -37,6 +37,8 @@ const PARAGRAPHS = [
   "§9. Schlussregeln",
 ];
 
+const SCHLUSSREGELN = "§9. Schlussregeln";
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -58,6 +60,7 @@ const SanktionenPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [targetUserId, setTargetUserId] = useState("");
   const [paragraph, setParagraph] = useState("");
+  const [schlussregelnText, setSchlussregelnText] = useState("");
   const [zeugen, setZeugen] = useState("");
   const [von, setVon] = useState(todayStr());
   const [bis, setBis] = useState(todayStr());
@@ -102,18 +105,23 @@ const SanktionenPage = () => {
   });
 
   const resetForm = () => {
-    setTargetUserId(""); setParagraph(""); setZeugen("");
+    setTargetUserId(""); setParagraph(""); setSchlussregelnText(""); setZeugen("");
     setVon(todayStr()); setBis(todayStr()); setAmount(""); setNotiz("");
     setShowForm(false);
   };
+
+  const isSchlussregeln = paragraph === SCHLUSSREGELN;
 
   const issueSanction = useMutation({
     mutationFn: async () => {
       const target = members?.find((m) => m.id === targetUserId);
       if (!target) throw new Error("Bitte ein Mitglied auswählen");
       if (!paragraph) throw new Error("Bitte einen Grund auswählen");
+      if (isSchlussregeln && !schlussregelnText.trim()) throw new Error("Bitte den individuellen Verstoß beschreiben");
       const amountNum = Number(amount.replace(/\./g, "").replace(",", "."));
       if (!amountNum || amountNum <= 0) throw new Error("Bitte eine gültige Sanktionshöhe eintragen");
+
+      const finalParagraph = isSchlussregeln ? `${paragraph}: ${schlussregelnText.trim()}` : paragraph;
 
       const { data, error } = await supabase
         .from("sanctions")
@@ -122,7 +130,7 @@ const SanktionenPage = () => {
           target_name: target.name,
           target_dienstnummer: target.dienstnummer,
           target_discord_id: target.discord_id,
-          paragraph,
+          paragraph: finalParagraph,
           zeugen: zeugen || null,
           tatzeitraum_start: von,
           tatzeitraum_end: bis,
@@ -304,6 +312,21 @@ const SanktionenPage = () => {
             </div>
           </div>
 
+          {isSchlussregeln && (
+            <div className="animate-in slide-in-from-top-1 duration-150">
+              <Label>Individueller Verstoß (freie Beschreibung)</Label>
+              <Textarea
+                className="mt-1.5 bg-background border-border"
+                placeholder="Beschreibe den Verstoß, der nicht unter §1-§8 fällt..."
+                value={schlussregelnText}
+                onChange={(e) => setSchlussregelnText(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                §9 erlaubt der Unitleitung, nicht aufgeführte Verstöße individuell zu bewerten. Diese Beschreibung erscheint als „Grund" in der Discord-Nachricht.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><Label>Tatzeitraum von</Label><Input type="date" className="mt-1.5 bg-background border-border" value={von} onChange={(e) => setVon(e.target.value)} /></div>
             <div><Label>Tatzeitraum bis</Label><Input type="date" className="mt-1.5 bg-background border-border" value={bis} onChange={(e) => setBis(e.target.value)} /></div>
@@ -318,12 +341,17 @@ const SanktionenPage = () => {
           </p>
 
           <div className="flex justify-end">
-            <Button variant="destructive" onClick={() => issueSanction.mutate()} disabled={issueSanction.isPending || !targetUserId || !paragraph || !amount}>
+            <Button
+              variant="destructive"
+              onClick={() => issueSanction.mutate()}
+              disabled={issueSanction.isPending || !targetUserId || !paragraph || !amount || (isSchlussregeln && !schlussregelnText.trim())}
+            >
               Sanktion aussprechen
             </Button>
           </div>
         </div>
       )}
+
 
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="text-primary animate-pulse">Lade...</div></div>
