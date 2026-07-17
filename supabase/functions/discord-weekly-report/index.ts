@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { reportAutomationFailure } from "../_shared/automation-alert.ts";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
@@ -170,6 +171,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("Error:", err);
+    await reportAutomationFailure("discord-weekly-report", err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
   }
 });

@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
+import { reportAutomationFailure } from "../_shared/automation-alert.ts";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const SANCTION_REASON_CHANNEL_ID = "1399063415049424966";
@@ -134,6 +135,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    await reportAutomationFailure("sanction-reminder-check", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

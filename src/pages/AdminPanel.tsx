@@ -1844,10 +1844,14 @@ const AdminPanel = () => {
                         { permission_key: "aufstellung_auto_enabled", role: aufstellungAuto ? "true" : "false" },
                       ];
                       for (const u of updates) {
+                        // upsert statt update: .update() auf eine fehlende
+                        // permission_key-Zeile schlägt lautlos fehl (0 Zeilen
+                        // betroffen, kein Error) - dadurch konnte die
+                        // Aufstellungs-Automatik unbemerkt "deaktiviert"
+                        // bleiben, obwohl "Gespeichert" angezeigt wurde.
                         const { error } = await supabase
                           .from("permission_settings")
-                          .update({ role: u.role } as any)
-                          .eq("permission_key", u.permission_key);
+                          .upsert({ permission_key: u.permission_key, role: u.role } as any, { onConflict: "permission_key" });
                         if (error) throw error;
                       }
                       toast.success("Einstellungen gespeichert");
@@ -1977,10 +1981,11 @@ const AdminPanel = () => {
                         { permission_key: "stats_ping_codirector_id", role: statsPingCoDirector.trim() },
                       ];
                       for (const u of updates) {
+                        // upsert statt update: siehe Kommentar bei der
+                        // Aufstellungs-Automatik weiter oben.
                         const { error } = await supabase
                           .from("permission_settings")
-                          .update({ role: u.role } as any)
-                          .eq("permission_key", u.permission_key);
+                          .upsert({ permission_key: u.permission_key, role: u.role } as any, { onConflict: "permission_key" });
                         if (error) throw error;
                       }
                       toast.success("Discord-IDs gespeichert");
@@ -2046,10 +2051,11 @@ const AdminPanel = () => {
                         { permission_key: "inactivity_director_channel_id", role: inactivityChannelId.trim() },
                       ];
                       for (const u of updates) {
+                        // upsert statt update: siehe Kommentar bei der
+                        // Aufstellungs-Automatik weiter oben.
                         const { error } = await supabase
                           .from("permission_settings")
-                          .update({ role: u.role } as any)
-                          .eq("permission_key", u.permission_key);
+                          .upsert({ permission_key: u.permission_key, role: u.role } as any, { onConflict: "permission_key" });
                         if (error) throw error;
                       }
                       toast.success("Einstellungen gespeichert");

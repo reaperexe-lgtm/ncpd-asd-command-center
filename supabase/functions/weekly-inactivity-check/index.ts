@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
+import { reportAutomationFailure } from "../_shared/automation-alert.ts";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
@@ -289,6 +290,7 @@ Deno.serve(async (req) => {
       results,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
+    await reportAutomationFailure("weekly-inactivity-check", e);
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
