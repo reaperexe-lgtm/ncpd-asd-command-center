@@ -286,6 +286,33 @@ export type Database = {
         }
         Relationships: []
       }
+      discord_embeds: {
+        Row: {
+          channel_id: string
+          discord_message_id: string | null
+          embeds: Json
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          discord_message_id?: string | null
+          embeds: Json
+          id: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          discord_message_id?: string | null
+          embeds?: Json
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flashcards: {
         Row: {
           back: string
