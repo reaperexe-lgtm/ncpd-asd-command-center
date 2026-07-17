@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy, KeyRound } from "lucide-react";
+import { Shield, UserCheck, UserX, Trash2, ScrollText, Filter, CheckCircle, XCircle, Clock, Bell, MessageCircle, Lock, Check, X, Ban, Unlock, Settings, ExternalLink, Hash, Plane, Megaphone, Calendar, Send, UserPlus, Activity, LifeBuoy, Trophy, KeyRound, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, lazy, Suspense } from "react";
 const PermissionMatrixSection = lazy(() => import("@/components/PermissionMatrixSection"));
@@ -126,6 +126,7 @@ const AdminPanel = () => {
   const [sendingAufstellung, setSendingAufstellung] = useState(false);
   const [sendingSaturdayTest, setSendingSaturdayTest] = useState(false);
   const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
+  const [sendingMemberList, setSendingMemberList] = useState(false);
   const [statsPingDirector, setStatsPingDirector] = useState("");
   const [statsPingCoDirector, setStatsPingCoDirector] = useState("");
   const [savingStatsPings, setSavingStatsPings] = useState(false);
@@ -1866,6 +1867,37 @@ const AdminPanel = () => {
                   className="gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Speichern
+                </Button>
+              </div>
+            </div>
+
+            {/* Mitgliederliste — Discord */}
+            <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+              <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-4 h-4" /> Mitgliederliste — Discord
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Postet ein Embed mit allen freigeschalteten Mitgliedern (Name, Dienstnummer, Rang), gruppiert nach Rang, in den
+                konfigurierten Discord-Channel. Beim erneuten Klicken wird dieselbe Nachricht aktualisiert statt neu gepostet.
+              </p>
+              <div className="flex justify-end pt-2 border-t border-border">
+                <Button
+                  onClick={async () => {
+                    setSendingMemberList(true);
+                    try {
+                      await invokeEdgeFunction(supabase as any, "discord-send-member-list", {});
+                      toast.success("Mitgliederliste gesendet / aktualisiert");
+                      logActivity("Mitgliederliste manuell gesendet", "admin");
+                    } catch (e: any) {
+                      toast.error(e.message ?? "Fehler beim Senden");
+                    } finally {
+                      setSendingMemberList(false);
+                    }
+                  }}
+                  disabled={sendingMemberList}
+                  className="gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Mitgliederliste senden / aktualisieren
                 </Button>
               </div>
             </div>
