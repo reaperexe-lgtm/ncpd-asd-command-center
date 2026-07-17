@@ -19,6 +19,13 @@ const LOCATIONS = ["Staatsbank","Juwelier","Human Labs","Geiselnahme","10-12 Lad
 const VEHICLE_TYPES = ["Fahrzeug","Motorrad","Helikopter","Boot"];
 const VEHICLE_MODELS = ["Drafter","VSTR","Sultan Classic","Sultan Revolter","Schafter","Jugular","Chino Custom","Faction Custom","Benefactor","Schlagen","Schneider","BFB 100","Super Volito","Skyhawk","Null","Sonstiges"];
 
+function getMonthRange(): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+  return { start, end };
+}
+
 type VehicleForm = VehicleFormData;
 
 const emptyVehicle: VehicleForm = createEmptyVehicleForm();
@@ -52,6 +59,61 @@ const EinsatzPage = () => {
     queryKey: ["gangs"],
     queryFn: async () => { const { data } = await supabase.from("gangs").select("*"); return data || []; },
   });
+
+  // Fahrzeugmodelle des Dropdowns nach Häufigkeit im aktuellen Monat sortieren
+  // (gleiche Basis wie "Fahrzeuge (Monat)" in der Statistik: mission_vehicles der
+  // Einsätze des aktuellen Monats, inkl. manuellem Monats-Reset der Übersicht-Statistik)
+  const { data: monthMissionsForVehicleSort } = useQuery({
+    queryKey: ["einsatz-missions-for-vehicle-sort"],
+    queryFn: async () => {
+      const { data } = await supabase.from("missions").select("id, tatzeit, created_at");
+      return data || [];
+    },
+  });
+
+  const { data: allMissionVehiclesForSort } = useQuery({
+    queryKey: ["einsatz-mission-vehicles-for-sort"],
+    queryFn: async () => {
+      const { data } = await supabase.from("mission_vehicles").select("mission_id, model");
+      return data || [];
+    },
+  });
+
+  const { data: overviewMonthlyResetForSort } = useQuery({
+    queryKey: ["einsatz-overview-monthly-reset-for-sort"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stats_resets")
+        .select("*")
+        .eq("reset_type", "overview_monthly")
+        .order("reset_at", { ascending: false })
+        .limit(1);
+      return data?.[0] || null;
+    },
+  });
+
+  const sortedVehicleModels = (() => {
+    const { start: monthStart, end: monthEnd } = getMonthRange();
+    const effectiveMonthStart = overviewMonthlyResetForSort?.reset_at && new Date(overviewMonthlyResetForSort.reset_at) > monthStart
+      ? new Date(overviewMonthlyResetForSort.reset_at)
+      : monthStart;
+    const missionIds = new Set(
+      (monthMissionsForVehicleSort || [])
+        .filter((m: any) => {
+          const d = new Date(m.tatzeit ?? m.created_at);
+          return d >= effectiveMonthStart && d < monthEnd;
+        })
+        .map((m: any) => m.id)
+    );
+    const counts: Record<string, number> = {};
+    (allMissionVehiclesForSort || []).forEach((v: any) => {
+      if (!missionIds.has(v.mission_id)) return;
+      const label = (v.model || "").trim();
+      if (!label) return;
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return [...VEHICLE_MODELS].sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
+  })();
 
   const { data: members } = useQuery({
     queryKey: ["members-select"],
@@ -307,7 +369,7 @@ const EinsatzPage = () => {
                 <Label>Modell</Label>
                 <Select value={currentVehicle.model} onValueChange={(v) => setCurrentVehicle({ ...currentVehicle, model: v })}>
                   <SelectTrigger className="mt-1 bg-card border-border"><SelectValue /></SelectTrigger>
-                  <SelectContent>{VEHICLE_MODELS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                  <SelectContent>{sortedVehicleModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                 </Select>
                 {currentVehicle.model === "Sonstiges" && (
                   <Input className="mt-2 bg-card border-border" placeholder="Eigenes Modell" value={currentVehicle.custom_model} onChange={(e) => setCurrentVehicle({ ...currentVehicle, custom_model: e.target.value })} />
