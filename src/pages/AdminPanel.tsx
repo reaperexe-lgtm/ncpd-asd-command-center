@@ -19,6 +19,7 @@ const AchievementsManager = lazy(() => import("@/components/AchievementsManager"
 const NavOrderSection = lazy(() => import("@/components/NavOrderSection"));
 const SlideshowImagesSection = lazy(() => import("@/components/SlideshowImagesSection"));
 const HeliEmbedsSection = lazy(() => import("@/components/HeliEmbedsSection"));
+const DiscordEmbedsSection = lazy(() => import("@/components/DiscordEmbedsSection"));
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getEffectiveRole, type AppRole } from "@/lib/roles";
 
@@ -2072,6 +2073,10 @@ const AdminPanel = () => {
 
             <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade Heli-Datenblätter...</div>}>
               <HeliEmbedsSection />
+            </Suspense>
+
+            <Suspense fallback={<div className="text-primary animate-pulse text-sm py-8 text-center">Lade Discord-Embeds...</div>}>
+              <DiscordEmbedsSection />
             </Suspense>
           </div>
         </TabsContent>
