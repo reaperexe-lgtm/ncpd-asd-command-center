@@ -725,9 +725,18 @@ Deno.serve(async (req) => {
         directionResults.push({ sent: false, error: (e as Error).message });
       }
 
-      return new Response(JSON.stringify({ success: true, dm: dmStatus, direction_dms: directionResults }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // WICHTIG: "success: true" heißt hier nur "der Endpoint ist ohne Absturz
+      // durchgelaufen", NICHT "die Direction hat die Nachricht bekommen".
+      // Aufrufer (achievement-engine, weekly-challenge-engine) müssen
+      // direction_notified prüfen, bevor sie etwas als "gemeldet" markieren —
+      // sonst wird bei DM-Fehlern (fehlende discord_id, DMs geschlossen,
+      // ungültiger Bot-Token, fehlender Fallback-Channel etc.) eine
+      // Auszahlung fälschlich als kommuniziert abgehakt und nie wiederholt.
+      const directionNotified = directionResults.some((r: any) => r.sent === true);
+      return new Response(
+        JSON.stringify({ success: true, direction_notified: directionNotified, dm: dmStatus, direction_dms: directionResults }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     if (type === "challenge_completed") {
@@ -798,9 +807,14 @@ Deno.serve(async (req) => {
         directionResults.push({ sent: false, error: (e as Error).message });
       }
 
-      return new Response(JSON.stringify({ success: true, dm: dmStatus, direction_dms: directionResults }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Siehe Kommentar im achievement_unlocked-Block weiter oben: nur
+      // direction_notified sagt aus, ob wirklich jemand aus der Direction
+      // erreicht wurde.
+      const directionNotified = directionResults.some((r: any) => r.sent === true);
+      return new Response(
+        JSON.stringify({ success: true, direction_notified: directionNotified, dm: dmStatus, direction_dms: directionResults }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     if (type === "stats_report") {

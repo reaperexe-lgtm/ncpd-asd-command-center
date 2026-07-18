@@ -101,7 +101,7 @@ export async function runAchievementCheckForUser(admin: any, userId: string) {
 
   const [{ data: defs }, { data: owned }] = await Promise.all([
     admin.from("achievement_definitions").select("*").eq("is_active", true),
-    admin.from("user_achievements").select("achievement_code").eq("user_id", userId),
+    admin.from("user_achievements").select("achievement_code, notify_attempted_at, direction_notified_at").eq("user_id", userId),
   ]);
   const ownedSet = new Set((owned || []).map((r: any) => r.achievement_code));
 
@@ -150,31 +150,79 @@ export async function runAchievementCheckForUser(admin: any, userId: string) {
     for (const a of toAward) {
       if (!insertedCodes.has(a.achievement_code)) continue;
       if (!NOTIFY_CODES.has(a.achievement_code)) continue;
-      const def = (defs || []).find((d: any) => d.code === a.achievement_code);
-      if (!def) continue;
-      const tier = (def.tier || "").toLowerCase();
-      const reward = MISSION_PURSUIT_METRICS.has(def.metric) ? 0 : (TIER_REWARDS[tier] || 0);
-      try {
-        await admin.functions.invoke("discord-notify", {
-          body: {
-            type: "achievement_unlocked",
-            data: {
-              user_id: userId,
-              user_name: userName,
-              dienstnummer,
-              achievement_code: def.code,
-              achievement_title: def.title,
-              achievement_description: def.description,
-              achievement_tier: def.tier,
-              casino_reward: reward,
-            },
-          },
-        });
-      } catch (e) {
-        console.error("Discord notify failed", e);
-      }
+      await notifyDirectionForAchievement(admin, userId, userName, dienstnummer, defs, a.achievement_code, null);
     }
   }
 
+  // Retry: Achievements, die schon vergeben sind, deren Direction-Ping aber
+  // NIE bestätigt zurückkam (discord-notify gab früher immer success:true
+  // zurück, egal ob wirklich jemand erreicht wurde -> reward_paid-artige
+  // Markierungen blieben für immer "erledigt", ohne dass je etwas ankam).
+  // Läuft nur alle paar Minuten pro Nutzer (award-achievements-batch Cron),
+  // daher unkritisch für Last.
+  const lockCutoffMs = Date.now() - 5 * 60 * 1000;
+  for (const o of (owned || []) as any[]) {
+    if (!NOTIFY_CODES.has(o.achievement_code)) continue;
+    if (o.direction_notified_at) continue; // schon bestätigt zugestellt
+    const lockedAt = o.notify_attempted_at ? new Date(o.notify_attempted_at).getTime() : 0;
+    if (lockedAt > lockCutoffMs) continue; // gerade erst versucht (Lock aktiv)
+    await notifyDirectionForAchievement(admin, userId, userName, dienstnummer, defs, o.achievement_code, o.notify_attempted_at);
+  }
+
   return { newlyAwarded, metrics };
+}
+
+async function notifyDirectionForAchievement(
+  admin: any,
+  userId: string,
+  userName: string,
+  dienstnummer: string | null,
+  defs: any[] | null,
+  achievementCode: string,
+  _prevLock: string | null,
+) {
+  const def = (defs || []).find((d: any) => d.code === achievementCode);
+  if (!def) return;
+  const tier = (def.tier || "").toLowerCase();
+  const reward = MISSION_PURSUIT_METRICS.has(def.metric) ? 0 : (TIER_REWARDS[tier] || 0);
+
+  // Lock setzen, damit Client-Trigger und 10-Minuten-Cron sich nicht
+  // gegenseitig doppelt pingen.
+  await admin
+    .from("user_achievements")
+    .update({ notify_attempted_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .eq("achievement_code", achievementCode);
+
+  let directionNotified = false;
+  try {
+    const { data: notifyRes } = await admin.functions.invoke("discord-notify", {
+      body: {
+        type: "achievement_unlocked",
+        data: {
+          user_id: userId,
+          user_name: userName,
+          dienstnummer,
+          achievement_code: def.code,
+          achievement_title: def.title,
+          achievement_description: def.description,
+          achievement_tier: def.tier,
+          casino_reward: reward,
+        },
+      },
+    });
+    directionNotified = notifyRes?.direction_notified === true;
+  } catch (e) {
+    console.error("Discord notify failed", e);
+  }
+
+  if (directionNotified) {
+    await admin
+      .from("user_achievements")
+      .update({ direction_notified_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("achievement_code", achievementCode);
+  }
+  // Sonst: notify_attempted_at bleibt gesetzt (Lock), läuft nach 5 Minuten ab
+  // und wird beim nächsten Durchlauf automatisch erneut versucht.
 }

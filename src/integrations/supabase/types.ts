@@ -239,21 +239,27 @@ export type Database = {
         Row: {
           challenge_id: string
           completed_at: string
+          direction_notified_at: string | null
           id: string
+          notify_attempted_at: string | null
           reward_paid: boolean
           user_id: string
         }
         Insert: {
           challenge_id: string
           completed_at?: string
+          direction_notified_at?: string | null
           id?: string
+          notify_attempted_at?: string | null
           reward_paid?: boolean
           user_id: string
         }
         Update: {
           challenge_id?: string
           completed_at?: string
+          direction_notified_at?: string | null
           id?: string
+          notify_attempted_at?: string | null
           reward_paid?: boolean
           user_id?: string
         }
@@ -1393,21 +1399,27 @@ export type Database = {
         Row: {
           achievement_code: string
           awarded_at: string
+          direction_notified_at: string | null
           id: string
+          notify_attempted_at: string | null
           progress_value: number
           user_id: string
         }
         Insert: {
           achievement_code: string
           awarded_at?: string
+          direction_notified_at?: string | null
           id?: string
+          notify_attempted_at?: string | null
           progress_value?: number
           user_id: string
         }
         Update: {
           achievement_code?: string
           awarded_at?: string
+          direction_notified_at?: string | null
           id?: string
+          notify_attempted_at?: string | null
           progress_value?: number
           user_id?: string
         }

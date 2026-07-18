@@ -58,50 +58,80 @@ export async function checkAndClaimWeeklyChallenges(
     if (value < c.target) continue;
 
     try {
-      // Ensure a completion row exists and atomically flip reward_paid=false -> true.
-      // This avoids duplicate notifications when multiple clients/runs race.
+      // Ensure a completion row exists.
       await supabase.from("challenge_completions").upsert(
         { challenge_id: c.id, user_id: userId, reward_paid: false },
         { onConflict: "challenge_id,user_id" },
       );
 
-      const { data: updated } = await supabase
-        .from("challenge_completions")
-        .update({ reward_paid: true })
-        .eq("challenge_id", c.id)
-        .eq("user_id", userId)
-        .eq("reward_paid", false)
-        .select("id");
-
-      // If we didn't transition false->true, someone else already processed this.
-      if (!updated || (Array.isArray(updated) && updated.length === 0)) continue;
-
       const destination = getRewardDestination(c);
+
       if (destination === "casino") {
+        // Keine Discord-Meldung nötig, hier reicht die atomare reward_paid-Flip.
+        const { data: updated } = await supabase
+          .from("challenge_completions")
+          .update({ reward_paid: true })
+          .eq("challenge_id", c.id)
+          .eq("user_id", userId)
+          .eq("reward_paid", false)
+          .select("id");
+        if (!updated || (Array.isArray(updated) && updated.length === 0)) continue;
+
         const { data: bal } = await supabase.from("casino_balances").select("balance").eq("user_id", userId).maybeSingle();
         const newBal = (bal?.balance || 0) + c.reward_amount;
         await supabase.from("casino_balances").upsert({ user_id: userId, balance: newBal } as any, { onConflict: "user_id" });
         toast.success(`🏆 Challenge "${c.title}" geschafft! +$${c.reward_amount.toLocaleString()} auf das Gambling-Konto`);
-      } else {
-        try {
-          await supabase.functions.invoke("discord-notify", {
-            body: {
-              type: "challenge_completed",
-              data: {
-                user_id: userId,
-                user_name: userName || "",
-                dienstnummer: dienstnummer ?? null,
-                challenge_title: c.title,
-                challenge_description: c.description,
-                reward_amount: c.reward_amount,
-              },
-            },
-          });
-          toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
-        } catch (e) {
-          toast.success(`🏆 Challenge "${c.title}" geschafft! Bitte melde dich bei der Direction für deine $${c.reward_amount.toLocaleString()}.`);
-        }
+        continue;
       }
+
+      // Cash-Ziel: reward_paid wird ERST true, wenn discord-notify eine
+      // bestätigte Zustellung an die Direction zurückmeldet. Vorher nur ein
+      // kurzes Lock setzen, damit Client + 10-Minuten-Cron sich nicht
+      // gegenseitig doppelt pingen. Schlägt der Versand fehl, bleibt
+      // reward_paid=false -> der Cron holt es automatisch nach, statt dass
+      // die Karte fälschlich "gemeldet ✓" anzeigt, obwohl niemand etwas bekam.
+      const lockCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: locked } = await supabase
+        .from("challenge_completions")
+        .update({ notify_attempted_at: new Date().toISOString() })
+        .eq("challenge_id", c.id)
+        .eq("user_id", userId)
+        .eq("reward_paid", false)
+        .or(`notify_attempted_at.is.null,notify_attempted_at.lt.${lockCutoff}`)
+        .select("id");
+      if (!locked || (Array.isArray(locked) && locked.length === 0)) continue; // schon in Bearbeitung (Cron oder anderer Tab)
+
+      let directionNotified = false;
+      try {
+        const { data: notifyRes } = await supabase.functions.invoke("discord-notify", {
+          body: {
+            type: "challenge_completed",
+            data: {
+              user_id: userId,
+              user_name: userName || "",
+              dienstnummer: dienstnummer ?? null,
+              challenge_title: c.title,
+              challenge_description: c.description,
+              reward_amount: c.reward_amount,
+            },
+          },
+        });
+        directionNotified = (notifyRes as any)?.direction_notified === true;
+      } catch (e) {
+        console.error("[weeklyChallenges] discord-notify failed", e);
+      }
+
+      if (!directionNotified) {
+        toast.warning(`🏆 Challenge "${c.title}" geschafft! Die Direction-Meldung ist gerade fehlgeschlagen — wird automatisch erneut versucht (spätestens in ein paar Minuten).`);
+        continue;
+      }
+
+      await supabase
+        .from("challenge_completions")
+        .update({ reward_paid: true, direction_notified_at: new Date().toISOString() })
+        .eq("challenge_id", c.id)
+        .eq("user_id", userId);
+      toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
     } catch (e) {
       console.error("[weeklyChallenges] error processing completion:", e);
     }
