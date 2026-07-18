@@ -5,10 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Gift } from "lucide-react";
-import { computeMetrics } from "@/lib/achievements";
 import { getChallengeWeekStartDateKey } from "@/lib/weekBoundary";
 import { getSupabaseFunctionAuthHeaders } from "@/lib/supabaseFunctions";
-import { toast } from "sonner";
+import { checkAndClaimWeeklyChallenges } from "@/lib/weeklyChallenges";
 
 // "cash" = Ingame-Geld, wird NICHT automatisch gutgeschrieben. Stattdessen wird
 // die Direction per Discord benachrichtigt und zahlt manuell aus.
@@ -145,78 +144,16 @@ const WeeklyChallengesCard = () => {
     seed();
   }, [challenges, weekStartIso, refetch]);
 
-  // Auto-claim rewards when conditions met
+  // Auto-claim rewards when conditions met.
+  // Nutzt jetzt die geteilte Funktion aus src/lib/weeklyChallenges.ts (12.07.2026 Fix),
+  // damit dieselbe Claim-Logik auch direkt nach dem Erstellen eines Einsatzes/einer
+  // Verfolgung laufen kann, ohne dass diese Karte überhaupt gerendert sein muss.
   useEffect(() => {
     if (!user || !profile || !challenges?.length) return;
-    const run = async () => {
-      const metrics = await computeMetrics(user.id, profile.name || "", profile.dienstnummer);
-      for (const c of challenges) {
-        const value = (metrics as any)[c.metric] || 0;
-        const existing = completions?.find((x: any) => x.challenge_id === c.id);
-        if (existing?.reward_paid) continue;
-          if (value >= c.target) {
-          // Ensure a completion row exists and atomically flip reward_paid=false -> true.
-          // This avoids duplicate notifications when multiple clients/runs race.
-          try {
-            await supabase.from("challenge_completions").upsert(
-              { challenge_id: c.id, user_id: user.id, reward_paid: false },
-              { onConflict: "challenge_id,user_id" },
-            );
-
-            const { data: updated } = await supabase
-              .from("challenge_completions")
-              .update({ reward_paid: true })
-              .eq("challenge_id", c.id)
-              .eq("user_id", user.id)
-              .eq("reward_paid", false)
-              .select("id");
-
-            // If we updated a row (i.e. transitioned false->true), we're the first actor
-            // and should perform the reward logic (notify / credit casino).
-            if (!updated || (Array.isArray(updated) && updated.length === 0)) {
-              // Someone else already processed this completion
-              refetchComp();
-              continue;
-            }
-
-            const destination = getRewardDestination(c);
-            if (destination === "casino") {
-              const { data: bal } = await supabase.from("casino_balances").select("balance").eq("user_id", user.id).maybeSingle();
-              const newBal = (bal?.balance || 0) + c.reward_amount;
-              await supabase.from("casino_balances").upsert({ user_id: user.id, balance: newBal } as any, { onConflict: "user_id" });
-              toast.success(`🏆 Challenge "${c.title}" geschafft! +$${c.reward_amount.toLocaleString()} auf das Gambling-Konto`);
-            } else {
-              try {
-                await supabase.functions.invoke("discord-notify", {
-                  body: {
-                    type: "challenge_completed",
-                    data: {
-                      user_id: user.id,
-                      user_name: profile.name || "",
-                      dienstnummer: profile.dienstnummer ?? null,
-                      challenge_title: c.title,
-                      challenge_description: c.description,
-                      reward_amount: c.reward_amount,
-                    },
-                  },
-                });
-                toast.success(`🏆 Challenge "${c.title}" geschafft! Die Direction wurde per Discord über die Auszahlung von $${c.reward_amount.toLocaleString()} benachrichtigt.`);
-              } catch (e) {
-                toast.success(`🏆 Challenge "${c.title}" geschafft! Bitte melde dich bei der Direction für deine $${c.reward_amount.toLocaleString()}.`);
-              }
-            }
-
-            refetchComp();
-          } catch (e) {
-            console.error("[WeeklyChallenges] error processing completion:", e);
-            // Best effort: refresh completions so UI reflects current state
-            refetchComp();
-          }
-        }
-      }
-    };
-    run();
-  }, [user, profile, challenges, completions, refetchComp]);
+    checkAndClaimWeeklyChallenges(user.id, profile.name || "", profile.dienstnummer)
+      .then(refetchComp)
+      .catch((e) => console.error("[WeeklyChallenges] error processing completion:", e));
+  }, [user, profile, challenges, refetchComp]);
 
   const visibleChallenges = (challenges || []).filter(
     (c: any) => c.title !== "Aktiver Pilot" && !REMOVED_CHALLENGE_TITLES.includes(c.title)

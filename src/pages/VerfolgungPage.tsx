@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { toast } from "sonner";
 import { Plus, Trash2, Car, Siren, Users, Image, Clock, X } from "lucide-react";
+import { awardAchievements } from "@/lib/achievements";
+import { checkAndClaimWeeklyChallenges } from "@/lib/weeklyChallenges";
 
 const VerfolgungPage = () => {
   const { user, isAdmin, role } = useAuth();
@@ -53,6 +55,16 @@ const VerfolgungPage = () => {
     },
   });
 
+  const { data: ownProfile } = useQuery({
+    queryKey: ["my-profile-for-rewards", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("name, dienstnummer").eq("id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const savePursuit = useMutation({
     mutationFn: async () => {
       const { data: pursuit, error } = await supabase.from("pursuits").insert({
@@ -84,6 +96,17 @@ const VerfolgungPage = () => {
       toast.success("Verfolgung gespeichert!");
       queryClient.invalidateQueries({ queryKey: ["pursuits"] });
       logActivity("Verfolgung erstellt", "verfolgung", { vehicle: vehicleModel, plate: licensePlate });
+      // 12.07.2026 Fix: löst Achievement-Vergabe & Wochenziel-Check direkt beim
+      // Erstellen aus, statt darauf zu warten, dass zufällig die Achievements-Seite
+      // besucht wird. Bewusst "fire and forget" (best effort).
+      if (user) {
+        awardAchievements(user.id, ownProfile?.name || "", ownProfile?.dienstnummer).catch((e) =>
+          console.error("[VerfolgungPage] awardAchievements fehlgeschlagen:", e),
+        );
+        checkAndClaimWeeklyChallenges(user.id, ownProfile?.name || "", ownProfile?.dienstnummer).catch((e) =>
+          console.error("[VerfolgungPage] checkAndClaimWeeklyChallenges fehlgeschlagen:", e),
+        );
+      }
       resetForm();
     },
     onError: (e: any) => toast.error(e.message),

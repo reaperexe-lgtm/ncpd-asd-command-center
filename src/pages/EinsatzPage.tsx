@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { toast } from "sonner";
 import { Plus, Trash2, Car, FileText, Users, Shield, Pencil } from "lucide-react";
 import { GANG_CATEGORIES } from "@/lib/gangCategories";
+import { awardAchievements } from "@/lib/achievements";
+import { checkAndClaimWeeklyChallenges } from "@/lib/weeklyChallenges";
 
 const LOCATIONS = ["Staatsbank","Juwelier","Human Labs","Geiselnahme","10-12 Laden","1000 Laden","Paleto Bank","Sandy Laden","Razzia","Panikbutton","Sonstiges"];
 const VEHICLE_TYPES = ["Fahrzeug","Motorrad","Helikopter","Boot"];
@@ -123,6 +125,16 @@ const EinsatzPage = () => {
     },
   });
 
+  const { data: ownProfile } = useQuery({
+    queryKey: ["my-profile-for-rewards", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("name, dienstnummer").eq("id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const saveMission = useMutation({
     mutationFn: async () => {
       const { data: mission, error } = await supabase.from("missions").insert({
@@ -163,6 +175,18 @@ const EinsatzPage = () => {
       toast.success("Einsatz erfolgreich gespeichert!");
       queryClient.invalidateQueries({ queryKey: ["missions"] });
       logActivity("Einsatz erstellt", "einsatz", { location: location === "Sonstiges" ? customLocation : location, suspects: parseInt(suspects), hostages: parseInt(hostages) });
+      // 12.07.2026 Fix: löst Achievement-Vergabe & Wochenziel-Check direkt beim
+      // Erstellen aus, statt darauf zu warten, dass zufällig die Achievements-Seite
+      // besucht wird. Bewusst "fire and forget" (best effort) — soll die
+      // Erfolgsmeldung/das Formular-Reset nicht blockieren oder verzögern.
+      if (user) {
+        awardAchievements(user.id, ownProfile?.name || "", ownProfile?.dienstnummer).catch((e) =>
+          console.error("[EinsatzPage] awardAchievements fehlgeschlagen:", e),
+        );
+        checkAndClaimWeeklyChallenges(user.id, ownProfile?.name || "", ownProfile?.dienstnummer).catch((e) =>
+          console.error("[EinsatzPage] checkAndClaimWeeklyChallenges fehlgeschlagen:", e),
+        );
+      }
       resetForm();
     },
     onError: (e: any) => toast.error(e.message),
